@@ -9,7 +9,7 @@ object Templating {
   def compileTemplate(templateFile: String): Any = {
     val data = Data("TITLE", "LAYOUT")
     val nameUses = parseMustache(templateFile)
-    nameUses.map(n=>q"data.$n")
+    // nameUses.map(n=>q"data.$n")
     // val q"$expr(...$aexprssnel)" = data
   }
 }

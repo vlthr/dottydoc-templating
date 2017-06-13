@@ -1,6 +1,6 @@
 import mustachemeta.Mustache
 
 object TestMustache {
-  @Mustache("template.md")
+  // @Mustache("template.md")
   object Template
 }

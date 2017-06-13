@@ -1,6 +1,5 @@
-lazy val dottyOrg = "ch.epfl.lamp"
-lazy val dottyVersion = "0.1.2-RC1"
 lazy val metaVersion = "1.6.0"
+scalaVersion in ThisBuild := "2.12.2"
 
 
 
@@ -16,16 +15,12 @@ lazy val macrosSetting = Seq(
   scalacOptions := {
     Seq("-Xprint:frontend,parser,macrosTransform", "-Ycheck:all")
   },
-
+  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
+  scalacOptions += "-Xplugin-require:macroparadise",
   traceLevel := 0,
 
-  scalaVersion := dottyVersion,
-  scalaOrganization := dottyOrg,
-
   libraryDependencies ++= Seq(
-    ("org.scalameta" %% "scalameta" % metaVersion).withDottyCompat(),
-    ("my.fengy" %% "gestalt" % "0.1.1").withDottyCompat(),
-    dottyOrg %% "dotty" % dottyVersion % "provided"
+    "org.scalameta" %% "scalameta" % metaVersion
   )
 ) ++ common
 
@@ -33,12 +28,8 @@ lazy val macrosSetting = Seq(
 lazy val templatingSettings = Seq(
   name := "dottydoc-templating",
   version := "0.0.1",
-  organization := "vlthr",
-
-  scalaOrganization := dottyOrg,
-  scalaVersion := dottyVersion
+  organization := "vlthr"
 ) ++ common ++ macrosSetting
-
 
 lazy val macros = (project in file("macros"))
   .settings(macrosSetting: _*)
