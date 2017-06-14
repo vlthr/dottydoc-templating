@@ -1,7 +1,7 @@
 package vlthr.tee.core
 
-class Context {
-  def source: Source = ???
+case class ParseContext(begin: Int, end: Int, template: Template) {
+  
 }
 class EvalContext {
   def mappings: Map[String, Value] = ???
@@ -11,18 +11,18 @@ class EvalContext {
 abstract class Expr {
   def eval()(evalContext: EvalContext): Value = ???
 }
-final case class AndExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class OrExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class EqExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class NEqExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class LEqExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class LtExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class GEqExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class GtExpr(left: Expr, right: Expr)(implicit context: Context) extends Expr
-final case class LiteralExpr(value: Value)(implicit context: Context) extends Expr
-final case class VariableUseExpr(name: String)(implicit context: Context) extends Expr
-final case class IndexExpr(indexable: Expr, key: Expr)(implicit context: Context) extends Expr // l[0], l['hello'],
-final case class DotExpr(indexable: Expr, key: Value)(implicit context: Context) extends Expr // l.hello, or l.size (special methods)
+final case class AndExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class OrExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class EqExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class NEqExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class LEqExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class LtExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class GEqExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class GtExpr(left: Expr, right: Expr)(implicit context: ParseContext) extends Expr
+final case class LiteralExpr(value: Value)(implicit context: ParseContext) extends Expr
+final case class VariableUseExpr(name: String)(implicit context: ParseContext) extends Expr
+final case class IndexExpr(indexable: Expr, key: Expr)(implicit context: ParseContext) extends Expr // l[0], l['hello'],
+final case class DotExpr(indexable: Expr, key: Value)(implicit context: ParseContext) extends Expr // l.hello, or l.size (special methods)
 
 sealed trait Node {
   def render()(implicit evalContext: EvalContext): String = ???
@@ -60,12 +60,10 @@ final case class IntValue(v: Int) extends Value
 final case class MapValue(v: Map[String, Value]) extends IndexedValue
 final case class ListValue(v: List[Value]) extends IndexedValue
 
-class Template {
-  val body: String = ???
-  val nodes: List[Node] = ???
+class Template(body: String, nodes: List[Node]) {
   def this(path: String) = {
     // read file, populate body/nodes
-    this()
+    this("", Nil)
   }
   def render(evalContext: EvalContext): String = {
     // eval nodes
@@ -74,4 +72,3 @@ class Template {
   }
 
 }
-case class Source (begin: Int, end: Int, template: Template)
