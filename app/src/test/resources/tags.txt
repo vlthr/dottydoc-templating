@@ -1,0 +1,131 @@
+{% assign array = "1,2,3,4"; | split: ","; %}
+{% assign parent = page.path | first %}
+{% assign sidebarTop = "75px" %}
+{% assign titles = item.subsection %}
+{% assign titles = sidebar.titles %}
+{% docstring "scala.collection.immutable.Seq" %}
+{% docstring "scala.collection.Seq$" %}
+{% docstring "scala.collection.Seq" %}
+{% docstring "scala.collection.immutable.Seq" %}
+{% else %}
+{% elsif forloop.index > 6 and forloop.length > 7 %}
+{% elsif member.isProtected %}
+{% elsif member.kind != "package" %}
+{% elsif member.kind == "package" %}
+{% endfor %}
+{% endif %}
+{% endraw %}
+{% for annot in entity.annotations %}
+{% for annot in member.annotations %}
+{% for constructor in entity.constructors %}
+{% for css in page.extraCSS %}
+{% for item in titles %}
+{% for js in page.extraJS %}
+{% for member in entity.members %}
+{% for member in pkg.children %}
+{% for namedRef in plist.list %}
+{% for param in entity.typeParams %}
+{% for pkg in docs %}
+{% for plist in constructor %}
+{% for plist in member.paramLists %}
+{% for post in site.posts %}
+{% for super in entity.superTypes %}
+{% for title in sidebar.titles %}
+{% for tparam in member.typeParams %}
+{% if docs.size > 0 %}
+{% if entity.comment.body %}
+{% if entity.constructors == null or entity.constructors.size == 0 %}
+{% if entity.hasVisibleMembers == false %}
+{% if entity.modifiers %}
+{% if entity.superTypes.size > 0 %}
+{% if entity.typeParams.size > 0 %}
+{% if forloop.first %}
+{% if forloop.index == 6 and forloop.length > 7 %}
+{% if forloop.last != true %}
+{% if forloop.last %}
+{% if forloop.last and forloop.index > 6 %}
+{% if item.subsection %}
+{% if member.alias != null %}
+{% if member.comment.body %}
+{% if member.hasCompanion %}
+{% if member.isImplicitlyAddedFrom != null %}
+{% if member.isPrivate %}
+{% if member.kind == "class" or member.kind == "case class" or member.kind == "object" or member.kind == "trait" %}
+{% if member.kind == "def" and member.paramLists.size > 0 %}
+{% if member.kind == "object" and member.hasCompanion %}
+{% if member.kind == "type" %}
+{% if member.returnValue %}
+{% if namedRef.isByName %}
+{% if page.author %}
+{% if page.authorImg %}
+{% if page.authorImg == null %}
+{% if page.extraCSS %}
+{% if page.extraJS %}
+{% if page.subTitle %}
+{% if plist.isImplicit %}
+{% if site.projectUrl %}
+{% if site.projectUrl contains "github" %}
+{% if titles %}
+{% include "scala-logo.svg" %}
+{% include "sidebar" %}
+{% include "sidebar.html" %}
+{% include "table-of-contents" %}
+{% include "toolbar" %}
+{% include "sidebar.html" %}
+{% include "some-file" %}
+{% include faq.html %}
+{% include features.html %}
+{% include getting-started.html %}
+{% include logo-page.html %}
+{% item.url %}
+{% raw %}
+{% renderLink super %}
+{% renderRef member.alias %}
+{% renderRef member.returnValue %}
+{% renderRef namedRef.ref %}
+{% renderTitle title, parent %}
+{{ annot | split: '.' | last }}
+{{ array | first }}
+{{ array | reverse }}
+{{ content }}
+{{ content}}
+{{ css }}
+{{ docs | json }}
+{{ entity.comment.body }}
+{{ entity.kind }}
+{{ entity.modifiers | join: " " }}
+{{ entity.name }}
+{{ item.title }}
+{{ item.url }}
+{{ js }}
+{{ member.comment.body }}
+{{ member.companionPath | join: "/" }}
+{{ member.kind | first | capitalize }}
+{{ member.kind }}
+{{ member.modifiers | join: " " }}
+{{ member.name }}
+{{ member.path | join: "/" }}
+{{ member.signature }}
+{{ namedRef.title }}
+{{ page.author }}
+{{ page.authorImg }}
+{{ page.date | date: "%b-%d-%Y" }}
+{{ page.date | date: '%B %d, %Y' }}
+{{ page.subTitle }}
+{{ page.title }}
+{{ page.url }}
+{{ param }}
+{{ pkg.name }}
+{{ pkg.path | join: "/" }}
+{{ post.date | date: '%B %d, %Y' }}
+{{ post.excerpt }}
+{{ post.title }}
+{{ post.url }}
+{{ searchableDocs | json }}
+{{ sidebarTop }}
+{{ site.baseurl }}
+{{ site.project }}
+{{ site.projectUrl }}
+{{ site.root }}
+{{ site.version }}
+{{ tparam }}
