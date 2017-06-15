@@ -37,4 +37,11 @@ class ParserSpec extends FlatSpec with Matchers {
       }
     }
   }
+  it should "parse nodes" in {
+    val output = Liquid.parseNode("{{ 'str' }}")
+    output match {
+      case OutputNode(_) =>
+      case _ => fail(""+output)
+    }
+  }
 }

@@ -88,10 +88,10 @@ UNLESSSTART : 'UnlessStart';
 WHEN : 'When';
 WITH : 'With';
 
-TAGSTART : WS* '{{';
-TAGEND   : '}}' WS*;
-OUTPUTSTART : WS* '{%';
-OUTPUTEND   : '%}' WS*;
+OUTPUTSTART : WS* '{{';
+OUTPUTEND   : '}}' WS*;
+TAGSTART : WS* '{%';
+TAGEND   : '%}' WS*;
 
 // parser rules start with lowercase letters, lexer rules with uppercase
 ID : IDSTARTCHAR IDBODYCHAR*;
@@ -103,4 +103,4 @@ fragment LETTER : 'a'..'z' | 'A'..'Z';
 fragment DIGIT  : '0'..'9';
 STRSINGLE   : '\'' ~'\''* '\'';
 STRDOUBLE   : '"' ~'"'* '"';
-WS  :   [ \t\r\n]+; // Define whitespace rule, toss it out
+WS  :   [ \t\r\n]+ -> skip; // Define whitespace rule, toss it out
