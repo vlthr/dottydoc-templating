@@ -6,13 +6,20 @@ import vlthr.tee.core._
 class ParserSpec extends FlatSpec with Matchers {
   behavior of "Parser"
   it should "parse literals" in {
-    val result = Liquid.parseExpr("1")
-    result match {
+    val int = Liquid.parseExpr("1")
+    int match {
       case OutputNode(LiteralExpr(IntValue(1))) =>
       case _ => {
-        fail(""+result)
+        fail(""+int)
       }
     }
+    // val sstr = Liquid.parseExpr("'single quote string'")
+    // sstr match {
+    //   case OutputNode(LiteralExpr(StringValue("single quote string"))) =>
+    //   case _ => {
+    //     fail(""+sstr)
+    //   }
+    // }
 
   }
 }
