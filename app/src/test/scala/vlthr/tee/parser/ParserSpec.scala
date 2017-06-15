@@ -8,14 +8,14 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse literals" in {
     val int = Liquid.parseExpr("1")
     int match {
-      case OutputNode(LiteralExpr(IntValue(1))) =>
+      case LiteralExpr(IntValue(1)) =>
       case _ => {
         fail(""+int)
       }
     }
     val sstr = Liquid.parseExpr("'single quote string'")
     sstr match {
-      case OutputNode(LiteralExpr(StringValue("single quote string"))) =>
+      case LiteralExpr(StringValue("single quote string")) =>
       case _ => {
         fail(""+sstr)
       }
@@ -23,15 +23,15 @@ class ParserSpec extends FlatSpec with Matchers {
 
     val dstr = Liquid.parseExpr("\"double quote string\"")
     dstr match {
-      case OutputNode(LiteralExpr(StringValue("double quote string"))) =>
+      case LiteralExpr(StringValue("double quote string")) =>
       case _ => {
         fail(""+dstr)
       }
     }
 
-    val bool = Liquid.parseExpr("False")
+    val bool = Liquid.parseExpr("false")
     bool match {
-      case OutputNode(LiteralExpr(BooleanValue(false))) =>
+      case LiteralExpr(BooleanValue(false)) =>
       case _ => {
         fail(""+bool)
       }
