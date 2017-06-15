@@ -55,7 +55,7 @@ sealed trait Value {
 }
 abstract class IndexedValue extends Value
 final case class StringValue(v: String) extends Value
-final case class BoolValue(v: Boolean) extends Value
+final case class BooleanValue(v: Boolean) extends Value
 final case class IntValue(v: Int) extends Value
 final case class MapValue(v: Map[String, Value]) extends IndexedValue
 final case class ListValue(v: List[Value]) extends IndexedValue

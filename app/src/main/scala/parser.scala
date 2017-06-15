@@ -43,9 +43,13 @@ class LiquidExprVisitor extends LiquidBaseVisitor[Expr] {
         implicit val parseContext = ParseContext(t.getSymbol().getStartIndex(), t.getSymbol().getStopIndex(), template)
         if (ctx.INT() != null) {
           LiteralExpr(IntValue(t.getText().toInt))
-        } else if (ctx.STRSINGLE() != null || ctx.STRDOUBLE() != 0) {
+        } else if (ctx.STRSINGLE() != null || ctx.STRDOUBLE() != null) {
           LiteralExpr(StringValue(t.getText().substring(1, t.getText().size-1)))
-        } else throw new Exception("Unknown term: " + t)
+        } else if (ctx.TRUE() != null) {
+          LiteralExpr(BooleanValue(true))
+        } else if (ctx.FALSE() != null) {
+          LiteralExpr(BooleanValue(false))
+        } else throw new Exception("Unknown term: " + t + " in context " + ctx)
       }
     }
   }
