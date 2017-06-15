@@ -13,7 +13,9 @@ value : init
 
 expr : term;
 
-term : INT;
+term : INT
+     | STRDOUBLE
+     | STRSINGLE;
 
 id : ID;
 

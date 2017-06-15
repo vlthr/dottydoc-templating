@@ -38,9 +38,15 @@ class LiquidExprVisitor extends LiquidBaseVisitor[Expr] {
     term
   }
   override def visitTerm(ctx: LiquidParser.TermContext): Expr = {
-    val terminal = ctx.INT()
-    println(terminal)
-    implicit val parseContext = ParseContext(terminal.getSymbol().getStartIndex(), terminal.getSymbol().getStopIndex(), template)
-    LiteralExpr(IntValue(terminal.getText().toInt))
+    ctx.getChild(0) match {
+      case t: TerminalNode => {
+        implicit val parseContext = ParseContext(t.getSymbol().getStartIndex(), t.getSymbol().getStopIndex(), template)
+        if (ctx.INT() != null) {
+          LiteralExpr(IntValue(t.getText().toInt))
+        } else if (ctx.STRSINGLE() != null || ctx.STRDOUBLE() != 0) {
+          LiteralExpr(StringValue(t.getText().substring(1, t.getText().size-1)))
+        } else throw new Exception("Unknown term: " + t)
+      }
+    }
   }
 }
