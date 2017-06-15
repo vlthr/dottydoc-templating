@@ -13,13 +13,20 @@ class ParserSpec extends FlatSpec with Matchers {
         fail(""+int)
       }
     }
-    // val sstr = Liquid.parseExpr("'single quote string'")
-    // sstr match {
-    //   case OutputNode(LiteralExpr(StringValue("single quote string"))) =>
-    //   case _ => {
-    //     fail(""+sstr)
-    //   }
-    // }
+    val sstr = Liquid.parseExpr("'single quote string'")
+    sstr match {
+      case OutputNode(LiteralExpr(StringValue("single quote string"))) =>
+      case _ => {
+        fail(""+sstr)
+      }
+    }
 
+    val dstr = Liquid.parseExpr("\"double quote string\"")
+    dstr match {
+      case OutputNode(LiteralExpr(StringValue("double quote string"))) =>
+      case _ => {
+        fail(""+dstr)
+      }
+    }
   }
 }
