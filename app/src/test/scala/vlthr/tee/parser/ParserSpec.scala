@@ -47,4 +47,16 @@ class ParserSpec extends FlatSpec with Matchers {
                  }
                })
   }
+  it should "track the source position of each node" in {
+    val output = Liquid.parseNode("{{  'str'}}")
+    output match {
+      case o@OutputNode(e) => {
+        o.parseContext.begin should be(4);
+        o.parseContext.end should be(8);
+        e.parseContext.begin should be(4);
+        e.parseContext.end should be(8);
+      }
+      case _ => fail(""+output)
+    }
+  }
 }

@@ -48,7 +48,9 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
   }
   override def visitOutput(ctx: LiquidParser.OutputContext): Node = {
     val expVisitor = new LiquidExprVisitor()
-    val expr = expVisitor.visitExpr(ctx.expr())
+    val t = ctx.expr()
+    val expr = expVisitor.visitExpr(t)
+    implicit val parseContext = ParseContext(t.getStart().getStartIndex(), t.getStart().getStopIndex(), template)
     OutputNode(expr)
   }
 }
