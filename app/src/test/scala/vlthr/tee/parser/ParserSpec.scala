@@ -28,5 +28,13 @@ class ParserSpec extends FlatSpec with Matchers {
         fail(""+dstr)
       }
     }
+
+    val bool = Liquid.parseExpr("False")
+    bool match {
+      case OutputNode(LiteralExpr(BooleanValue(false))) =>
+      case _ => {
+        fail(""+bool)
+      }
+    }
   }
 }

@@ -1,21 +1,19 @@
-/** Grammars always start with a grammar header. This grammar is called
- *  ArrayInit and must match the filename: ArrayInit.g4
- */
 grammar Liquid;
 
-/** A rule called init that matches comma-separated values between {...}. */
-init  : '{' value (',' value)* '}' ;  // must match at least one value
+node : tag
+     | output;
 
-/** A value can be either a nested array/struct or a simple integer (INT) */
-value : init
-      | INT
-      ;
+tag : TAGSTART id TAGEND;
+
+output : OUTPUTSTART expr OUTPUTEND;
 
 expr : term;
 
 term : INT
      | STRDOUBLE
-     | STRSINGLE;
+     | STRSINGLE
+     | TRUE
+     | FALSE;
 
 id : ID;
 
@@ -55,18 +53,6 @@ keyword : AND
         | WITH;
 
 
-// parser rules start with lowercase letters, lexer rules with uppercase
-ID : IDSTARTCHAR IDBODYCHAR*;
-INT  : '0'..'9'+;
-IDSTARTCHAR : (LETTER | '_');
-IDBODYCHAR : (LETTER | '_' | '-' | DIGIT);
-
-fragment LETTER : 'a'..'z' | 'A'..'Z';
-fragment DIGIT  : '0'..'9';
-STRSINGLE   : '\'' ~'\''* '\'';
-STRDOUBLE   : '"' ~'"'* '"';
-WS  :   [ \t\r\n]+ -> skip ; // Define whitespace rule, toss it out
-
 AND : 'And';
 ASSIGN : 'Assign';
 BREAK : 'Break';
@@ -101,3 +87,20 @@ UNLESSEND : 'UnlessEnd';
 UNLESSSTART : 'UnlessStart';
 WHEN : 'When';
 WITH : 'With';
+
+TAGSTART : WS* '{{';
+TAGEND   : '}}' WS*;
+OUTPUTSTART : WS* '{%';
+OUTPUTEND   : '%}' WS*;
+
+// parser rules start with lowercase letters, lexer rules with uppercase
+ID : IDSTARTCHAR IDBODYCHAR*;
+INT  : '0'..'9'+;
+IDSTARTCHAR : (LETTER | '_');
+IDBODYCHAR : (LETTER | '_' | '-' | DIGIT);
+
+fragment LETTER : 'a'..'z' | 'A'..'Z';
+fragment DIGIT  : '0'..'9';
+STRSINGLE   : '\'' ~'\''* '\'';
+STRDOUBLE   : '"' ~'"'* '"';
+WS  :   [ \t\r\n]+; // Define whitespace rule, toss it out
