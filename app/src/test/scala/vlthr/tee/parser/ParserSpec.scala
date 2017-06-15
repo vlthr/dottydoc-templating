@@ -38,10 +38,12 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
   it should "parse nodes" in {
-    val output = Liquid.parseNode("{{ 'str' }}")
-    output match {
-      case OutputNode(_) =>
-      case _ => fail(""+output)
-    }
+    ("{{1}}" :: "{{''}}" :: "{{ 1}}" :: "{{    true  }}" :: Nil).foreach(s => {
+                                                          val output = Liquid.parseNode(s)
+                                                          output match {
+                                                            case OutputNode(_) => println(output)
+                                                            case _ => fail("String "+s+" parsed to an invalid output node: "+output)
+                                                          }
+                                                        })
   }
 }

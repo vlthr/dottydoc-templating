@@ -32,6 +32,7 @@ object Liquid {
 
     // create a parser that feeds off the tokens buffer
     val parser = new LiquidParser(tokens)
+    parser.setErrorHandler(new BailErrorStrategy());
     parser
   }
 }

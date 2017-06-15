@@ -88,10 +88,10 @@ UNLESSSTART : 'UnlessStart';
 WHEN : 'When';
 WITH : 'With';
 
-OUTPUTSTART : WS* '{{';
-OUTPUTEND   : '}}' WS*;
-TAGSTART : WS* '{%';
-TAGEND   : '%}' WS*;
+OUTPUTSTART : '{{';
+OUTPUTEND   : '}}' ;
+TAGSTART : '{%';
+TAGEND   : '%}';
 
 // parser rules start with lowercase letters, lexer rules with uppercase
 ID : IDSTARTCHAR IDBODYCHAR*;
