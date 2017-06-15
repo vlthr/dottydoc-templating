@@ -5,13 +5,13 @@ import org.antlr.v4.runtime.tree._
 import vlthr.tee.core._
 
 object Liquid {
-  def parseExpr(node: String): Node = {
+  def parseExpr(node: String): Expr = {
     val parser = makeParser(node)
     val tree = parser.expr()
     println(tree.toStringTree(parser))
     val visitor = new LiquidExprVisitor()
     tree.accept(visitor)
-    OutputNode(visitor.rootExpr.get)
+    visitor.rootExpr.get
   }
   def makeParser(text: String): LiquidParser = {
     // create a CharStream that reads from standard input
