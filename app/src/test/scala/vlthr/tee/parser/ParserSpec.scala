@@ -1,8 +1,11 @@
 package vlthr.tee.parser
 
+import scala.io.Source
+import scala.util.Try
 import org.scalatest._
 import vlthr.tee.core._
 
+object Incomplete extends org.scalatest.Tag("Incomplete")
 class ParserSpec extends FlatSpec with Matchers {
   behavior of "Parser"
   it should "parse literals" in {
@@ -58,5 +61,11 @@ class ParserSpec extends FlatSpec with Matchers {
       }
       case _ => fail(""+output)
     }
+  }
+  ignore should "work on every tag in dottydoc" taggedAs(Incomplete) in {
+    val source = Source.fromURL(getClass.getResource("/tags.txt"))
+    val (successes, failures) = source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isSuccess)
+    println(failures)
+    failures.size should be(0)
   }
 }
