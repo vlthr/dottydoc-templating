@@ -12,6 +12,12 @@ abstract class Expr {
   def parseContext: ParseContext
   def eval()(evalContext: EvalContext): Value = ???
 }
+class Filter {
+  def apply(args: List[Expr]): Value = ???
+}
+object Filter {
+  def byName(s: String): Filter = new Filter()
+}
 final case class AndExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
 final case class OrExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
 final case class EqExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
@@ -22,6 +28,7 @@ final case class GEqExpr(left: Expr, right: Expr)(implicit override val parseCon
 final case class GtExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
 final case class LiteralExpr(value: Value)(implicit override val parseContext: ParseContext) extends Expr
 final case class VariableUseExpr(name: String)(implicit override val parseContext: ParseContext) extends Expr
+final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(implicit override val parseContext: ParseContext) extends Expr
 final case class IndexExpr(indexable: Expr, key: Expr)(implicit override val parseContext: ParseContext) extends Expr // l[0], l['hello'],
 final case class DotExpr(indexable: Expr, key: Value)(implicit override val parseContext: ParseContext) extends Expr // l.hello, or l.size (special methods)
 
