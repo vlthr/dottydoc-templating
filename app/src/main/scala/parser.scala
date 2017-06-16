@@ -12,8 +12,8 @@ object Liquid {
     println(tree.toStringTree(parser))
     val visitor = new LiquidExprVisitor()
     tree.accept(visitor)
-    visitor.rootExpr.get
   }
+
   def parseNode(node: String): Node = {
     val parser = makeParser(node)
     val tree = parser.node()
@@ -68,16 +68,18 @@ class LiquidArgsVisitor extends LiquidBaseVisitor[List[Expr]] {
 }
 class LiquidExprVisitor extends LiquidBaseVisitor[Expr] {
   val template = new Template("")
-  var rootExpr: Option[Expr] = None
   override def visitExpr(ctx: LiquidParser.ExprContext): Expr = {
+    implicit val parseContext = ParseContext(ctx.start.getStartIndex(), ctx.stop.getStopIndex(), template)
     if (ctx.FILTER() != null) {
-      implicit val parseContext = ParseContext(ctx.start.getStartIndex(), ctx.stop.getStopIndex(), template)
       val args = if (ctx.args() != null) new LiquidArgsVisitor().visitArgs(ctx.args())
                  else Nil
-      FilterExpr(visitExpr(ctx.expr()), Filter.byName(ctx.id().getText()), args)
+      FilterExpr(visitExpr(ctx.expr(0)), Filter.byName(ctx.id().getText()), args)
+    } else if (ctx.DOTINDEX() != null) {
+      DotExpr(visitExpr(ctx.expr(0)), StringValue(ctx.id().getText()))
+    } else if (ctx.STARTINDEX() != null) {
+      IndexExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
     } else {
       val term = visitTerm(ctx.term())
-      rootExpr = Some(term)
       term
     }
   }

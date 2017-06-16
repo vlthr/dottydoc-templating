@@ -8,6 +8,8 @@ tag : TAGSTART id TAGEND;
 output : OUTPUTSTART expr OUTPUTEND;
 
 expr : expr FILTER id args?
+| expr DOTINDEX id
+| expr STARTINDEX expr ENDINDEX
 | term;
 
 term : INT
@@ -58,6 +60,9 @@ args : ':' arglist;
 arglist : expr (',' expr)*;
 
 FILTER : '|';
+DOTINDEX : '.';
+STARTINDEX : '[';
+ENDINDEX : ']';
 AND : 'And';
 ASSIGN : 'Assign';
 BREAK : 'Break';

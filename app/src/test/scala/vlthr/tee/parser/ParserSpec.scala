@@ -77,6 +77,22 @@ class ParserSpec extends FlatSpec with Matchers {
     println(failures)
     failures.size should be(0)
   }
+  it should "parse indexing" in {
+    val index = Liquid.parseExpr("a[b][c]")
+    println(index)
+    index match {
+      case IndexExpr(IndexExpr(_,_), VariableUseExpr(_)) =>
+      case _ => fail("String output node: "+index)
+    }
+  }
+  it should "parse field indexing" in {
+    val dotindex = Liquid.parseExpr("a.b.c")
+    println(dotindex)
+    dotindex match {
+      case DotExpr(DotExpr(_,_), StringValue(_)) =>
+      case _ => fail("String output node: "+dotindex)
+    }
+  }
   it should "parse filter applications" in {
     val output = Liquid.parseNode("{{ 'str' | reverse }}")
     output match {
