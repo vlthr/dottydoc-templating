@@ -18,26 +18,26 @@ class Filter {
 object Filter {
   def byName(s: String): Filter = new Filter()
 }
-final case class AndExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class OrExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class EqExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class NEqExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class LEqExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class LtExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class GEqExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class GtExpr(left: Expr, right: Expr)(implicit override val parseContext: ParseContext) extends Expr
-final case class LiteralExpr(value: Value)(implicit override val parseContext: ParseContext) extends Expr
-final case class VariableUseExpr(name: String)(implicit override val parseContext: ParseContext) extends Expr
-final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(implicit override val parseContext: ParseContext) extends Expr
-final case class IndexExpr(indexable: Expr, key: Expr)(implicit override val parseContext: ParseContext) extends Expr // l[0], l['hello'],
-final case class DotExpr(indexable: Expr, key: Value)(implicit override val parseContext: ParseContext) extends Expr // l.hello, or l.size (special methods)
+final case class AndExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class OrExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class EqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class NEqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class LEqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class LtExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class GEqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class GtExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
+final case class LiteralExpr(value: Value)(implicit val parseContext: ParseContext) extends Expr
+final case class VariableUseExpr(name: String)(implicit val parseContext: ParseContext) extends Expr
+final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(implicit val parseContext: ParseContext) extends Expr
+final case class IndexExpr(indexable: Expr, key: Expr)(implicit val parseContext: ParseContext) extends Expr // l[0], l['hello'],
+final case class DotExpr(indexable: Expr, key: Value)(implicit val parseContext: ParseContext) extends Expr // l.hello, or l.size (special methods)
 
 abstract class Node {
   def render()(implicit evalContext: EvalContext): String = ???
   def parseContext: ParseContext
 }
-final case class TagNode(tag: Tag, args: List[Expr])(implicit override val parseContext: ParseContext) extends Node    // {% xxx %}
-final case class OutputNode(expr: Expr)(implicit override val parseContext: ParseContext) extends Node // {{ 'hello' }}
+final case class TagNode(tag: Tag, args: List[Expr])(implicit val parseContext: ParseContext) extends Node    // {% xxx %}
+final case class OutputNode(expr: Expr)(implicit val parseContext: ParseContext) extends Node // {{ 'hello' }}
 
 object Tag {
   def build(string: String): Tag = ???
