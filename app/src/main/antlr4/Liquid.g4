@@ -7,7 +7,8 @@ tag : TAGSTART id TAGEND;
 
 output : OUTPUTSTART expr OUTPUTEND;
 
-expr : term;
+expr : expr FILTER id args?
+| term;
 
 term : INT
      | STRDOUBLE
@@ -52,7 +53,10 @@ keyword : AND
         | WHEN
         | WITH;
 
+args : ':' arglist;
+arglist : expr (',' expr)*;
 
+FILTER : '|';
 AND : 'And';
 ASSIGN : 'Assign';
 BREAK : 'Break';

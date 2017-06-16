@@ -1,5 +1,6 @@
 package vlthr.tee.parser
 
+import scala.collection.JavaConverters._
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
 import vlthr.tee.core._
@@ -50,18 +51,37 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
     val expVisitor = new LiquidExprVisitor()
     val t = ctx.expr()
     val expr = expVisitor.visitExpr(t)
-    implicit val parseContext = ParseContext(t.getStart().getStartIndex(), t.getStart().getStopIndex(), template)
+    implicit val parseContext = ParseContext(ctx.start.getStartIndex(), ctx.stop.getStopIndex(), template)
     OutputNode(expr)
+  }
+}
+
+class LiquidArgsVisitor extends LiquidBaseVisitor[List[Expr]] {
+  val template = new Template("")
+
+  override def visitArgs(ctx: LiquidParser.ArgsContext): List[Expr] = {
+    ctx.arglist().expr().asScala.map(ectx => {
+                               implicit val parseContext = ParseContext(ectx.start.getStartIndex(), ectx.stop.getStopIndex(), template)
+                               new LiquidExprVisitor().visitExpr(ectx)
+                             }).toList
   }
 }
 class LiquidExprVisitor extends LiquidBaseVisitor[Expr] {
   val template = new Template("")
   var rootExpr: Option[Expr] = None
   override def visitExpr(ctx: LiquidParser.ExprContext): Expr = {
-    val term = visitTerm(ctx.term())
-    rootExpr = Some(term)
-    term
+    if (ctx.FILTER() != null) {
+      implicit val parseContext = ParseContext(ctx.start.getStartIndex(), ctx.stop.getStopIndex(), template)
+      val args = if (ctx.args() != null) new LiquidArgsVisitor().visitArgs(ctx.args())
+                 else Nil
+      FilterExpr(visitExpr(ctx.expr()), Filter.byName(ctx.id().getText()), args)
+    } else {
+      val term = visitTerm(ctx.term())
+      rootExpr = Some(term)
+      term
+    }
   }
+
   override def visitTerm(ctx: LiquidParser.TermContext): Expr = {
     ctx.getChild(0) match {
       case t: TerminalNode => {

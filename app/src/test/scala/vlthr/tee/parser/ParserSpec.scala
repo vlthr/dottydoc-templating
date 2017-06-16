@@ -54,8 +54,8 @@ class ParserSpec extends FlatSpec with Matchers {
     val output = Liquid.parseNode("{{  'str'}}")
     output match {
       case o@OutputNode(e) => {
-        o.parseContext.begin should be(4);
-        o.parseContext.end should be(8);
+        o.parseContext.begin should be(0);
+        o.parseContext.end should be(10);
         e.parseContext.begin should be(4);
         e.parseContext.end should be(8);
       }
@@ -67,5 +67,17 @@ class ParserSpec extends FlatSpec with Matchers {
     val (successes, failures) = source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isSuccess)
     println(failures)
     failures.size should be(0)
+  }
+  it should "parse filter applications" in {
+    val output = Liquid.parseNode("{{ 'str' | reverse }}")
+    output match {
+      case OutputNode(FilterExpr(_, _, Nil)) => println(output)
+      case _ => fail("String output node: "+output)
+    }
+    val out = Liquid.parseNode("{{ 'str' | filter: 'a', 't' }}")
+    out match {
+      case OutputNode(FilterExpr(_, _, args)) => args.size should be(2)
+      case _ => fail("String output node: "+out)
+    }
   }
 }
