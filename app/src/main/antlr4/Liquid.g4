@@ -14,7 +14,8 @@ term : INT
      | STRDOUBLE
      | STRSINGLE
      | TRUE
-     | FALSE;
+     | FALSE
+     | id;
 
 id : ID;
 
