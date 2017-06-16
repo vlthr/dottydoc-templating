@@ -8,6 +8,15 @@ import vlthr.tee.core._
 object Incomplete extends org.scalatest.Tag("Incomplete")
 class ParserSpec extends FlatSpec with Matchers {
   behavior of "Parser"
+  it should "parse ids" in {
+    val id = Liquid.parseExpr("Identifier")
+    id match {
+      case VariableUseExpr(_) =>
+      case _ => {
+        fail(""+id)
+      }
+    }
+  }
   it should "parse literals" in {
     val int = Liquid.parseExpr("1")
     int match {
