@@ -6,12 +6,15 @@ node : tag
      | output;
 
 tag : ifTag
-    | TAGSTART FORSTART id IN expr FOREND TAGEND
-    | TAGSTART id TAGEND;
+    | forTag;
 
 ifStart : TAGSTART IFSTART expr TAGEND;
-ifTag : ifStart node* block ifEnd;
+ifTag : ifStart block ifEnd;
 ifEnd : TAGSTART IFEND TAGEND;
+
+forStart : TAGSTART FORSTART id IN expr TAGEND;
+forTag : forStart node* block forEnd;
+forEnd : TAGSTART FOREND TAGEND;
 
 output : OUTPUTSTART expr OUTPUTEND;
 

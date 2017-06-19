@@ -23,6 +23,21 @@ class ParserSpec extends FlatSpec with Matchers {
       }
     }
   }
+  it should "parse for blocks" in {
+    val forStr = """
+    {% for a in "1,2,3,4"; | split: ","; %}
+    {{ true }}
+    {{ true }}
+    {% endfor %}
+    """
+    val forNode = Liquid.parseNode(forStr)
+    forNode match {
+      case ForTag(_, _, _) =>
+      case _ => {
+        fail("" + forNode)
+      }
+    }
+  }
   it should "parse ids" in {
     val id = Liquid.parseExpr("Identifier")
     id match {
