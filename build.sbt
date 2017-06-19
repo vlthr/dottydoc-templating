@@ -1,8 +1,7 @@
 lazy val metaVersion = "1.6.0"
 scalaVersion in ThisBuild := "2.12.2"
 
-lazy val root = Project(id = "tee",
-                        base = file("."))
+lazy val root = Project(id = "tee", base = file("."))
   .aggregate(macros, app)
 
 lazy val common = Seq(
@@ -17,15 +16,14 @@ lazy val macrosSetting = Seq(
   // scalacOptions := {
   //   Seq("-Xprint:frontend,parser,macrosTransform", "-Ycheck:all")
   // },
-  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
+  addCompilerPlugin(
+    "org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
   scalacOptions += "-Xplugin-require:macroparadise",
   traceLevel := 0,
-
   libraryDependencies ++= Seq(
     "org.scalameta" %% "scalameta" % metaVersion
   )
 ) ++ common
-
 
 lazy val templatingSettings = antlr4Settings ++ Seq(
   name := "dottydoc-templating",
