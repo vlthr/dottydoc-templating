@@ -75,6 +75,12 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
         new LiquidExprVisitor().visitExpr(ctx.forTag().forStart().expr())
       val block = visitBlock(ctx.forTag().block())
       ForTag(id, expr, block)
+    } else if (ctx.assignTag() != null) {
+      val id = ctx.assignTag().id().getText()
+      val expr =
+        new LiquidExprVisitor().visitExpr(ctx.assignTag().expr())
+      AssignTag(id, expr)
+
     } else throw new Exception("Unknown node type")
   }
 

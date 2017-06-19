@@ -8,6 +8,16 @@ import vlthr.tee.core._
 object Incomplete extends org.scalatest.Tag("Incomplete")
 class ParserSpec extends FlatSpec with Matchers {
   behavior of "Parser"
+  it should "parse assign tags" in {
+    val assignStr = "{% assign a = 1 %}"
+    val assignNode = Liquid.parseNode(assignStr)
+    assignNode match {
+      case AssignTag(_, _) =>
+      case _ => {
+        fail("" + assignNode)
+      }
+    }
+  }
   it should "parse if blocks" in {
     val ifStr = """
     {% if true %}

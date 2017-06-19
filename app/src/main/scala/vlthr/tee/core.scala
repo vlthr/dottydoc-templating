@@ -77,7 +77,8 @@ abstract class TagNode extends Node {
   def render(args: List[Expr])(implicit evalContext: EvalContext) = ???
 }
 
-final case class AssignTag(implicit val parseContext: ParseContext)
+final case class AssignTag(id: String, value: Expr)(
+    implicit val parseContext: ParseContext)
     extends TagNode
 final case class CaptureTag()(implicit val parseContext: ParseContext)
     extends TagNode
