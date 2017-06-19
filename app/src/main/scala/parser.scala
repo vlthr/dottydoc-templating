@@ -61,16 +61,20 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
   }
 
   override def visitTag(ctx: LiquidParser.TagContext): Node = {
+    implicit val parseContext = ParseContext(ctx.start.getStartIndex(),
+                                             ctx.stop.getStopIndex(),
+                                             template)
     if (ctx.ifTag() != null) {
-      implicit val parseContext = ParseContext(ctx.start.getStartIndex(),
-                                               ctx.stop.getStopIndex(),
-                                               template)
       val expr =
         new LiquidExprVisitor().visitExpr(ctx.ifTag().ifStart().expr())
       val block = visitBlock(ctx.ifTag().block())
       IfTag(expr, block)
-      // } else if (ctx.output() != null) {
-      // visitOutput(ctx.output())
+    } else if (ctx.forTag() != null) {
+      val id = ctx.forTag().forStart().id().getText()
+      val expr =
+        new LiquidExprVisitor().visitExpr(ctx.forTag().forStart().expr())
+      val block = visitBlock(ctx.forTag().block())
+      ForTag(id, expr, block)
     } else throw new Exception("Unknown node type")
   }
 

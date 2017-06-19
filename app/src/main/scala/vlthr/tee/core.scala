@@ -87,7 +87,8 @@ final case class CommentTag()(implicit val parseContext: ParseContext)
     extends TagNode
 final case class CycleTag()(implicit val parseContext: ParseContext)
     extends TagNode
-final case class ForTag()(implicit val parseContext: ParseContext)
+final case class ForTag(id: String, expr: Expr, block: Node)(
+    implicit val parseContext: ParseContext)
     extends TagNode
 final case class BreakTag()(implicit val parseContext: ParseContext)
     extends TagNode
