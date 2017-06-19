@@ -1,4 +1,4 @@
-{% assign array = "1,2,3,4"; | split: ","; %}
+{% assign array = "1,2,3,4" | split: "," %}
 {% assign parent = page.path | first %}
 {% assign sidebarTop = "75px" %}
 {% assign titles = item.subsection %}

@@ -6,7 +6,10 @@ node : tag
      | output;
 
 tag : ifTag
-    | forTag;
+    | forTag
+    | assignTag;
+
+assignTag : TAGSTART ASSIGN id '=' expr TAGEND;
 
 ifStart : TAGSTART IFSTART expr TAGEND;
 ifTag : ifStart block ifEnd;
@@ -39,8 +42,8 @@ FILTER     : '|';
 DOTINDEX   : '.';
 STARTINDEX : '[';
 ENDINDEX   : ']';
-AND        : 'And';
 ASSIGN     : 'assign';
+AND        : 'and';
 ELSE       : 'else';
 ELSIF      : 'elsif';
 FOREND     : 'endfor';
