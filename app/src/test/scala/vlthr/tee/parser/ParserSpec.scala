@@ -8,12 +8,27 @@ import vlthr.tee.core._
 object Incomplete extends org.scalatest.Tag("Incomplete")
 class ParserSpec extends FlatSpec with Matchers {
   behavior of "Parser"
+  it should "parse if blocks" in {
+    val ifStr = """
+    {% if true %}
+    {{ true }}
+    {{ true }}
+    {% endif %}
+    """
+    val ifNode = Liquid.parseNode(ifStr)
+    ifNode match {
+      case IfTag(_, _) =>
+      case _ => {
+        fail("" + ifNode)
+      }
+    }
+  }
   it should "parse ids" in {
     val id = Liquid.parseExpr("Identifier")
     id match {
       case VariableUseExpr(_) =>
       case _ => {
-        fail(""+id)
+        fail("" + id)
       }
     }
   }
@@ -22,14 +37,14 @@ class ParserSpec extends FlatSpec with Matchers {
     int match {
       case LiteralExpr(IntValue(1)) =>
       case _ => {
-        fail(""+int)
+        fail("" + int)
       }
     }
     val sstr = Liquid.parseExpr("'single quote string'")
     sstr match {
       case LiteralExpr(StringValue("single quote string")) =>
       case _ => {
-        fail(""+sstr)
+        fail("" + sstr)
       }
     }
 
@@ -37,7 +52,7 @@ class ParserSpec extends FlatSpec with Matchers {
     dstr match {
       case LiteralExpr(StringValue("double quote string")) =>
       case _ => {
-        fail(""+dstr)
+        fail("" + dstr)
       }
     }
 
@@ -45,35 +60,38 @@ class ParserSpec extends FlatSpec with Matchers {
     bool match {
       case LiteralExpr(BooleanValue(false)) =>
       case _ => {
-        fail(""+bool)
+        fail("" + bool)
       }
     }
   }
   it should "parse nodes" in {
     ("{{1}}" :: "{{''}}" :: "{{ 1}}" :: "{{    true  }}" :: Nil)
       .foreach(s => {
-                 val output = Liquid.parseNode(s)
-                 output match {
-                   case OutputNode(_) => println(output)
-                   case _ => fail("String "+s+" parsed to an invalid output node: "+output)
-                 }
-               })
+        val output = Liquid.parseNode(s)
+        output match {
+          case OutputNode(_) => println(output)
+          case _ =>
+            fail(
+              "String " + s + " parsed to an invalid output node: " + output)
+        }
+      })
   }
   it should "track the source position of each node" in {
     val output = Liquid.parseNode("{{  'str'}}")
     output match {
-      case o@OutputNode(e) => {
+      case o @ OutputNode(e) => {
         o.parseContext.begin should be(0);
         o.parseContext.end should be(10);
         e.parseContext.begin should be(4);
         e.parseContext.end should be(8);
       }
-      case _ => fail(""+output)
+      case _ => fail("" + output)
     }
   }
-  ignore should "work on every tag in dottydoc" taggedAs(Incomplete) in {
+  ignore should "work on every tag in dottydoc" taggedAs (Incomplete) in {
     val source = Source.fromURL(getClass.getResource("/tags.txt"))
-    val (successes, failures) = source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isSuccess)
+    val (successes, failures) =
+      source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isSuccess)
     println(failures)
     failures.size should be(0)
   }
@@ -81,28 +99,28 @@ class ParserSpec extends FlatSpec with Matchers {
     val index = Liquid.parseExpr("a[b][c]")
     println(index)
     index match {
-      case IndexExpr(IndexExpr(_,_), VariableUseExpr(_)) =>
-      case _ => fail("String output node: "+index)
+      case IndexExpr(IndexExpr(_, _), VariableUseExpr(_)) =>
+      case _ => fail("String output node: " + index)
     }
   }
   it should "parse field indexing" in {
     val dotindex = Liquid.parseExpr("a.b.c")
     println(dotindex)
     dotindex match {
-      case DotExpr(DotExpr(_,_), StringValue(_)) =>
-      case _ => fail("String output node: "+dotindex)
+      case DotExpr(DotExpr(_, _), StringValue(_)) =>
+      case _ => fail("String output node: " + dotindex)
     }
   }
   it should "parse filter applications" in {
     val output = Liquid.parseNode("{{ 'str' | reverse }}")
     output match {
       case OutputNode(FilterExpr(_, _, Nil)) => println(output)
-      case _ => fail("String output node: "+output)
+      case _ => fail("String output node: " + output)
     }
     val out = Liquid.parseNode("{{ 'str' | filter: 'a', 't' }}")
     out match {
       case OutputNode(FilterExpr(_, _, args)) => args.size should be(2)
-      case _ => fail("String output node: "+out)
+      case _ => fail("String output node: " + out)
     }
   }
 }

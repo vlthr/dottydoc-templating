@@ -1,67 +1,112 @@
 package vlthr.tee.core
 
-case class ParseContext(begin: Int, end: Int, template: Template) {
-  
-}
+case class ParseContext(begin: Int, end: Int, template: Template) {}
+
 class EvalContext {
   def mappings: Map[String, Value] = ???
   def parentScope: EvalContext = ???
   def lookup(s: String): Value = ???
 }
+
 abstract class Expr {
   def parseContext: ParseContext
   def eval()(evalContext: EvalContext): Value = ???
 }
+
 class Filter {
   def apply(args: List[Expr]): Value = ???
 }
+
 object Filter {
   def byName(s: String): Filter = new Filter()
 }
-final case class AndExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class OrExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class EqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class NEqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class LEqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class LtExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class GEqExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class GtExpr(left: Expr, right: Expr)(implicit val parseContext: ParseContext) extends Expr
-final case class LiteralExpr(value: Value)(implicit val parseContext: ParseContext) extends Expr
-final case class VariableUseExpr(name: String)(implicit val parseContext: ParseContext) extends Expr
-final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(implicit val parseContext: ParseContext) extends Expr
-final case class IndexExpr(indexable: Expr, key: Expr)(implicit val parseContext: ParseContext) extends Expr // l[0], l['hello'],
-final case class DotExpr(indexable: Expr, key: Value)(implicit val parseContext: ParseContext) extends Expr // l.hello, or l.size (special methods)
+final case class AndExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class OrExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class EqExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class NEqExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class LEqExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class LtExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class GEqExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class GtExpr(left: Expr, right: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class LiteralExpr(value: Value)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class VariableUseExpr(name: String)(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
+    implicit val parseContext: ParseContext)
+    extends Expr
+final case class IndexExpr(indexable: Expr, key: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Expr // l[0], l['hello'],
+final case class DotExpr(indexable: Expr, key: Value)(
+    implicit val parseContext: ParseContext)
+    extends Expr // l.hello, or l.size (special methods)
 
 abstract class Node {
   def render()(implicit evalContext: EvalContext): String = ???
   def parseContext: ParseContext
 }
-final case class TagNode(tag: Tag, args: List[Expr])(implicit val parseContext: ParseContext) extends Node    // {% xxx %}
-final case class OutputNode(expr: Expr)(implicit val parseContext: ParseContext) extends Node // {{ 'hello' }}
 
-object Tag {
-  def build(string: String): Tag = ???
-  def register(tagName: String, ctor: Function1[String, Tag]): Unit = ???
-}
-abstract class Tag {
+final case class BlockNode(node: List[Node])(
+    implicit val parseContext: ParseContext)
+    extends Node {}
+
+final case class OutputNode(expr: Expr)(
+    implicit val parseContext: ParseContext)
+    extends Node // {{ 'hello' }}
+
+abstract class TagNode extends Node {
   def render(args: List[Expr])(implicit evalContext: EvalContext) = ???
 }
-final class AssignTag extends Tag
-final class CaptureTag extends Tag
-final class CaseTag extends Tag
-final class CommentTag extends Tag
-final class CycleTag extends Tag
-final class ForTag extends Tag
-final class BreakTag extends Tag
-final class ContinueTag extends Tag
-final class IfTag extends Tag
-final class IncludeTag extends Tag
-final class RawTag extends Tag
-final class UnlessTag extends Tag
+
+final case class AssignTag(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class CaptureTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class CaseTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class CommentTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class CycleTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class ForTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class BreakTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class ContinueTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class IfTag(condition: Expr, block: Node)(
+    implicit val parseContext: ParseContext)
+    extends TagNode
+final case class IncludeTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class RawTag()(implicit val parseContext: ParseContext)
+    extends TagNode
+final case class UnlessTag()(implicit val parseContext: ParseContext)
+    extends TagNode
 
 sealed trait Value {
   def render: String = ???
 }
+
 abstract class IndexedValue extends Value
 final case class StringValue(v: String) extends Value
 final case class BooleanValue(v: Boolean) extends Value
