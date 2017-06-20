@@ -5,7 +5,7 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
 import vlthr.tee.core._
 
-object Liq {
+object Liquid {
   def parseExpr(node: String): Expr = {
     val parser = makeParser(node)
     val tree = parser.expr()
@@ -22,27 +22,27 @@ object Liq {
     tree.accept(visitor)
   }
 
-  def makeParser(text: String): Liquid = {
+  def makeParser(text: String): LiquidParser = {
     // create a CharStream that reads from standard input
     val input = new ANTLRInputStream(text)
 
     // create a lexer that feeds off of input CharStream
-    val lexer = new ObjectLexer(input)
+    val lexer = new LiquidLexer(input)
 
     // create a buffer of tokens pulled from the lexer
     val tokens = new CommonTokenStream(lexer)
 
     // create a parser that feeds off the tokens buffer
-    val parser = new Liquid(tokens)
+    val parser = new LiquidParser(tokens)
     parser.setErrorHandler(new BailErrorStrategy());
     parser
   }
 }
 
-class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
+class LiquidNodeVisitor extends LiquidParserBaseVisitor[Node] {
   val template = new Template("")
 
-  override def visitNode(ctx: Liquid.NodeContext): Node = {
+  override def visitNode(ctx: LiquidParser.NodeContext): Node = {
     if (ctx.tag() != null) {
       visitTag(ctx.tag())
     } else if (ctx.output() != null) {
@@ -53,7 +53,7 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
     }
   }
 
-  override def visitOutput(ctx: Liquid.OutputContext): Node = {
+  override def visitOutput(ctx: LiquidParser.OutputContext): Node = {
     val expVisitor = new LiquidExprVisitor()
     val t = ctx.expr()
     val expr = expVisitor.visitExpr(t)
@@ -63,7 +63,7 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
     OutputNode(expr)
   }
 
-  override def visitTag(ctx: Liquid.TagContext): Node = {
+  override def visitTag(ctx: LiquidParser.TagContext): Node = {
     implicit val parseContext = ParseContext(ctx.start.getStartIndex(),
                                              ctx.stop.getStopIndex(),
                                              template)
@@ -87,7 +87,7 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
     } else throw new Exception("Unknown node type")
   }
 
-  override def visitBlock(ctx: Liquid.BlockContext): Node = {
+  override def visitBlock(ctx: LiquidParser.BlockContext): Node = {
     implicit val parseContext = ParseContext(ctx.start.getStartIndex(),
                                              ctx.stop.getStopIndex(),
                                              template)
@@ -95,10 +95,10 @@ class LiquidNodeVisitor extends LiquidBaseVisitor[Node] {
   }
 }
 
-class LiquidArgsVisitor extends LiquidBaseVisitor[List[Expr]] {
+class LiquidArgsVisitor extends LiquidParserBaseVisitor[List[Expr]] {
   val template = new Template("")
 
-  override def visitArgs(ctx: Liquid.ArgsContext): List[Expr] = {
+  override def visitArgs(ctx: LiquidParser.ArgsContext): List[Expr] = {
     ctx
       .arglist()
       .expr()
@@ -113,9 +113,9 @@ class LiquidArgsVisitor extends LiquidBaseVisitor[List[Expr]] {
   }
 }
 
-class LiquidExprVisitor extends LiquidBaseVisitor[Expr] {
+class LiquidExprVisitor extends LiquidParserBaseVisitor[Expr] {
   val template = new Template("")
-  override def visitExpr(ctx: Liquid.ExprContext): Expr = {
+  override def visitExpr(ctx: LiquidParser.ExprContext): Expr = {
     implicit val parseContext = ParseContext(ctx.start.getStartIndex(),
                                              ctx.stop.getStopIndex(),
                                              template)
@@ -136,7 +136,7 @@ class LiquidExprVisitor extends LiquidBaseVisitor[Expr] {
     }
   }
 
-  override def visitTerm(ctx: Liquid.TermContext): Expr = {
+  override def visitTerm(ctx: LiquidParser.TermContext): Expr = {
     implicit val parseContext = ParseContext(ctx.start.getStartIndex(),
                                              ctx.start.getStopIndex(),
                                              template)
@@ -154,7 +154,7 @@ class LiquidExprVisitor extends LiquidBaseVisitor[Expr] {
           LiteralExpr(BooleanValue(false))
         } else throw new Exception("Unknown term: " + t + " in context " + ctx)
       }
-      case ictx: Liquid.IdContext => {
+      case ictx: LiquidParser.IdContext => {
         VariableUseExpr(ctx.id().getText())
       }
     }

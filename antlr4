@@ -1,8 +1,10 @@
 #!/bin/bash
 BUILD=./target/antlr4
+rm -r $BUILD
 mkdir -p $BUILD
-cp ./app/src/main/antlr4/Liquid.g4 $BUILD
-export CLASSPATH=".:/usr/local/lib/antlr-4.5.3-complete.jar:$CLASSPATH"
-java -Xmx500M -cp "/usr/local/lib/antlr-4.5.3-complete.jar:$CLASSPATH" org.antlr.v4.Tool $BUILD/Liquid.g4
+cp ./app/src/main/antlr4/*.g4 $BUILD
 cd $BUILD
+export CLASSPATH=".:/usr/local/lib/antlr-4.5.3-complete.jar:$CLASSPATH"
+java -Xmx500M -cp "/usr/local/lib/antlr-4.5.3-complete.jar:$CLASSPATH" org.antlr.v4.Tool ./LiquidLexer.g4
+java -Xmx500M -cp "/usr/local/lib/antlr-4.5.3-complete.jar:$CLASSPATH" org.antlr.v4.Tool ./LiquidParser.g4
 javac *.java

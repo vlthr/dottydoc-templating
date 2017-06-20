@@ -16,7 +16,7 @@ class ParserSpec extends FlatSpec with Matchers {
         {{ content.body }}
     {% endif %}
     """
-    // val node = Liq.parseTemplate(input)
+    // val node = Liquid.parseTemplate(input)
     // node match {
     //   case BlockNode(_) =>
     //   case _ => {
@@ -26,7 +26,7 @@ class ParserSpec extends FlatSpec with Matchers {
   }
   it should "parse assign tags" in {
     val assignStr = "{% assign a = 1 %}"
-    val assignNode = Liq.parseNode(assignStr)
+    val assignNode = Liquid.parseNode(assignStr)
     assignNode match {
       case AssignTag(_, _) =>
       case _ => {
@@ -41,7 +41,7 @@ class ParserSpec extends FlatSpec with Matchers {
     {{ true }}
     {% endif %}
     """
-    val ifNode = Liq.parseNode(ifStr)
+    val ifNode = Liquid.parseNode(ifStr)
     ifNode match {
       case IfTag(_, _) =>
       case _ => {
@@ -56,7 +56,7 @@ class ParserSpec extends FlatSpec with Matchers {
     {{ true }}
     {% endfor %}
     """
-    val forNode = Liq.parseNode(forStr)
+    val forNode = Liquid.parseNode(forStr)
     forNode match {
       case ForTag(_, _, _) =>
       case _ => {
@@ -65,7 +65,7 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
   it should "parse ids" in {
-    val id = Liq.parseExpr("Identifier")
+    val id = Liquid.parseExpr("Identifier")
     id match {
       case VariableUseExpr(_) =>
       case _ => {
@@ -74,14 +74,14 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
   it should "parse literals" in {
-    val int = Liq.parseExpr("1")
+    val int = Liquid.parseExpr("1")
     int match {
       case LiteralExpr(IntValue(1)) =>
       case _ => {
         fail("" + int)
       }
     }
-    val sstr = Liq.parseExpr("'single quote string'")
+    val sstr = Liquid.parseExpr("'single quote string'")
     sstr match {
       case LiteralExpr(StringValue("single quote string")) =>
       case _ => {
@@ -89,7 +89,7 @@ class ParserSpec extends FlatSpec with Matchers {
       }
     }
 
-    val dstr = Liq.parseExpr("\"double quote string\"")
+    val dstr = Liquid.parseExpr("\"double quote string\"")
     dstr match {
       case LiteralExpr(StringValue("double quote string")) =>
       case _ => {
@@ -97,7 +97,7 @@ class ParserSpec extends FlatSpec with Matchers {
       }
     }
 
-    val bool = Liq.parseExpr("false")
+    val bool = Liquid.parseExpr("false")
     bool match {
       case LiteralExpr(BooleanValue(false)) =>
       case _ => {
@@ -108,7 +108,7 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse nodes" in {
     ("{{1}}" :: "{{''}}" :: "{{ 1}}" :: "{{    true  }}" :: Nil)
       .foreach(s => {
-        val output = Liq.parseNode(s)
+        val output = Liquid.parseNode(s)
         output match {
           case OutputNode(_) => println(output)
           case _ =>
@@ -118,7 +118,7 @@ class ParserSpec extends FlatSpec with Matchers {
       })
   }
   it should "track the source position of each node" in {
-    val output = Liq.parseNode("{{  'str'}}")
+    val output = Liquid.parseNode("{{  'str'}}")
     output match {
       case o @ OutputNode(e) => {
         o.parseContext.begin should be(0);
@@ -132,12 +132,12 @@ class ParserSpec extends FlatSpec with Matchers {
   ignore should "work on every tag in dottydoc" taggedAs (Incomplete) in {
     val source = Source.fromURL(getClass.getResource("/tags.txt"))
     val (successes, failures) =
-      source.getLines.map(l => Try(Liq.parseNode(l))).partition(_.isSuccess)
+      source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isSuccess)
     println(failures)
     failures.size should be(0)
   }
   it should "parse indexing" in {
-    val index = Liq.parseExpr("a[b][c]")
+    val index = Liquid.parseExpr("a[b][c]")
     println(index)
     index match {
       case IndexExpr(IndexExpr(_, _), VariableUseExpr(_)) =>
@@ -145,7 +145,7 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
   it should "parse field indexing" in {
-    val dotindex = Liq.parseExpr("a.b.c")
+    val dotindex = Liquid.parseExpr("a.b.c")
     println(dotindex)
     dotindex match {
       case DotExpr(DotExpr(_, _), StringValue(_)) =>
@@ -153,12 +153,12 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
   it should "parse filter applications" in {
-    val output = Liq.parseNode("{{ 'str' | reverse }}")
+    val output = Liquid.parseNode("{{ 'str' | reverse }}")
     output match {
       case OutputNode(FilterExpr(_, _, Nil)) => println(output)
       case _ => fail("String output node: " + output)
     }
-    val out = Liq.parseNode("{{ 'str' | filter: 'a', 't' }}")
+    val out = Liquid.parseNode("{{ 'str' | filter: 'a', 't' }}")
     out match {
       case OutputNode(FilterExpr(_, _, args)) => args.size should be(2)
       case _ => fail("String output node: " + out)
