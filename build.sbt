@@ -43,3 +43,12 @@ lazy val macros = (project in file("macros"))
 lazy val app = (project in file("app"))
   .settings(templatingSettings)
   .dependsOn(macros)
+
+lazy val genTestExamples =
+  inputKey[Unit]("Generate test outputs from examples")
+
+genTestExamples := {
+  val run = (runMain in Compile in app)
+    .partialInput(" vlthr.tee.GenTestExamples")
+    .evaluated
+}
