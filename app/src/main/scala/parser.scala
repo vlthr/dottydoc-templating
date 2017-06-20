@@ -26,7 +26,8 @@ object Liquid {
   final case class Default() extends LexerMode
   final case class Object() extends LexerMode
 
-  def makeParser(text: String, lexerMode: LexerMode = Default()): LiquidParser = {
+  def makeParser(text: String,
+                 lexerMode: LexerMode = Default()): LiquidParser = {
     val input = new ANTLRInputStream(text)
 
     val lexer = new LiquidLexer(input)
@@ -52,8 +53,7 @@ class LiquidNodeVisitor extends LiquidParserBaseVisitor[Node] {
     } else if (ctx.TEXT() != null) {
       visitText(ctx.TEXT())
     } else {
-      throw new Exception("");
-      // ctx.text().getText()
+      throw new Exception("Missing node definition");
     }
   }
   def visitText(t: TerminalNode): Node = {
