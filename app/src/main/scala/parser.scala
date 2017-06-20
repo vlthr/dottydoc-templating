@@ -7,7 +7,7 @@ import vlthr.tee.core._
 
 object Liquid {
   def parseExpr(node: String): Expr = {
-    val parser = makeParser(node)
+    val parser = makeParser(node, lexerMode = Object())
     val tree = parser.expr()
     println(tree.toStringTree(parser))
     val visitor = new LiquidExprVisitor()
@@ -22,17 +22,19 @@ object Liquid {
     tree.accept(visitor)
   }
 
-  def makeParser(text: String): LiquidParser = {
-    // create a CharStream that reads from standard input
+  sealed trait LexerMode
+  final case class Default() extends LexerMode
+  final case class Object() extends LexerMode
+
+  def makeParser(text: String, lexerMode: LexerMode = Default()): LiquidParser = {
     val input = new ANTLRInputStream(text)
 
-    // create a lexer that feeds off of input CharStream
     val lexer = new LiquidLexer(input)
-
-    // create a buffer of tokens pulled from the lexer
+    lexerMode match {
+      case Object() => lexer.pushMode(LiquidLexer.Object)
+      case Default() =>
+    }
     val tokens = new CommonTokenStream(lexer)
-
-    // create a parser that feeds off the tokens buffer
     val parser = new LiquidParser(tokens)
     parser.setErrorHandler(new BailErrorStrategy());
     parser
@@ -47,10 +49,19 @@ class LiquidNodeVisitor extends LiquidParserBaseVisitor[Node] {
       visitTag(ctx.tag())
     } else if (ctx.output() != null) {
       visitOutput(ctx.output())
+    } else if (ctx.TEXT() != null) {
+      visitText(ctx.TEXT())
     } else {
       throw new Exception("");
       // ctx.text().getText()
     }
+  }
+  def visitText(t: TerminalNode): Node = {
+    implicit val parseContext = ParseContext(t.getSymbol().getStartIndex(),
+                                             t.getSymbol().getStopIndex(),
+                                             template)
+
+    TextNode(t.getText())
   }
 
   override def visitOutput(ctx: LiquidParser.OutputContext): Node = {

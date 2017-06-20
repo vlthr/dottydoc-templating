@@ -2,9 +2,9 @@ lexer grammar LiquidLexer;
 
 OUTPUTSTART : '{{' -> pushMode(Object);
 TAGSTART    : '{%' -> pushMode(Object);
-fragment NO_OUTPUT: ( ~'{' | ( '{' ~[/{]) );
-fragment NO_TAG: ( ~'{' | ( '{' ~[/%]) );
-TEXT : (NO_OUTPUT | NO_TAG)+;
+fragment NO_OBJECTS: ( ~'{' | ( '{' ~[/{%]) ) ;
+fragment NEWLINE: ('\r\n'|'\n'|'\r');
+TEXT : (NO_OBJECTS | NEWLINE)+;
 
 mode Object;
 FILTER     : '|';
