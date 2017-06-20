@@ -35,12 +35,10 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
   it should "parse if blocks" in {
-    val ifStr = """
-    {% if true %}
+    val ifStr = """{% if true %}
     {{ true }}
     {{ true }}
-    {% endif %}
-    """
+    {% endif %}"""
     val ifNode = Liquid.parseNode(ifStr)
     ifNode match {
       case IfTag(_, _) =>
@@ -50,12 +48,10 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
   it should "parse for blocks" in {
-    val forStr = """
-    {% for a in "1,2,3,4"; | split: ","; %}
+    val forStr = """{% for a in "1,2,3,4"; | split: ","; %}
     {{ true }}
     {{ true }}
-    {% endfor %}
-    """
+    {% endfor %}"""
     val forNode = Liquid.parseNode(forStr)
     forNode match {
       case ForTag(_, _, _) =>

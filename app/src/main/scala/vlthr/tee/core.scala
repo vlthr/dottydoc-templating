@@ -73,6 +73,10 @@ final case class OutputNode(expr: Expr)(
     implicit val parseContext: ParseContext)
     extends Node // {{ 'hello' }}
 
+final case class TextNode(text: String)(
+  implicit val parseContext: ParseContext)
+    extends Node
+
 abstract class TagNode extends Node {
   def render(args: List[Expr])(implicit evalContext: EvalContext) = ???
 }

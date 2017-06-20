@@ -5,7 +5,8 @@ options {tokenVocab = LiquidLexer;}
 block : node*;
 
 node : tag
-     | output;
+     | output
+     | TEXT;
 
 tag : ifTag
     | forTag
