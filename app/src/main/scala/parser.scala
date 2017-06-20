@@ -31,6 +31,17 @@ object Liquid {
     tree.accept(visitor)
   }
 
+  def getParseTree(node: String): String = {
+    val input = new ANTLRInputStream(node)
+    val lexer = new LiquidLexer(input)
+    val tokens = new CommonTokenStream(lexer)
+    val parser = new LiquidParser(tokens)
+    lexer.removeErrorListeners();
+    parser.removeErrorListeners();
+    val tree = parser.block()
+    tree.toStringTree(parser)
+  }
+
   def parse(node: String): Either[Node, List[Error]] = {
     val input = new ANTLRInputStream(node)
     val lexer = new LiquidLexer(input)
