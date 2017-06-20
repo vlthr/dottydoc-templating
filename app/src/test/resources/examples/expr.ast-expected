@@ -1,0 +1,1 @@
+Right(List(ParseError(mismatched input 'or' expecting {'|', '.', '[', '}}'}), ParseError(mismatched input 'and' expecting {'|', '.', '[', '}}'}), ParseError(mismatched input 'and' expecting {'|', '.', '[', '}}'}), ParseError(extraneous input '","' expecting {'|', '.', '[', '}}'}), ParseError(extraneous input '","' expecting {'|', '.', '[', '}}'})))
