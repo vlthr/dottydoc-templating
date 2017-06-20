@@ -1,5 +1,12 @@
-lexer grammar ObjectLexer;
+lexer grammar LiquidLexer;
 
+OUTPUTSTART : '{{' -> pushMode(Object);
+TAGSTART    : '{%' -> pushMode(Object);
+fragment NO_OUTPUT: ( ~'{' | ( '{' ~[/{]) );
+fragment NO_TAG: ( ~'{' | ( '{' ~[/%]) );
+TEXT : (NO_OUTPUT | NO_TAG)+;
+
+mode Object;
 FILTER     : '|';
 DOTINDEX   : '.';
 STARTINDEX : '[';
@@ -19,10 +26,8 @@ EQUALS     : '=';
 COLON      : ':';
 COMMA      : ',';
 
-OUTPUTSTART : '{{';
-OUTPUTEND   : '}}' ;
-TAGSTART    : '{%';
-TAGEND      : '%}';
+OUTPUTEND   : '}}' -> popMode;
+TAGEND      : '%}' -> popMode;
 
 // parser rules start with lowercase letters, lexer rules with uppercase
 ID          : IDSTARTCHAR IDBODYCHAR*;

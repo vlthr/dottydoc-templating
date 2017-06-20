@@ -1,6 +1,6 @@
-parser grammar Liquid;
+parser grammar LiquidParser;
 
-options {tokenVocab = ObjectLexer;}
+options {tokenVocab = LiquidLexer;}
 
 block : node*;
 
