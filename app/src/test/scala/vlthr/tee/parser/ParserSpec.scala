@@ -7,11 +7,7 @@ import org.junit.Assert._
 import vlthr.tee.core._
 
 class ParserTests {
-  sealed trait ParseType
-  final case class ParseNode() extends ParseType
-  final case class ParseExpr() extends ParseType
-  final case class ParseBlock() extends ParseType
-  def assertParsed(str: String, t: ParseType = ParseNode())(
+  def assertParsed(str: String)(
       isMatch: PartialFunction[Node, Boolean]): Unit = {
     val ast = Liquid.parseTemplate(str)
     val error: PartialFunction[Node, Unit] = {
