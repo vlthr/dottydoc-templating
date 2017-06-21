@@ -5,6 +5,7 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
 import scala.collection.mutable.Buffer
 import vlthr.tee.core._
+import scala.util.{Try,Success,Failure}
 
 object Liquid {
   def parseExpr(node: String): Expr = {
@@ -42,7 +43,7 @@ object Liquid {
     tree.toStringTree(parser)
   }
 
-  def parse(node: String): Either[Node, List[Error]] = {
+  def parse(node: String): Try[Node] = {
     val input = new ANTLRInputStream(node)
     val lexer = new LiquidLexer(input)
     val tokens = new CommonTokenStream(lexer)
@@ -54,8 +55,8 @@ object Liquid {
     parser.addErrorListener(errors);
     val tree = parser.block()
     val result = tree.accept(new LiquidNodeVisitor())
-    if (errors.errors.size != 0) Right(errors.errors.toList)
-    else Left(result)
+    if (errors.errors.size != 0) Failure(ParseFailure(errors.errors.toList))
+    else Success(result)
   }
 
   sealed trait LexerMode
@@ -78,9 +79,12 @@ object Liquid {
   }
 }
 
+sealed case class ParseFailure(errors: List[Error]) extends Exception {
+  override def getMessage() = errors.mkString("\n")
+}
 sealed trait Error
 final case class ParseError(msg: String) extends Error
-final case class TypeError() extends Error
+final case class TypeError(msg: String) extends Error
 class GatherErrors extends BaseErrorListener {
   val errors = Buffer[Error]()
 
