@@ -2,13 +2,28 @@ package vlthr.tee.parser
 
 import scala.io.Source
 import scala.util.Try
-import org.scalatest._
+import org.junit._
+import org.junit.Assert._
 import vlthr.tee.core._
 
-object Incomplete extends org.scalatest.Tag("Incomplete")
-class ParserSpec extends FlatSpec with Matchers {
-  behavior of "Parser"
-  it should "parse whole templates" in {
+class ParserTests {
+  sealed trait ParseType
+  final case class ParseNode() extends ParseType
+  final case class ParseExpr() extends ParseType
+  final case class ParseBlock() extends ParseType
+  def assertParsed(str: String, t: ParseType = ParseNode())(
+      isMatch: PartialFunction[Node, Boolean]): Unit = {
+    val ast = Liquid.parseTemplate(str)
+    val error: PartialFunction[Node, Unit] = {
+      case bad => {
+        val parseTree = Liquid.getParseTree(str)
+        fail(
+          s"""Failed parse! String \"$str\" yielded unexpected result: $bad with (block mode) parse tree: $parseTree""")
+      }
+    }
+    (isMatch orElse error)(ast)
+  }
+  @Test def parseTemplate() = {
     val input = """
     # Heading
     ## Subheading about {{ topic }}
@@ -16,148 +31,109 @@ class ParserSpec extends FlatSpec with Matchers {
         {{ content.body }}
     {% endif %}
     """
-    // val node = Liquid.parseTemplate(input)
-    // node match {
-    //   case BlockNode(_) =>
-    //   case _ => {
-    //     fail("" + node)
-    //   }
-    // }
-  }
-  it should "parse assign tags" in {
-    val assignStr = "{% assign a = 1 %}"
-    val assignNode = Liquid.parseNode(assignStr)
-    assignNode match {
-      case AssignTag(_, _) =>
-      case _ => {
-        fail("" + assignNode)
-      }
+    assertParsed(input) {
+      case BlockNode(_) => true
     }
   }
-  it should "parse if blocks" in {
-    val ifStr = """{% if true %}
-    {{ true }}
-    {{ true }}
-    {% endif %}"""
-    val ifNode = Liquid.parseNode(ifStr)
-    ifNode match {
-      case IfTag(_, _) =>
-      case _ => {
-        fail("" + ifNode)
-      }
+  @Test def parseAssign() = {
+    val input = "{% assign a = 1 %}"
+    assertParsed(input) {
+      case BlockNode(AssignTag(_, _) :: rest) => true
     }
   }
-  it should "parse for blocks" in {
-    val forStr = """{% for a in "1,2,3,4"; | split: ","; %}
-    {{ true }}
-    {{ true }}
-    {% endfor %}"""
-    val forNode = Liquid.parseNode(forStr)
-    forNode match {
-      case ForTag(_, _, _) =>
-      case _ => {
-        fail("" + forNode)
-      }
+  @Test def parseIf() = {
+    val input = """{% if true %}
+      {{ true }}
+      {{ true }}
+      {% endif %}"""
+    assertParsed(input) {
+      case BlockNode(IfTag(_, _) :: rest) => true
     }
   }
-  it should "parse ids" in {
-    val id = Liquid.parseExpr("Identifier")
-    id match {
-      case VariableUseExpr(_) =>
-      case _ => {
-        fail("" + id)
-      }
+  @Test def parseFor() = {
+    val input = """{% for a in "1,2,3,4"; | split: ","; %}
+      {{ true }}
+      {{ true }}
+      {% endfor %}"""
+    assertParsed(input) {
+      case BlockNode(ForTag(_, _, _) :: rest) => true
     }
   }
-  it should "parse literals" in {
-    val int = Liquid.parseExpr("1")
-    int match {
-      case LiteralExpr(IntValue(1)) =>
-      case _ => {
-        fail("" + int)
-      }
+  @Test def parseId() = {
+    val input = "{{ Identifier }}"
+    assertParsed(input) {
+      case BlockNode(OutputNode(VariableUseExpr(_)) :: Nil) => true
     }
-    val sstr = Liquid.parseExpr("'single quote string'")
-    sstr match {
-      case LiteralExpr(StringValue("single quote string")) =>
-      case _ => {
-        fail("" + sstr)
-      }
+  }
+  @Test def parseInt() = {
+    val input = "{{ 1 }}"
+    assertParsed(input) {
+      case BlockNode(OutputNode(LiteralExpr(IntValue(1))) :: Nil) => true
     }
+  }
+  @Test def parseString() = {
+    val input = "{{ 'single quote string' }}"
+    assertParsed(input) {
+      case BlockNode(OutputNode(LiteralExpr(StringValue(_))) :: Nil) => true
+    }
+    val input2 = "{{ 'single quote string' }}"
+    assertParsed(input2) {
+      case BlockNode(OutputNode(LiteralExpr(StringValue(_))) :: Nil) => true
+    }
+  }
+  @Test def parseMisc() = {
+    val inputs = ("{{1}}" :: "{{''}}" :: "{{ 1}}" :: "{{    true  }}" :: Nil)
+    inputs.foreach(input => {
+      assertParsed(input) {
+        case BlockNode(OutputNode(LiteralExpr(_)) :: Nil) => true
+      }
+    })
+  }
 
-    val dstr = Liquid.parseExpr("\"double quote string\"")
-    dstr match {
-      case LiteralExpr(StringValue("double quote string")) =>
-      case _ => {
-        fail("" + dstr)
-      }
-    }
-
-    val bool = Liquid.parseExpr("false")
-    bool match {
-      case LiteralExpr(BooleanValue(false)) =>
-      case _ => {
-        fail("" + bool)
+  @Test def shouldTrackSourcePosition() = {
+    val input = "{{  'str'}}"
+    assertParsed(input) {
+      case BlockNode((o @ OutputNode(e)) :: Nil) => {
+        assertEquals(0, o.parseContext.begin);
+        assertEquals(10, o.parseContext.end);
+        assertEquals(4, e.parseContext.begin);
+        assertEquals(8, e.parseContext.end);
+        true
       }
     }
   }
-  it should "parse nodes" in {
-    ("{{1}}" :: "{{''}}" :: "{{ 1}}" :: "{{    true  }}" :: Nil)
-      .foreach(s => {
-        val output = Liquid.parseNode(s)
-        output match {
-          case OutputNode(_) => println(output)
-          case _ =>
-            fail(
-              "String " + s + " parsed to an invalid output node: " + output)
-        }
-      })
-  }
-  it should "track the source position of each node" in {
-    val output = Liquid.parseNode("{{  'str'}}")
-    output match {
-      case o @ OutputNode(e) => {
-        o.parseContext.begin should be(0);
-        o.parseContext.end should be(10);
-        e.parseContext.begin should be(4);
-        e.parseContext.end should be(8);
-      }
-      case _ => fail("" + output)
-    }
-  }
-  ignore should "work on every tag in dottydoc" taggedAs (Incomplete) in {
+  @Ignore
+  @Test def shouldWorkOnAllDottyDocTags() = {
     val source = Source.fromURL(getClass.getResource("/tags.txt"))
     val (successes, failures) =
       source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isSuccess)
     println(failures)
-    failures.size should be(0)
+    assertEquals(0, failures.size)
   }
-  it should "parse indexing" in {
-    val index = Liquid.parseExpr("a[b][c]")
-    println(index)
-    index match {
-      case IndexExpr(IndexExpr(_, _), VariableUseExpr(_)) =>
-      case _ => fail("String output node: " + index)
+  @Test def parseIndexing() = {
+    val input = "{{ a[b][c] }}"
+    assertParsed(input) {
+      case BlockNode(
+          OutputNode(IndexExpr(IndexExpr(_, _), VariableUseExpr(_))) :: Nil) =>
+        true
     }
   }
-  it should "parse field indexing" in {
-    val dotindex = Liquid.parseExpr("a.b.c")
-    println(dotindex)
-    dotindex match {
-      case DotExpr(DotExpr(_, _), StringValue(_)) =>
-      case _ => fail("String output node: " + dotindex)
+  @Test def parseDotIndexing() = {
+    val input = "{{ a.b.c }}"
+    assertParsed(input) {
+      case BlockNode(OutputNode(DotExpr(DotExpr(_, _), "c")) :: Nil) => true
     }
   }
-  it should "parse filter applications" in {
-    val output = Liquid.parseNode("{{ 'str' | reverse }}")
-    output match {
-      case OutputNode(FilterExpr(_, _, Nil)) => println(output)
-      case _ => fail("String output node: " + output)
+  @Test def parseFilterApplication() = {
+    val input = "{{ 'str' | reverse }}"
+    assertParsed(input) {
+      case BlockNode(OutputNode(FilterExpr(_, _, Nil)) :: Nil) => true
     }
-    val out = Liquid.parseNode("{{ 'str' | filter: 'a', 't' }}")
-    out match {
-      case OutputNode(FilterExpr(_, _, args)) => args.size should be(2)
-      case _ => fail("String output node: " + out)
+    val input2 = "{{ '1,2,3' | split: ',' | reverse }}"
+    assertParsed(input2) {
+      case BlockNode(
+          OutputNode(FilterExpr(FilterExpr(_, _, _), _, Nil)) :: Nil) =>
+        true
     }
   }
 }
