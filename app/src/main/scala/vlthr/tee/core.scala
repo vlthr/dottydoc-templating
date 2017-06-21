@@ -62,12 +62,14 @@ abstract trait Expr {
   def eval()(evalContext: EvalContext): Value = ???
 }
 
-trait Filter {
+abstract trait Filter {
   def apply(args: List[Expr]): Value = ???
 }
 
+case class NoFilter() extends Filter
+
 object Filter {
-  def byName(s: String): Filter = new Object() with Filter
+  def byName(s: String): Filter = NoFilter()
 }
 
 final case class AndExpr(left: Expr, right: Expr)(

@@ -1,3 +1,3 @@
-Success(BlockNode(List(OutputNode(FilterExpr(LiteralExpr(StringValue(1,2,3)),vlthr.tee.core.Filter$$anon$1@6c4872f3,List(LiteralExpr(StringValue(,))))), TextNode(
-), OutputNode(FilterExpr(LiteralExpr(StringValue(1,2,3)),vlthr.tee.core.Filter$$anon$1@164e5046,List(FilterExpr(LiteralExpr(StringValue(,)),vlthr.tee.core.Filter$$anon$1@174f2317,List())))), TextNode(
+Success(BlockNode(List(OutputNode(FilterExpr(LiteralExpr(StringValue(1,2,3)),NoFilter(),List(LiteralExpr(StringValue(,))))), TextNode(
+), OutputNode(FilterExpr(LiteralExpr(StringValue(1,2,3)),NoFilter(),List(FilterExpr(LiteralExpr(StringValue(,)),NoFilter(),List())))), TextNode(
 ))))
