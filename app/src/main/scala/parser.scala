@@ -190,7 +190,7 @@ class LiquidExprVisitor extends LiquidParserBaseVisitor[Expr] {
                  Filter.byName(ctx.id().getText()),
                  args)
     } else if (ctx.DOTINDEX() != null) {
-      DotExpr(visitExpr(ctx.expr(0)), StringValue(ctx.id().getText()))
+      DotExpr(visitExpr(ctx.expr(0)), ctx.id().getText())
     } else if (ctx.STARTINDEX() != null) {
       IndexExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
     } else {

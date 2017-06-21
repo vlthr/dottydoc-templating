@@ -106,7 +106,7 @@ final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
 final case class IndexExpr(indexable: Expr, key: Expr)(
     implicit val parseContext: ParseContext)
     extends Expr // l[0], l['hello'],
-final case class DotExpr(indexable: Expr, key: Value)(
+final case class DotExpr(indexable: Expr, key: String)(
     implicit val parseContext: ParseContext)
     extends Expr // l.hello, or l.size (special methods)
 
