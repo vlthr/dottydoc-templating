@@ -126,7 +126,8 @@ class ParserTests {
       case BlockNode(OutputNode(FilterExpr(_, _, Nil)) :: Nil) => true
     }
   }
-  @Ignore @Test def parseMultipleFilterApplication() = {
+  @Ignore
+  @Test def parseMultipleFilterApplication() = {
     val input = "{{ '1,2,3' | split: ',' | reverse }}"
     assertParsed(input) {
       case BlockNode(
