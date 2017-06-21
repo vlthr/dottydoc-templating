@@ -46,9 +46,3 @@ lazy val app = (project in file("app"))
 
 lazy val genTestExamples =
   inputKey[Unit]("Generate test outputs from examples")
-
-genTestExamples := {
-  val run = (runMain in Compile in app)
-    .partialInput(" vlthr.tee.GenTestExamples")
-    .evaluated
-}

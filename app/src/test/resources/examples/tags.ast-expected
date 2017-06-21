@@ -1,6 +1,6 @@
-Left(BlockNode(List(IfTag(LiteralExpr(BooleanValue(true)),BlockNode(List(TextNode(
+Success(BlockNode(List(IfTag(LiteralExpr(BooleanValue(true)),BlockNode(List(TextNode(
     TEXT IN BLOCK
 )))), TextNode(
-), ForTag(a,DotExpr(VariableUseExpr(some),StringValue(list)),BlockNode(List())), TextNode(
+), ForTag(a,DotExpr(VariableUseExpr(some),list),BlockNode(List())), TextNode(
 ), AssignTag(x,LiteralExpr(IntValue(1))), TextNode(
 ))))
