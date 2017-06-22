@@ -35,6 +35,13 @@ class FileTests(template: Path) {
     assertTrue(result.isSuccess)
   }
 
+  @Test def testCodeGen() = {
+    Assume.assumeTrue(result.isSuccess);
+    fileTest(".codeGen") { templateBody =>
+      Liquid.parse(templateBody).get.codeGen()
+    }
+  }
+
   @Test def testAST() = {
     Assume.assumeTrue(result.isSuccess);
     fileTest(".ast") { templateBody =>
@@ -58,7 +65,7 @@ class FileTests(template: Path) {
 }
 
 object FileTests {
-  @Parameters
+  @Parameters(name="{0}")
   def data(): java.util.Collection[Array[Object]] = {
     filesInDir("./app/src/test/resources/examples")
       .filter(_.toString.endsWith(".liquid"))
