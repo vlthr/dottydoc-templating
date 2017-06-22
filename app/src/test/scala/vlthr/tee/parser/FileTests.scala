@@ -56,6 +56,7 @@ class FileTests(template: Path) {
     val parseTreeFile = FileTests.pairedFileWithExt(template, ext)
     val parseTreeFileExpected =
       FileTests.pairedFileWithExt(template, ext + "-expected")
+    Assume.assumeTrue(Files.exists(parseTreeFileExpected))
     val actual = f(templateBody)
     FileTests.writeFile(parseTreeFile, actual)
     val expected = FileTests.readWholeFile(parseTreeFileExpected)
