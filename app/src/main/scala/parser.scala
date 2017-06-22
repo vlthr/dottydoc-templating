@@ -11,7 +11,6 @@ object Liquid {
   def parseExpr(node: String): Expr = {
     val parser = makeParser(node, lexerMode = Object())
     val tree = parser.expr()
-    println(tree.toStringTree(parser))
     val visitor = new LiquidExprVisitor()
     tree.accept(visitor)
   }
@@ -19,7 +18,6 @@ object Liquid {
   def parseNode(node: String): Node = {
     val parser = makeParser(node)
     val tree = parser.node()
-    println(tree.toStringTree(parser))
     val visitor = new LiquidNodeVisitor()
     tree.accept(visitor)
   }
@@ -27,7 +25,6 @@ object Liquid {
   def parseTemplate(node: String): Node = {
     val parser = makeParser(node)
     val tree = parser.block()
-    println(tree.toStringTree(parser))
     val visitor = new LiquidNodeVisitor()
     tree.accept(visitor)
   }
@@ -212,7 +209,6 @@ class LiquidExprVisitor extends LiquidParserBaseVisitor[Expr] {
         if (ctx.INT() != null) {
           LiteralExpr(IntValue(t.getText().toInt))
         } else if (ctx.STRSINGLE() != null || ctx.STRDOUBLE() != null) {
-          println(t.getText())
           LiteralExpr(
             StringValue(t.getText().substring(1, t.getText().size - 1)))
         } else if (ctx.TRUE() != null) {
