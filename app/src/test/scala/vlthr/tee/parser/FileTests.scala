@@ -53,13 +53,13 @@ class FileTests(template: Path) {
     * value found in filename.ext-expected. Saves the actual output to filename.ext
     */
   def fileTest(ext: String)(f: Function[String, String]) = {
-    val parseTreeFile = FileTests.pairedFileWithExt(template, ext)
-    val parseTreeFileExpected =
+    val outFile = FileTests.pairedFileWithExt(template, ext)
+    val expectedFile =
       FileTests.pairedFileWithExt(template, ext + "-expected")
-    Assume.assumeTrue(Files.exists(parseTreeFileExpected))
+    Assume.assumeTrue(Files.exists(expectedFile))
     val actual = f(templateBody)
-    FileTests.writeFile(parseTreeFile, actual)
-    val expected = FileTests.readWholeFile(parseTreeFileExpected)
+    FileTests.writeFile(outFile, actual)
+    val expected = FileTests.readWholeFile(expectedFile)
     assertEquals(expected, actual)
   }
 
