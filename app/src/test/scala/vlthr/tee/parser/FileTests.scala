@@ -39,14 +39,14 @@ class FileTests(template: Path) {
     Assume.assumeTrue(result.isSuccess);
     fileTest(".render") { templateBody =>
       implicit val ctx = EvalContext()
-      Liquid.parse(templateBody).get.render()
+      result.get.render()
     }
   }
 
   @Test def testAST() = {
     Assume.assumeTrue(result.isSuccess);
     fileTest(".ast") { templateBody =>
-      Liquid.parse(templateBody).toString
+      result.get.toString
     }
   }
 

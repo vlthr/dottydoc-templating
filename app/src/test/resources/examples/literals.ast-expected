@@ -1,4 +1,4 @@
-Success(BlockNode(List(OutputNode(LiteralExpr(IntValue(1))), TextNode(
+BlockNode(List(OutputNode(LiteralExpr(IntValue(1))), TextNode(
 ), OutputNode(LiteralExpr(StringValue(single))), TextNode(
 ), OutputNode(LiteralExpr(StringValue(double))), TextNode(
-))))
+)))
