@@ -35,6 +35,14 @@ class FileTests(template: Path) {
     assertTrue(result.isSuccess)
   }
 
+  @Test def testRender() = {
+    Assume.assumeTrue(result.isSuccess);
+    fileTest(".render") { templateBody =>
+      implicit val ctx = EvalContext()
+      Liquid.parse(templateBody).get.render()
+    }
+  }
+
   @Test def testAST() = {
     Assume.assumeTrue(result.isSuccess);
     fileTest(".ast") { templateBody =>
