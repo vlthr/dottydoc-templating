@@ -19,7 +19,7 @@ ifTag : ifStart block ifEnd;
 ifEnd : TAGSTART IFEND TAGEND;
 
 forStart : TAGSTART FORSTART id IN expr TAGEND;
-forTag : forStart node* block forEnd;
+forTag : forStart block forEnd;
 forEnd : TAGSTART FOREND TAGEND;
 
 output : OUTPUTSTART expr OUTPUTEND;
