@@ -14,7 +14,7 @@ lazy val common = Seq(
 )
 
 lazy val macrosSetting = Seq(
-) ++ common
+  ) ++ common
 
 lazy val templatingSettings = antlr4Settings ++ Seq(
   name := "dottydoc-templating",

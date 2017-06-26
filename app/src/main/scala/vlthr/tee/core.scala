@@ -3,14 +3,17 @@ import scala.collection.mutable.Map
 
 case class ParseContext(begin: Int, end: Int, template: Template) {}
 
-case class EvalContext(mappings: Map[String, Value], parent: Option[EvalContext]) {
-  def lookup(s: String): Option[Value] = mappings.get(s).orElse(parent.flatMap(_.lookup(s)))
+case class EvalContext(mappings: Map[String, Value],
+                       parent: Option[EvalContext]) {
+  def lookup(s: String): Option[Value] =
+    mappings.get(s).orElse(parent.flatMap(_.lookup(s)))
 }
 
 object EvalContext {
   def createNew(): EvalContext = EvalContext(Map(), None)
   def createNew(map: Map[String, Value]): EvalContext = EvalContext(map, None)
-  def createChild(parent: EvalContext): EvalContext = EvalContext(Map(), Some(parent))
+  def createChild(parent: EvalContext): EvalContext =
+    EvalContext(Map(), Some(parent))
 }
 
 abstract trait Node extends Renderable {
@@ -84,7 +87,8 @@ final case class ContinueTag()(implicit val parseContext: ParseContext)
 final case class IfTag(condition: Expr, block: Node)(
     implicit val parseContext: ParseContext)
     extends TagNode {
-  override def render()(implicit evalContext: EvalContext): String = if (condition.eval.truthy) block.render() else ""
+  override def render()(implicit evalContext: EvalContext): String =
+    if (condition.eval.truthy) block.render() else ""
 }
 final case class IncludeTag()(implicit val parseContext: ParseContext)
     extends TagNode
@@ -153,7 +157,8 @@ final case class VariableUseExpr(name: String)(
 final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
     implicit val parseContext: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = filter.apply(expr.eval())
+  override def eval()(implicit evalContext: EvalContext) =
+    filter.apply(expr.eval())
 }
 final case class IndexExpr(indexable: Expr, key: Expr)(
     implicit val parseContext: ParseContext)
@@ -182,8 +187,7 @@ final case class DotExpr(indexable: Expr, key: String)(
   }
 }
 
-sealed trait Value extends Renderable with Truthable {
-}
+sealed trait Value extends Renderable with Truthable {}
 
 object Value {
   def create(value: Any) = {
@@ -216,7 +220,9 @@ final case class BooleanValue(v: Boolean) extends Value {
 final case class IntValue(v: Int) extends Value with Truthy {
   def render()(implicit evalContext: EvalContext): String = v.toString
 }
-final case class MapValue(v: Map[String, Value]) extends IndexedValue with Truthy {
+final case class MapValue(v: Map[String, Value])
+    extends IndexedValue
+    with Truthy {
   def render()(implicit evalContext: EvalContext): String = ???
 }
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {

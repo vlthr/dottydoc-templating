@@ -40,10 +40,15 @@ class FileTests(template: Path) {
     Assume.assumeTrue(result.isSuccess)
     fileTest(".render") { templateBody =>
       val subMap: Map[String, Value] = Map("id" -> IntValue(1))
-      val map: Map[String, Value] = Map("id" -> IntValue(1), "subMap" -> MapValue(subMap))
+      val map: Map[String, Value] =
+        Map("id" -> IntValue(1), "subMap" -> MapValue(subMap))
       val subList = ListValue(IntValue(1) :: Nil)
       val listOfLists = ListValue(subList :: Nil)
-      implicit val ctx: EvalContext = EvalContext.createNew(Map("zero" -> IntValue(0), "map" -> MapValue(map), "listOfLists" -> listOfLists, "list" -> subList))
+      implicit val ctx: EvalContext = EvalContext.createNew(
+        Map("zero" -> IntValue(0),
+            "map" -> MapValue(map),
+            "listOfLists" -> listOfLists,
+            "list" -> subList))
       result.get.render()
     }
   }
@@ -72,7 +77,7 @@ class FileTests(template: Path) {
 }
 
 object FileTests {
-  @Parameters(name="{0}")
+  @Parameters(name = "{0}")
   def data(): java.util.Collection[Array[Object]] = {
     filesInDir("./app/src/test/resources/examples")
       .filter(_.toString.endsWith(".liquid"))
