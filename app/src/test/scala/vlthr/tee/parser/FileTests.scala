@@ -36,7 +36,7 @@ class FileTests(template: Path) {
   }
 
   @Test def testRender() = {
-    Assume.assumeTrue(result.isSuccess);
+    Assume.assumeTrue(result.isSuccess)
     fileTest(".render") { templateBody =>
       implicit val ctx = EvalContext()
       result.get.render()
@@ -44,7 +44,7 @@ class FileTests(template: Path) {
   }
 
   @Test def testAST() = {
-    Assume.assumeTrue(result.isSuccess);
+    Assume.assumeTrue(result.isSuccess)
     fileTest(".ast") { templateBody =>
       result.get.toString
     }
