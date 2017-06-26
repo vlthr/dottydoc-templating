@@ -1,3 +1,3 @@
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-addSbtPlugin("com.artima.supersafe" % "sbtplugin" % "1.1.2")
+addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.1.3")
