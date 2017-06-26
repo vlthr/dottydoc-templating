@@ -57,10 +57,10 @@ class FileTests(template: Path) {
     val outFile = FileTests.pairedFileWithExt(template, ext)
     val expectedFile =
       FileTests.pairedFileWithExt(template, ext + "-expected")
-    Assume.assumeTrue(Files.exists(expectedFile))
     val actual = f(templateBody)
     FileTests.writeFile(outFile, actual)
     val expected = FileTests.readWholeFile(expectedFile)
+    Assume.assumeTrue(Files.exists(expectedFile))
     assertEquals(expected, actual)
   }
 
