@@ -11,6 +11,7 @@ import vlthr.tee.core._
 import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets
+import scala.collection.mutable.Map
 
 /** For every .liquid file in the examples directory, compare the outputs
   * of various stages of template rendering to their expected values.
@@ -38,7 +39,11 @@ class FileTests(template: Path) {
   @Test def testRender() = {
     Assume.assumeTrue(result.isSuccess)
     fileTest(".render") { templateBody =>
-      implicit val ctx = EvalContext()
+      val subMap: Map[String, Value] = Map("id" -> IntValue(1))
+      val map: Map[String, Value] = Map("id" -> IntValue(1), "subMap" -> MapValue(subMap))
+      val subList = ListValue(IntValue(1) :: Nil)
+      val listOfLists = ListValue(subList :: Nil)
+      implicit val ctx: EvalContext = EvalContext.createNew(Map("zero" -> IntValue(0), "map" -> MapValue(map), "listOfLists" -> listOfLists, "list" -> subList))
       result.get.render()
     }
   }
@@ -59,8 +64,8 @@ class FileTests(template: Path) {
       FileTests.pairedFileWithExt(template, ext + "-expected")
     val actual = f(templateBody)
     FileTests.writeFile(outFile, actual)
-    val expected = FileTests.readWholeFile(expectedFile)
     Assume.assumeTrue(Files.exists(expectedFile))
+    val expected = FileTests.readWholeFile(expectedFile)
     assertEquals(expected, actual)
   }
 
