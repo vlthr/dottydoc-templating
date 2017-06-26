@@ -1,7 +1,7 @@
-Success(BlockNode(List(OutputNode(VariableUseExpr(id)), TextNode(
+BlockNode(List(OutputNode(VariableUseExpr(id)), TextNode(
 ), OutputNode(DotExpr(VariableUseExpr(id),subId)), TextNode(
 ), OutputNode(DotExpr(DotExpr(VariableUseExpr(id),subId),subSubId)), TextNode(
 ), OutputNode(IndexExpr(VariableUseExpr(id),LiteralExpr(IntValue(0)))), TextNode(
 ), OutputNode(IndexExpr(IndexExpr(VariableUseExpr(id),LiteralExpr(IntValue(0))),LiteralExpr(IntValue(1)))), TextNode(
 ), OutputNode(IndexExpr(VariableUseExpr(id),VariableUseExpr(index))), TextNode(
-))))
+)))
