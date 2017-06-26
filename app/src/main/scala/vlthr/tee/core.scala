@@ -2,15 +2,19 @@ package vlthr.tee.core
 
 case class ParseContext(begin: Int, end: Int, template: Template) {}
 
-trait EvalContext {
+case class EvalContext() {
   def mappings: Map[String, Value] = ???
   def parentScope: EvalContext = ???
   def lookup(s: String): Value = ???
 }
 
-abstract trait Node {
+abstract trait Node extends Renderable {
   def render()(implicit evalContext: EvalContext): String = ???
   def parseContext: ParseContext
+}
+
+trait Renderable {
+  def render()(implicit evalContext: EvalContext): String
 }
 
 final case class BlockNode(node: List[Node])(
@@ -25,8 +29,7 @@ final case class TextNode(text: String)(
     implicit val parseContext: ParseContext)
     extends Node
 
-trait TagNode extends Node {
-  def render(args: List[Expr])(implicit evalContext: EvalContext) = ???
+trait TagNode extends Node with Renderable {
 }
 
 final case class AssignTag(id: String, value: Expr)(
@@ -98,7 +101,11 @@ final case class GtExpr(left: Expr, right: Expr)(
     extends Expr
 final case class LiteralExpr(value: Value)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  def render()(implicit evalContext: EvalContext) = {
+    value.render()
+  }
+}
 final case class VariableUseExpr(name: String)(
     implicit val parseContext: ParseContext)
     extends Expr
@@ -112,16 +119,25 @@ final case class DotExpr(indexable: Expr, key: String)(
     implicit val parseContext: ParseContext)
     extends Expr // l.hello, or l.size (special methods)
 
-sealed trait Value {
-  def render: String = ???
+sealed trait Value extends Renderable {
 }
 
 sealed trait IndexedValue extends Value
-final case class StringValue(v: String) extends Value
-final case class BooleanValue(v: Boolean) extends Value
-final case class IntValue(v: Int) extends Value
-final case class MapValue(v: Map[String, Value]) extends IndexedValue
-final case class ListValue(v: List[Value]) extends IndexedValue
+final case class StringValue(v: String) extends Value {
+  def render()(implicit evalContext: EvalContext): String = v
+}
+final case class BooleanValue(v: Boolean) extends Value {
+  def render()(implicit evalContext: EvalContext): String = v.toString
+}
+final case class IntValue(v: Int) extends Value {
+  def render()(implicit evalContext: EvalContext): String = v.toString
+}
+final case class MapValue(v: Map[String, Value]) extends IndexedValue {
+  def render()(implicit evalContext: EvalContext): String = v.toString
+}
+final case class ListValue(v: List[Value]) extends IndexedValue {
+  def render()(implicit evalContext: EvalContext): String = v.toString
+}
 
 case class Template(body: String, nodes: List[Node]) {
   def this(path: String) = {
