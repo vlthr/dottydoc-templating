@@ -117,28 +117,44 @@ object Filter {
 
 final case class AndExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval.truthy && right.eval.truthy)
+}
 final case class OrExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval.truthy || right.eval.truthy)
+}
 final case class EqExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval == right.eval)
+}
 final case class NEqExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval != right.eval)
+}
 final case class LEqExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval <= right.eval)
+}
 final case class LtExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval < right.eval)
+}
 final case class GEqExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval >= right.eval)
+}
 final case class GtExpr(left: Expr, right: Expr)(
     implicit val parseContext: ParseContext)
-    extends Expr
+    extends Expr {
+  override def eval()(implicit evalContext: EvalContext) = BooleanValue(left.eval > right.eval)
+}
 final case class LiteralExpr(value: Value)(
     implicit val parseContext: ParseContext)
     extends Expr {
@@ -187,7 +203,18 @@ final case class DotExpr(indexable: Expr, key: String)(
   }
 }
 
-sealed trait Value extends Renderable with Truthable {}
+sealed trait Value extends Renderable with Truthable with Ordered[Value] {
+  def compare(that: Value): Int = {
+    (this, right) match {
+      case (IntValue(l), IntValue(r)) => l compare r
+      case (StringValue(l), StringValue(r)) => l compare r
+      case (BooleanValue(l), BooleanValue(r)) => l compare r
+      case (MapValue(l), MapValue(r)) => ???
+      case (ListValue(l), ListValue(r)) => ???
+      case (l, r) => throw new Exception(s"TODO: Incomparable types $l and $r")
+    }
+  }
+}
 
 object Value {
   def create(value: Any) = {
