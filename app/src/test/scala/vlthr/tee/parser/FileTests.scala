@@ -49,7 +49,7 @@ class FileTests(template: Path) {
             "map" -> MapValue(map),
             "listOfLists" -> listOfLists,
             "list" -> subList))
-      result.get.render()
+      result.get.render.toString
     }
   }
 

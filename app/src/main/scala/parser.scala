@@ -52,7 +52,7 @@ object Liquid {
     parser.addErrorListener(errors);
     val tree = parser.block()
     val result = tree.accept(new LiquidNodeVisitor())
-    if (errors.errors.size != 0) Failure(ParseFailure(errors.errors.toList))
+    if (errors.errors.size != 0) Failure(LiquidFailure(errors.errors.toList))
     else Success(result)
   }
 
@@ -76,12 +76,6 @@ object Liquid {
   }
 }
 
-sealed case class ParseFailure(errors: List[Error]) extends Exception {
-  override def getMessage() = errors.mkString("\n")
-}
-sealed trait Error
-final case class ParseError(msg: String) extends Error
-final case class TypeError(msg: String) extends Error
 class GatherErrors extends BaseErrorListener {
   val errors = Buffer[Error]()
 
