@@ -90,10 +90,10 @@ class ParserTests {
     val input = "{{  'str'}}"
     assertParsed(input) {
       case BlockNode((o @ OutputNode(e)) :: Nil) => {
-        assertEquals(0, o.parseContext.begin);
-        assertEquals(10, o.parseContext.end);
-        assertEquals(4, e.parseContext.begin);
-        assertEquals(8, e.parseContext.end);
+        assertEquals(0, o.sourcePosition.start);
+        assertEquals(10, o.sourcePosition.end);
+        assertEquals(4, e.sourcePosition.start);
+        assertEquals(8, e.sourcePosition.end);
         true
       }
     }
