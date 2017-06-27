@@ -1,0 +1,4 @@
+BlockNode(List(ForTag(i,VariableUseExpr(map),BlockNode(List(TextNode(
+    ), OutputNode(VariableUseExpr(i)), TextNode(
+)))), TextNode(
+)))
