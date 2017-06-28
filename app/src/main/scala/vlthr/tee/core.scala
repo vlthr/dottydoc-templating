@@ -12,11 +12,39 @@ ${iterableExpr.sourcePosition.report}
     fail(TypeError(msg))
   }
 
+  def invalidMap(dotExpr: DotExpr, map: Expr) = {
+    val msg = s"""Type Error: Invalid map
+${map.sourcePosition.report}
+"""
+    fail(TypeError(msg))
+  }
+
   def undefinedVariable(idUse: Expr) = {
     val msg = s"""Error: Undefined variable reference
 ${idUse.sourcePosition.report}
 """
     fail(RenderError(msg))
+  }
+
+  def undefinedField(dotExpr: DotExpr, map: Expr, field: String) = {
+    val msg = s"""Error: hashmap ${map.toString} contains no field '$field'
+${dotExpr.sourcePosition.report}
+"""
+    fail(RenderError(msg))
+  }
+
+  def invalidIndex(indexExpr: IndexExpr, index: Expr) = {
+    val msg = s"""Error: invalid index
+${index.sourcePosition.report}
+"""
+    fail(TypeError(msg))
+  }
+
+  def invalidIndexable(indexExpr: IndexExpr, indexable: Expr) = {
+    val msg = s"""Error: ${indexable.toString} is not indexable
+${indexExpr.sourcePosition.report}
+"""
+    fail(TypeError(msg))
   }
 
   def all[A, B](a: Try[A])(onSuccess: Function[A, B]): Try[B] = all(Success(null), a)((_, r) => onSuccess(r))
@@ -270,11 +298,11 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
   override def eval()(implicit evalContext: EvalContext) = {
     val i: Try[List[Value]] = indexable.eval.flatMap {
       case ListValue(s) => Success(s)
-      case x => Error.fail(TypeError(s"Invalid indexable: $x"))
+      case x => Error.invalidIndexable(this, indexable)
     }
     val k: Try[Int] = key.eval.flatMap {
       case IntValue(i) => Success(i)
-      case x => Error.fail(TypeError(s"Invalid index: $x"))
+      case x => Error.invalidIndex(this, key)
     }
     Error.all(i, k) { (i, k) =>
       i(k)
@@ -288,12 +316,12 @@ final case class DotExpr(indexable: Expr, key: String)(
   override def eval()(implicit evalContext: EvalContext) = {
     val source: Try[Map[String, Value]] = indexable.eval.flatMap {
       case MapValue(m) => Success(m)
-      case x => Error.fail(TypeError(s"Invalid indexable: $x"))
+      case x => Error.invalidMap(this, indexable)
     }
     Error.all(source) { source =>
       source.get(key) match {
         case Some(s) => Success(s)
-        case None => Error.fail(TypeError(s"No key $key found in map $source"))
+        case None => Error.undefinedField(this, indexable, key)
       }
     }.flatten
   }

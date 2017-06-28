@@ -1,0 +1,2 @@
+BlockNode(List(OutputNode(IndexExpr(VariableUseExpr(zero),LiteralExpr(IntValue(1)))), TextNode(
+)))
