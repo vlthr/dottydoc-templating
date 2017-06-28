@@ -1,0 +1,1 @@
+(block (node (output {{ (expr (expr (term false)) or (expr (term false))) }})) (node \n) (node (output {{ (expr (expr (term false)) or (expr (term true))) }})) (node \n) (node (output {{ (expr (expr (expr (term false)) or (expr (term false))) or (expr (term true))) }})) (node \n))

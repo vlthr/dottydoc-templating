@@ -27,6 +27,14 @@ output : OUTPUTSTART expr OUTPUTEND;
 expr : expr FILTER id args?
 | expr DOTINDEX id
 | expr STARTINDEX expr ENDINDEX
+| expr EQ expr
+| expr NEQ expr
+| expr LT expr
+| expr GT expr
+| expr LEQ expr
+| expr GEQ expr
+| expr AND expr
+| expr OR expr
 | term;
 
 term : INT

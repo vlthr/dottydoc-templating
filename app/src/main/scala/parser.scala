@@ -184,6 +184,22 @@ class LiquidExprVisitor(template: SourceFile) extends LiquidParserBaseVisitor[Ex
       DotExpr(visitExpr(ctx.expr(0)), ctx.id().getText())
     } else if (ctx.STARTINDEX() != null) {
       IndexExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.AND() != null) {
+      AndExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.OR() != null) {
+      OrExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.EQ() != null) {
+      EqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.NEQ() != null) {
+      NEqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.LT() != null) {
+      LtExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.LEQ() != null) {
+      LEqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.GT() != null) {
+      GtExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+    } else if (ctx.GEQ() != null) {
+      GEqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
     } else {
       val term = visitTerm(ctx.term())
       term
