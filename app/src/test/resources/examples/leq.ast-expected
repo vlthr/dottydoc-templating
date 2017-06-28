@@ -1,0 +1,4 @@
+BlockNode(List(OutputNode(LEqExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(0)))), TextNode(
+), OutputNode(LEqExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(1)))), TextNode(
+), OutputNode(LEqExpr(LiteralExpr(IntValue(0)),LiteralExpr(IntValue(1)))), TextNode(
+)))

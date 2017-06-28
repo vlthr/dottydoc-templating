@@ -1,0 +1,3 @@
+BlockNode(List(OutputNode(GtExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(0)))), TextNode(
+), OutputNode(GtExpr(LiteralExpr(BooleanValue(true)),LiteralExpr(BooleanValue(false)))), TextNode(
+)))
