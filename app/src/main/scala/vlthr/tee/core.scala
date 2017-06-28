@@ -47,6 +47,13 @@ ${indexExpr.sourcePosition.report}
     fail(TypeError(msg))
   }
 
+  def incomparableValues(expr: Expr, left: Value, right: Value) = {
+    val msg = s"""Error: Incomparable values $left and $right
+${expr.sourcePosition.report}
+"""
+    fail(TypeError(msg))
+  }
+
   def all[A, B](a: Try[A])(onSuccess: Function[A, B]): Try[B] = all(Success(null), a)((_, r) => onSuccess(r))
 
   // TODO: can this be made to work for any number of args?
@@ -216,9 +223,9 @@ object Filter {
 }
 
 abstract trait BooleanExpr extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(op(l, r))
-  }
+  override def eval()(implicit evalContext: EvalContext): Try[Value] = Error.all(left.eval, right.eval) { (l, r) =>
+    Try(BooleanValue(op(l, r))).recoverWith(_ => Error.incomparableValues(this, l, r))
+  }.flatten
   def left: Expr
   def right: Expr
   def op(left: Value, right: Value): Boolean
