@@ -215,61 +215,54 @@ object Filter {
   def byName(s: String): Filter = NoFilter()
 }
 
-final case class AndExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
-    extends Expr {
+abstract trait BooleanExpr extends Expr {
   override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l.truthy && r.truthy)
+    BooleanValue(op(l, r))
   }
+  def left: Expr
+  def right: Expr
+  def op(left: Value, right: Value): Boolean
 }
-final case class OrExpr(left: Expr, right: Expr)(
+
+final case class AndExpr(left: Expr, right: Expr) (
     implicit val sourcePosition: SourcePosition)
-    extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l.truthy || r.truthy)
-  }
+    extends BooleanExpr {
+  override def op(l: Value, r: Value): Boolean = l.truthy && r.truthy
+}
+final case class OrExpr(left: Expr, right: Expr) (
+    implicit val sourcePosition: SourcePosition)
+    extends BooleanExpr {
+  override def op(left: Value, right: Value): Boolean = left.truthy || right.truthy
 }
 final case class EqExpr(left: Expr, right: Expr)(
     implicit val sourcePosition: SourcePosition)
-    extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l == r)
-  }
+    extends BooleanExpr {
+  override def op(left: Value, right: Value): Boolean = left == right
 }
 final case class NEqExpr(left: Expr, right: Expr)(
     implicit val sourcePosition: SourcePosition)
-    extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l != r)
-  }
+    extends BooleanExpr {
+  override def op(left: Value, right: Value): Boolean = left != right
 }
 final case class LEqExpr(left: Expr, right: Expr)(
     implicit val sourcePosition: SourcePosition)
-    extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l <= r)
-  }
+    extends BooleanExpr {
+  override def op(left: Value, right: Value): Boolean = left <= right
 }
 final case class LtExpr(left: Expr, right: Expr)(
     implicit val sourcePosition: SourcePosition)
-    extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l < r)
-  }
+    extends BooleanExpr {
+  override def op(left: Value, right: Value): Boolean = left < right
 }
 final case class GEqExpr(left: Expr, right: Expr)(
     implicit val sourcePosition: SourcePosition)
-    extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l >= r)
-  }
+    extends BooleanExpr {
+  override def op(left: Value, right: Value): Boolean = left >= right
 }
 final case class GtExpr(left: Expr, right: Expr)(
     implicit val sourcePosition: SourcePosition)
-    extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Error.all(left.eval, right.eval) { (l, r) =>
-    BooleanValue(l > r)
-  }
+    extends BooleanExpr {
+  override def op(left: Value, right: Value): Boolean = left > right
 }
 final case class LiteralExpr(value: Value)(
     implicit val sourcePosition: SourcePosition)
