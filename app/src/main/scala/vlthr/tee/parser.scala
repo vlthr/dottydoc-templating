@@ -89,7 +89,8 @@ class GatherErrors extends BaseErrorListener {
   }
 }
 
-class LiquidNodeVisitor(template: SourceFile) extends LiquidParserBaseVisitor[Node] {
+class LiquidNodeVisitor(template: SourceFile)
+    extends LiquidParserBaseVisitor[Node] {
 
   override def visitNode(ctx: LiquidParser.NodeContext): Node = {
     if (ctx.tag() != null) {
@@ -104,8 +105,8 @@ class LiquidNodeVisitor(template: SourceFile) extends LiquidParserBaseVisitor[No
   }
   def visitText(t: TerminalNode): Node = {
     implicit val sourcePosition = SourcePosition(t.getSymbol().getStartIndex(),
-                                             t.getSymbol().getStopIndex(),
-                                             template)
+                                                 t.getSymbol().getStopIndex(),
+                                                 template)
 
     TextNode(t.getText())
   }
@@ -115,15 +116,15 @@ class LiquidNodeVisitor(template: SourceFile) extends LiquidParserBaseVisitor[No
     val t = ctx.expr()
     val expr = expVisitor.visitExpr(t)
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
-                                             ctx.stop.getStopIndex(),
-                                             template)
+                                                 ctx.stop.getStopIndex(),
+                                                 template)
     OutputNode(expr)
   }
 
   override def visitTag(ctx: LiquidParser.TagContext): Node = {
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
-                                             ctx.stop.getStopIndex(),
-                                             template)
+                                                 ctx.stop.getStopIndex(),
+                                                 template)
     if (ctx.ifTag() != null) {
       val expr =
         new LiquidExprVisitor(template).visitExpr(ctx.ifTag().ifStart().expr())
@@ -132,7 +133,8 @@ class LiquidNodeVisitor(template: SourceFile) extends LiquidParserBaseVisitor[No
     } else if (ctx.forTag() != null) {
       val id = ctx.forTag().forStart().id().getText()
       val expr =
-        new LiquidExprVisitor(template).visitExpr(ctx.forTag().forStart().expr())
+        new LiquidExprVisitor(template)
+          .visitExpr(ctx.forTag().forStart().expr())
       val block = visitBlock(ctx.forTag().block())
       ForTag(id, expr, block)
     } else if (ctx.assignTag() != null) {
@@ -146,36 +148,40 @@ class LiquidNodeVisitor(template: SourceFile) extends LiquidParserBaseVisitor[No
 
   override def visitBlock(ctx: LiquidParser.BlockContext): Node = {
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
-                                             ctx.stop.getStopIndex(),
-                                             template)
+                                                 ctx.stop.getStopIndex(),
+                                                 template)
     BlockNode(ctx.node().asScala.toList.map(n => visitNode(n)))
   }
 }
 
-class LiquidArgsVisitor(template: SourceFile) extends LiquidParserBaseVisitor[List[Expr]] {
+class LiquidArgsVisitor(template: SourceFile)
+    extends LiquidParserBaseVisitor[List[Expr]] {
   override def visitArgs(ctx: LiquidParser.ArgsContext): List[Expr] = {
     ctx
       .arglist()
       .expr()
       .asScala
       .map(ectx => {
-        implicit val sourcePosition = SourcePosition(ectx.start.getStartIndex(),
-                                                 ectx.stop.getStopIndex(),
-                                                 template)
+        implicit val sourcePosition =
+          SourcePosition(ectx.start.getStartIndex(),
+                         ectx.stop.getStopIndex(),
+                         template)
         new LiquidExprVisitor(template).visitExpr(ectx)
       })
       .toList
   }
 }
 
-class LiquidExprVisitor(template: SourceFile) extends LiquidParserBaseVisitor[Expr] {
+class LiquidExprVisitor(template: SourceFile)
+    extends LiquidParserBaseVisitor[Expr] {
   override def visitExpr(ctx: LiquidParser.ExprContext): Expr = {
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
-                                             ctx.stop.getStopIndex(),
-                                             template)
+                                                 ctx.stop.getStopIndex(),
+                                                 template)
     if (ctx.FILTER() != null) {
       val args =
-        if (ctx.args() != null) new LiquidArgsVisitor(template).visitArgs(ctx.args())
+        if (ctx.args() != null)
+          new LiquidArgsVisitor(template).visitArgs(ctx.args())
         else Nil
       FilterExpr(visitExpr(ctx.expr(0)),
                  Filter.byName(ctx.id().getText()),
@@ -208,8 +214,8 @@ class LiquidExprVisitor(template: SourceFile) extends LiquidParserBaseVisitor[Ex
 
   override def visitTerm(ctx: LiquidParser.TermContext): Expr = {
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
-                                             ctx.start.getStopIndex(),
-                                             template)
+                                                 ctx.start.getStopIndex(),
+                                                 template)
     ctx.getChild(0) match {
       case t: TerminalNode => {
         if (ctx.INT() != null) {

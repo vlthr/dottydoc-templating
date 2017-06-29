@@ -21,13 +21,17 @@ import liqp.Template
 class FileTests(template: Path) {
   var templateBody: String = null
   var result: Try[Node] = null
-  val environment = Map("zero" -> 0,
-                        "map" -> Map("id" -> 1, "subMap" -> Map("id" -> 1)),
-                        "content" -> "CONTENT",
-                        "site" -> Map("baseurl" -> "BASEURL"),
-                        "page" -> Map("title" -> "TITLE", "extraCSS" -> List("extraCSS1", "extraCSS2", "extraCSS3"), "extraJS" -> List("extraJS1", "extraJS2", "extraJS3")),
-                        "listOfLists" -> List(List(1)),
-                        "list" -> List(1))
+  val environment = Map(
+    "zero" -> 0,
+    "map" -> Map("id" -> 1, "subMap" -> Map("id" -> 1)),
+    "content" -> "CONTENT",
+    "site" -> Map("baseurl" -> "BASEURL"),
+    "page" -> Map("title" -> "TITLE",
+                  "extraCSS" -> List("extraCSS1", "extraCSS2", "extraCSS3"),
+                  "extraJS" -> List("extraJS1", "extraJS2", "extraJS3")),
+    "listOfLists" -> List(List(1)),
+    "list" -> List(1)
+  )
 
   @Before def setup() = {
     templateBody = FileTests.readWholeFile(template)
@@ -47,7 +51,9 @@ class FileTests(template: Path) {
   @Test def testRender() = {
     Assume.assumeTrue(result.isSuccess)
     fileTest(".render") { templateBody =>
-      implicit val ctx: EvalContext = EvalContext.createNew(environment.map{case (k, v) => (k, Value.create(v))})
+      implicit val ctx: EvalContext = EvalContext.createNew(environment.map {
+        case (k, v) => (k, Value.create(v))
+      })
       result.get.render match {
         case Success(output) => output
         case Failure(f) => f.getMessage
@@ -59,7 +65,9 @@ class FileTests(template: Path) {
     Assume.assumeTrue(result.isSuccess)
     val subList = 1 :: Nil
     val listOfLists = subList :: Nil
-    implicit val ctx: EvalContext = EvalContext.createNew(environment.map{case (k, v) => (k, Value.create(v))})
+    implicit val ctx: EvalContext = EvalContext.createNew(environment.map {
+      case (k, v) => (k, Value.create(v))
+    })
     val actual = result.get.render
     if (actual.isFailure) return ()
 
@@ -83,7 +91,10 @@ class FileTests(template: Path) {
         case v => v.asInstanceOf[Object]
       }
     }
-    env.map{case (k, v) => (k, convert(v))}.asJava.asInstanceOf[java.util.Map[String, Object]]
+    env
+      .map { case (k, v) => (k, convert(v)) }
+      .asJava
+      .asInstanceOf[java.util.Map[String, Object]]
   }
 
   /** Asserts that the output of f(template_string) matches the expected
