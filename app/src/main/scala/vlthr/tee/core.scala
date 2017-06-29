@@ -85,8 +85,8 @@ final case class TypeError(msg: String) extends Error
 final case class RenderError(msg: String) extends Error
 final case class NameError(msg: String) extends Error
 
-case class LiquidFailure(errors: List[Error]) extends Exception(errors.mkString("\n")) {
-  override def getMessage(): String = errors.toString
+case class LiquidFailure(errors: List[Error]) extends Exception {
+  override def getMessage(): String = errors.mkString("\n")
   override def toString = getMessage
 }
 

@@ -1,7 +1,7 @@
 package vlthr.tee.parser
 
 import scala.io.Source
-import scala.util.Try
+import scala.util.{Success, Failure, Try}
 import org.junit._
 import org.junit.Assert._
 import org.junit.runner.RunWith
@@ -49,7 +49,10 @@ class FileTests(template: Path) {
             "map" -> MapValue(map),
             "listOfLists" -> listOfLists,
             "list" -> subList))
-      result.get.render.toString
+      result.get.render match {
+        case Success(output) => output
+        case Failure(f) => f.getMessage
+      }
     }
   }
 
