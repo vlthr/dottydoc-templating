@@ -21,6 +21,13 @@ import liqp.Template
 class FileTests(template: Path) {
   var templateBody: String = null
   var result: Try[Node] = null
+  val environment = Map("zero" -> 0,
+                        "map" -> Map("id" -> 1, "subMap" -> Map("id" -> 1)),
+                        "content" -> "CONTENT",
+                        "site" -> Map("baseurl" -> "BASEURL"),
+                        "page" -> Map("title" -> "TITLE", "extraCSS" -> List("extraCSS1", "extraCSS2", "extraCSS3"), "extraJS" -> List("extraJS1", "extraJS2", "extraJS3")),
+                        "listOfLists" -> List(List(1)),
+                        "list" -> List(1))
 
   @Before def setup() = {
     templateBody = FileTests.readWholeFile(template)
@@ -40,16 +47,7 @@ class FileTests(template: Path) {
   @Test def testRender() = {
     Assume.assumeTrue(result.isSuccess)
     fileTest(".render") { templateBody =>
-      val subMap: Map[String, Value] = Map("id" -> IntValue(1))
-      val map: Map[String, Value] =
-        Map("id" -> IntValue(1), "subMap" -> MapValue(subMap))
-      val subList = ListValue(IntValue(1) :: Nil)
-      val listOfLists = ListValue(subList :: Nil)
-      implicit val ctx: EvalContext = EvalContext.createNew(
-        Map("zero" -> IntValue(0),
-            "map" -> MapValue(map),
-            "listOfLists" -> listOfLists,
-            "list" -> subList))
+      implicit val ctx: EvalContext = EvalContext.createNew(environment.map{case (k, v) => (k, Value.create(v))})
       result.get.render match {
         case Success(output) => output
         case Failure(f) => f.getMessage
@@ -61,10 +59,6 @@ class FileTests(template: Path) {
     Assume.assumeTrue(result.isSuccess)
     val subList = 1 :: Nil
     val listOfLists = subList :: Nil
-    val environment = Map("zero" -> 0,
-                          "map" -> Map("id" -> 1, "subMap" -> Map("id" -> 1)),
-        "listOfLists" -> listOfLists,
-        "list" -> subList)
     implicit val ctx: EvalContext = EvalContext.createNew(environment.map{case (k, v) => (k, Value.create(v))})
     val actual = result.get.render
     if (actual.isFailure) return ()
