@@ -43,7 +43,7 @@ class ParserTests {
       {{ true }}
       {% endif %}"""
     assertParsed(input) {
-      case BlockNode(IfTag(_, _) :: rest) => true
+      case BlockNode(IfTag(_, _, _, _) :: rest) => true
     }
   }
   @Test def parseFor() = {
@@ -98,6 +98,7 @@ class ParserTests {
       }
     }
   }
+
   @Ignore
   @Test def shouldWorkOnAllDottyDocTags() = {
     val source = Source.fromURL(getClass.getResource("/tags.txt"))
@@ -106,6 +107,7 @@ class ParserTests {
     println(failures)
     assertEquals(0, failures.size)
   }
+
   @Test def parseIndexing() = {
     val input = "{{ a[b][c] }}"
     assertParsed(input) {
@@ -114,18 +116,21 @@ class ParserTests {
         true
     }
   }
+
   @Test def parseDotIndexing() = {
     val input = "{{ a.b.c }}"
     assertParsed(input) {
       case BlockNode(OutputNode(DotExpr(DotExpr(_, _), "c")) :: Nil) => true
     }
   }
+
   @Test def parseFilterApplication() = {
     val input = "{{ 'str' | reverse }}"
     assertParsed(input) {
       case BlockNode(OutputNode(FilterExpr(_, _, Nil)) :: Nil) => true
     }
   }
+
   @Ignore
   @Test def parseMultipleFilterApplication() = {
     val input = "{{ '1,2,3' | split: ',' | reverse }}"

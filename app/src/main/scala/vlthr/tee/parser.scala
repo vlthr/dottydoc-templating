@@ -126,10 +126,13 @@ class LiquidNodeVisitor(template: SourceFile)
                                                  ctx.stop.getStopIndex(),
                                                  template)
     if (ctx.ifTag() != null) {
+      val ev = new LiquidExprVisitor(template)
       val expr =
-        new LiquidExprVisitor(template).visitExpr(ctx.ifTag().ifStart().expr())
+        ev.visitExpr(ctx.ifTag().ifStart().expr())
       val block = visitBlock(ctx.ifTag().block())
-      IfTag(expr, block)
+      val elsifs = if (ctx.ifTag().elsif() != null) ctx.ifTag().elsif().asScala.map(elsif => (ev.visitExpr(elsif.expr()), visitBlock(elsif.block()))).toList else Nil
+      val els = if (ctx.ifTag().els() != null) Some(visitBlock(ctx.ifTag().els().block())) else None
+      IfTag(expr, block, elsifs, els)
     } else if (ctx.forTag() != null) {
       val id = ctx.forTag().forStart().id().getText()
       val expr =

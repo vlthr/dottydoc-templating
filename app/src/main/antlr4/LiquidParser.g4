@@ -15,8 +15,11 @@ tag : ifTag
 assignTag : TAGSTART ASSIGN id EQUALS expr TAGEND;
 
 ifStart : TAGSTART IFSTART expr TAGEND;
-ifTag : ifStart block ifEnd;
+ifTag : ifStart block elsif* els? ifEnd;
 ifEnd : TAGSTART IFEND TAGEND;
+
+elsif: TAGSTART ELSIF expr TAGEND block;
+els: TAGSTART ELSE TAGEND block;
 
 forStart : TAGSTART FORSTART id IN expr TAGEND;
 forTag : forStart block forEnd;
