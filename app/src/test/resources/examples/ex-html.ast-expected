@@ -37,7 +37,7 @@ BlockNode(List(TextNode(<html lang="en">
                 href="), OutputNode(DotExpr(VariableUseExpr(site),baseurl)), TextNode(/), OutputNode(VariableUseExpr(css)), TextNode("
             >
             )))), TextNode(
-        )))), TextNode(
+        ))),List(),None), TextNode(
     </head>
     <body>
 
@@ -51,7 +51,7 @@ BlockNode(List(TextNode(<html lang="en">
             ), ForTag(js,DotExpr(VariableUseExpr(page),extraJS),BlockNode(List(TextNode(
             <script src="), OutputNode(DotExpr(VariableUseExpr(site),baseurl)), TextNode(/), OutputNode(VariableUseExpr(js)), TextNode("></script>
             )))), TextNode(
-        )))), TextNode(
+        ))),List(),None), TextNode(
         <script>
             $(document).ready(function() {
                 $('pre code').each(function(i, block) {

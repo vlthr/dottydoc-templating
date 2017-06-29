@@ -81,16 +81,27 @@ final case class BreakTag()(implicit val sourcePosition: SourcePosition)
 final case class ContinueTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode
 
-final case class IfTag(condition: Expr, block: Node)(
+final case class IfTag(condition: Expr, thenBlock: Node, elsifs: List[(Expr, Node)], elseBlock: Option[Node])(
     implicit val sourcePosition: SourcePosition)
     extends TagNode {
   override def render()(implicit evalContext: EvalContext): Try[String] = {
-    val cond = condition.eval
-    val render = block.render
+    val condErrors = (condition +: elsifs.collect{ case (c, _) => c}).map(_.eval).collect{ case Failure(LiquidFailure(errors)) => errors }.flatten
+    val renderErrors = (elsifs.collect{ case (_, b) => b} ++ elseBlock.toList).map(_.render).collect{ case Failure(LiquidFailure(errors)) => errors }.flatten
+    val allErrors = condErrors ++ renderErrors
+    if (allErrors.size > 0) return Error.fail(allErrors: _*)
 
-    Error.all(condition.eval, block.render) { (cond, render) =>
-      if (cond.truthy) render
-      else ""
+    // TODO: Don't evaluate/render twice
+    val cond = condition.eval
+    val render = thenBlock.render
+
+    val elsifResults = elsifs.map{ case (c, block) => (c.eval, block.render)}
+
+    val elseResult = elseBlock.map(_.render)
+
+    if (cond.get.truthy) render
+    else {
+      for ((c, block) <- elsifResults) if (c.get.truthy) return block
+      elseResult.getOrElse(Success(""))
     }
   }
 }
