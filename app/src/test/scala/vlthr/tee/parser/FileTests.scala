@@ -12,6 +12,7 @@ import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable.Map
+import liqp.Template
 
 /** For every .liquid file in the examples directory, compare the outputs
   * of various stages of template rendering to their expected values.
@@ -56,11 +57,39 @@ class FileTests(template: Path) {
     }
   }
 
+  @Test def testMatchesLiqp(): Unit = {
+    Assume.assumeTrue(result.isSuccess)
+    val subList = 1 :: Nil
+    val listOfLists = subList :: Nil
+    val environment = Map("zero" -> 0,
+                          "map" -> Map("id" -> 1, "subMap" -> Map("id" -> 1)),
+        "listOfLists" -> listOfLists,
+        "list" -> subList)
+    implicit val ctx: EvalContext = EvalContext.createNew(environment.map{case (k, v) => (k, Value.create(v))})
+    val actual = result.get.render
+    if (actual.isFailure) return ()
+
+    val template = Template.parse(templateBody)
+    val expected = template.render(asJava(environment))
+    assertEquals(expected, actual.get)
+  }
+
   @Test def testAST() = {
     Assume.assumeTrue(result.isSuccess)
     fileTest(".ast") { templateBody =>
       result.get.toString
     }
+  }
+
+  def asJava(env: Map[String, Any]): java.util.Map[String, Object] = {
+    def convert(scala: Any): Object = {
+      scala match {
+        case m: Map[String, Any] => asJava(m)
+        case l: List[Any] => l.map(convert).asJava
+        case v => v.asInstanceOf[Object]
+      }
+    }
+    env.map{case (k, v) => (k, convert(v))}.asJava.asInstanceOf[java.util.Map[String, Object]]
   }
 
   /** Asserts that the output of f(template_string) matches the expected
@@ -76,7 +105,6 @@ class FileTests(template: Path) {
     val expected = FileTests.readWholeFile(expectedFile)
     assertEquals(expected, actual)
   }
-
 }
 
 object FileTests {

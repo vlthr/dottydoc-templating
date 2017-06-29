@@ -169,7 +169,6 @@ final case class ForTag(id: String, expr: Expr, block: Node)(
       case ListValue(l) => Success(l)
       case _ => Error.invalidIterable(expr)
     }
-    println(iterable)
     Error.all(iterable) { iterable =>
       val renders = iterable.map { v =>
         implicit val forCtx = EvalContext.createChild(evalContext)
@@ -341,14 +340,14 @@ sealed trait Value extends Renderable with Truthable with Ordered[Value] {
 }
 
 object Value {
-  def create(value: Any) = {
+  def create(value: Any): Value = {
     value match {
       case v: Value => v
       case v: Int => IntValue(v)
       case v: String => StringValue(v)
       case v: Boolean => BooleanValue(v)
-      case v: Map[String, Value] => MapValue(v)
-      case v: List[Value] => ListValue(v)
+      case v: Map[String, Any] => MapValue(v.map{case (key, value) => (key, Value.create(value))})
+      case v: Seq[Any] => ListValue(v.map(value => Value.create(value)).toList)
       case _ => throw new Exception(s"Invalid value: $value")
     }
   }
