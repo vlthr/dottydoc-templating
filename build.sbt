@@ -22,6 +22,7 @@ lazy val templatingSettings = antlr4Settings ++ Seq(
   organization := "vlthr",
   libraryDependencies += "junit" % "junit" % "4.12" % "test",
   libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test",
+  libraryDependencies += "nl.big-o" % "liqp" % "0.7.0" % "test",
   antlr4GenListener in Antlr4 := true,
   antlr4GenVisitor in Antlr4 := true,
   antlr4Dependency in Antlr4 := "org.antlr" % "antlr4" % "4.5",

@@ -1,3 +1,6 @@
 BlockNode(List(OutputNode(GtExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(0)))), TextNode(
 ), OutputNode(GtExpr(LiteralExpr(BooleanValue(true)),LiteralExpr(BooleanValue(false)))), TextNode(
+), OutputNode(GtExpr(LiteralExpr(BooleanValue(false)),LiteralExpr(BooleanValue(true)))), TextNode(
+), OutputNode(GtExpr(LiteralExpr(BooleanValue(false)),LiteralExpr(BooleanValue(false)))), TextNode(
+), OutputNode(GtExpr(LiteralExpr(BooleanValue(true)),LiteralExpr(BooleanValue(true)))), TextNode(
 )))
