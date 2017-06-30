@@ -5,7 +5,25 @@ import scala.util.{Try, Success, Failure}
 case class SourceFile(body: String)
 
 case class SourcePosition(start: Int, end: Int, template: SourceFile) {
-  def report: String = template.body.substring(start, end + 1)
+  def report: String = linesOfContext(1)
+  def linesOfContext(count: Int): String = {
+    def seekNewline(str: String, start: Int, direction: Int, count: Int): Int = {
+      var c = start
+      var remaining = count
+      while (count > 0 && c > 0 && c < (str.size - 1)) {
+        c += direction
+        if (str(c) == '\n' ) {
+          remaining -= 1
+        }
+      }
+      c
+    }
+    val s = seekNewline(template.body, start, -1, count+1)
+    val e = seekNewline(template.body, start, 1, count+1)
+    val highlightStart = start - s
+    val highlightEnd = end - e
+    template.body.substring(s, e)
+  }
 }
 
 trait Renderable {
