@@ -1,3 +1,3 @@
 TypeError(Error: VariableUseExpr(zero) is not indexable
-zero[1]
+{{ zero[1] }}
 )
