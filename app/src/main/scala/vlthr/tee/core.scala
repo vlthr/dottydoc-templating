@@ -42,16 +42,19 @@ abstract trait Expr extends Renderable {
 }
 
 case class EvalContext(mappings: Map[String, Value],
-                       parent: Option[EvalContext]) {
+                       parent: Option[EvalContext],
+                       includeDir: String) {
   def lookup(s: String): Option[Value] =
     mappings.get(s).orElse(parent.flatMap(_.lookup(s)))
+
 }
 
 object EvalContext {
-  def createNew(): EvalContext = EvalContext(Map(), None)
-  def createNew(map: Map[String, Value]): EvalContext = EvalContext(map, None)
+  def createNew(): EvalContext = createNew(Map(), "")
+  def createNew(map: Map[String, Value], includeDir: String): EvalContext =
+    EvalContext(map, None, includeDir)
   def createChild(parent: EvalContext): EvalContext =
-    EvalContext(Map(), Some(parent))
+    EvalContext(Map(), Some(parent), parent.includeDir)
 }
 
 abstract trait Filter {

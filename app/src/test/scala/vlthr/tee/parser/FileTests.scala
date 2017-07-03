@@ -32,6 +32,9 @@ class FileTests(file: SourceFile) {
     "listOfLists" -> List(List(1)),
     "list" -> List(1)
   )
+  implicit val ctx: EvalContext = EvalContext.createNew(environment.map {
+    case (k: String, v: Object) => (k, Value.create(v))
+  }, "./app/src/test/resources/examples/_includes")
 
   @Before def setup() = {
     result = Liquid.parse(file)
@@ -50,9 +53,6 @@ class FileTests(file: SourceFile) {
   @Test def testRender() = {
     Assume.assumeTrue(result.isSuccess)
     fileTest(".render") { templateBody =>
-      implicit val ctx: EvalContext = EvalContext.createNew(environment.map {
-        case (k, v) => (k, Value.create(v))
-      })
       result.get.render match {
         case Success(output) => output
         case Failure(f) => f.getMessage
@@ -62,11 +62,6 @@ class FileTests(file: SourceFile) {
 
   @Test def testMatchesLiqp(): Unit = {
     Assume.assumeTrue(result.isSuccess)
-    val subList = 1 :: Nil
-    val listOfLists = subList :: Nil
-    implicit val ctx: EvalContext = EvalContext.createNew(environment.map {
-      case (k, v) => (k, Value.create(v))
-    })
     val actual = result.get.render
     if (actual.isFailure) return ()
 
@@ -117,6 +112,7 @@ object FileTests {
     Util
       .filesInDir("./app/src/test/resources/examples")
       .filter(_.toString.endsWith(".liquid"))
+      .filter(!_.toString.contains("_include"))
       .map { file =>
         val sourceFile = SourceFile(Util.readWholeFile(file), file.toString)
         List(sourceFile.asInstanceOf[Object]).toArray
