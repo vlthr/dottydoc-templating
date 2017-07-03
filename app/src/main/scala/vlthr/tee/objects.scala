@@ -125,10 +125,8 @@ final case class IncludeTag(filename: Expr)(
     Error
       .all(filename.eval) {
         case StringValue(f) => {
-          val pathAbsolute = Paths.get(f);
-          val pathBase = Paths.get(sourcePosition.template.path);
-          val pathRelative = pathBase.relativize(pathAbsolute);
-          Liquid.parse(pathRelative.toString).flatMap(_.render)
+          val path = Paths.get(evalContext.includeDir, f);
+          Liquid.parse(path.toString).flatMap(_.render)
         }
         case e => Error.invalidInclude(this, e)
       }
