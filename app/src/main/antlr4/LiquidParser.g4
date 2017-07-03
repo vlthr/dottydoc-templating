@@ -10,7 +10,8 @@ node : tag
 
 tag : ifTag
     | forTag
-    | assignTag;
+    | assignTag
+    | includeTag;
 
 assignTag : TAGSTART ASSIGN id EQUALS expr TAGEND;
 
@@ -20,6 +21,8 @@ ifEnd : TAGSTART IFEND TAGEND;
 
 elsif: TAGSTART ELSIF expr TAGEND block;
 els: TAGSTART ELSE TAGEND block;
+
+includeTag : TAGSTART INCLUDE expr TAGEND;
 
 forStart : TAGSTART FORSTART id IN expr TAGEND;
 forTag : forStart block forEnd;

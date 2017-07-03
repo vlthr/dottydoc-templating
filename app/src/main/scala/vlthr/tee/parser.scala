@@ -5,27 +5,28 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
 import scala.collection.mutable.Buffer
 import vlthr.tee.core._
+import vlthr.tee.util.Util
 import scala.util.{Try, Success, Failure}
 
 object Liquid {
   def parseExpr(node: String): Expr = {
     val parser = makeParser(node, lexerMode = Object())
     val tree = parser.expr()
-    val visitor = new LiquidExprVisitor(SourceFile(node))
+    val visitor = new LiquidExprVisitor(SourceFile(node, "./"))
     tree.accept(visitor)
   }
 
   def parseNode(node: String): Node = {
     val parser = makeParser(node)
     val tree = parser.node()
-    val visitor = new LiquidNodeVisitor(SourceFile(node))
+    val visitor = new LiquidNodeVisitor(SourceFile(node, "./"))
     tree.accept(visitor)
   }
 
   def parseTemplate(node: String): Node = {
     val parser = makeParser(node)
     val tree = parser.block()
-    val visitor = new LiquidNodeVisitor(SourceFile(node))
+    val visitor = new LiquidNodeVisitor(SourceFile(node, "./"))
     tree.accept(visitor)
   }
 
@@ -40,8 +41,8 @@ object Liquid {
     tree.toStringTree(parser)
   }
 
-  def parse(node: String): Try[Node] = {
-    val input = new ANTLRInputStream(node)
+  def parse(file: SourceFile): Try[Node] = {
+    val input = new ANTLRInputStream(file.body)
     val lexer = new LiquidLexer(input)
     val tokens = new CommonTokenStream(lexer)
     val parser = new LiquidParser(tokens)
@@ -51,10 +52,13 @@ object Liquid {
     parser.removeErrorListeners();
     parser.addErrorListener(errors);
     val tree = parser.block()
-    val result = tree.accept(new LiquidNodeVisitor(SourceFile(node)))
+    val result = tree.accept(new LiquidNodeVisitor(file))
     if (errors.errors.size != 0) Failure(LiquidFailure(errors.errors.toList))
     else Success(result)
   }
+
+  def parse(path: String): Try[Node] =
+    parse(SourceFile(Util.readWholeFile(path), path))
 
   sealed trait LexerMode
   final case class Default() extends LexerMode
@@ -130,8 +134,20 @@ class LiquidNodeVisitor(template: SourceFile)
       val expr =
         ev.visitExpr(ctx.ifTag().ifStart().expr())
       val block = visitBlock(ctx.ifTag().block())
-      val elsifs = if (ctx.ifTag().elsif() != null) ctx.ifTag().elsif().asScala.map(elsif => (ev.visitExpr(elsif.expr()), visitBlock(elsif.block()))).toList else Nil
-      val els = if (ctx.ifTag().els() != null) Some(visitBlock(ctx.ifTag().els().block())) else None
+      val elsifs =
+        if (ctx.ifTag().elsif() != null)
+          ctx
+            .ifTag()
+            .elsif()
+            .asScala
+            .map(elsif =>
+              (ev.visitExpr(elsif.expr()), visitBlock(elsif.block())))
+            .toList
+        else Nil
+      val els =
+        if (ctx.ifTag().els() != null)
+          Some(visitBlock(ctx.ifTag().els().block()))
+        else None
       IfTag(expr, block, elsifs, els)
     } else if (ctx.forTag() != null) {
       val id = ctx.forTag().forStart().id().getText()
@@ -145,7 +161,10 @@ class LiquidNodeVisitor(template: SourceFile)
       val expr =
         new LiquidExprVisitor(template).visitExpr(ctx.assignTag().expr())
       AssignTag(id, expr)
-
+    } else if (ctx.includeTag() != null) {
+      val expr =
+        new LiquidExprVisitor(template).visitExpr(ctx.includeTag().expr())
+      IncludeTag(expr)
     } else throw new Exception("Unknown node type")
   }
 

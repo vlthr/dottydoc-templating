@@ -8,6 +8,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import vlthr.tee.core._
+import vlthr.tee.util._
 import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets
@@ -18,8 +19,7 @@ import liqp.Template
   * of various stages of template rendering to their expected values.
   */
 @RunWith(classOf[Parameterized])
-class FileTests(template: Path) {
-  var templateBody: String = null
+class FileTests(file: SourceFile) {
   var result: Try[Node] = null
   val environment = Map(
     "zero" -> 0,
@@ -34,8 +34,7 @@ class FileTests(template: Path) {
   )
 
   @Before def setup() = {
-    templateBody = FileTests.readWholeFile(template)
-    result = Liquid.parse(templateBody)
+    result = Liquid.parse(file)
   }
 
   @Test def testParseTree(): Unit = {
@@ -71,7 +70,7 @@ class FileTests(template: Path) {
     val actual = result.get.render
     if (actual.isFailure) return ()
 
-    val template = Template.parse(templateBody)
+    val template = Template.parse(file.body)
     val expected = template.render(asJava(environment))
     assertEquals(expected, actual.get)
   }
@@ -101,13 +100,13 @@ class FileTests(template: Path) {
     * value found in filename.ext-expected. Saves the actual output to filename.ext
     */
   def fileTest(ext: String)(f: Function[String, String]) = {
-    val outFile = FileTests.pairedFileWithExt(template, ext)
+    val outFile = Util.pairedFileWithExt(file.path, ext)
     val expectedFile =
-      FileTests.pairedFileWithExt(template, ext + "-expected")
-    val actual = f(templateBody)
-    FileTests.writeFile(outFile, actual)
+      Util.pairedFileWithExt(file.path, ext + "-expected")
+    val actual = f(file.body)
+    Util.writeFile(outFile, actual)
     Assume.assumeTrue(Files.exists(expectedFile))
-    val expected = FileTests.readWholeFile(expectedFile)
+    val expected = Util.readWholeFile(expectedFile)
     assertEquals(expected, actual)
   }
 }
@@ -115,25 +114,14 @@ class FileTests(template: Path) {
 object FileTests {
   @Parameters(name = "{0}")
   def data(): java.util.Collection[Array[Object]] = {
-    filesInDir("./app/src/test/resources/examples")
+    Util
+      .filesInDir("./app/src/test/resources/examples")
       .filter(_.toString.endsWith(".liquid"))
       .map { file =>
-        List(file.asInstanceOf[Object]).toArray
+        val sourceFile = SourceFile(Util.readWholeFile(file), file.toString)
+        List(sourceFile.asInstanceOf[Object]).toArray
       }
       .toList
       .asJava
   }
-
-  def filesInDir(dir: String): Iterator[Path] = {
-    val path = FileSystems.getDefault.getPath(dir)
-    Files.walk(path).iterator().asScala.filter(Files.isRegularFile(_))
-  }
-  def pairedFileWithExt(f: Path, ext: String): Path = {
-    val basename = f.toString.replaceAll("\\.liquid", "")
-    Paths.get(basename + ext)
-  }
-  def readWholeFile(path: Path): String =
-    Source.fromFile(path.toString).mkString
-  def writeFile(path: Path, contents: String) =
-    Files.write(path, contents.getBytes(StandardCharsets.UTF_8))
 }

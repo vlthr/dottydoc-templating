@@ -11,6 +11,7 @@ FILTER     : '|';
 DOTINDEX   : '.';
 STARTINDEX : '[';
 ENDINDEX   : ']';
+INCLUDE    : 'include';
 ASSIGN     : 'assign';
 AND        : 'and';
 OR         : 'or';

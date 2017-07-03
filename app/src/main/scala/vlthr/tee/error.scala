@@ -62,6 +62,13 @@ ${expr.sourcePosition.report}
     fail(TypeError(msg))
   }
 
+  def invalidInclude(include: IncludeTag, filename: Value) = {
+    val msg = s"""Error: include tag argument must be a filename, not $filename
+${include.sourcePosition.report}
+"""
+    fail(TypeError(msg))
+  }
+
   def all[A, B](a: Try[A])(onSuccess: Function[A, B]): Try[B] =
     all(Success(null), a)((_, r) => onSuccess(r))
 
