@@ -2,7 +2,7 @@ package vlthr.tee.core
 import scala.collection.mutable.Map
 import scala.util.{Try, Success, Failure}
 
-case class SourceFile(body: String)
+case class SourceFile(body: String, path: String)
 
 case class SourcePosition(start: Int, end: Int, template: SourceFile) {
   def report: String = linesOfContext(1)
@@ -12,14 +12,14 @@ case class SourcePosition(start: Int, end: Int, template: SourceFile) {
       var remaining = count
       while (count > 0 && c > 0 && c < (str.size - 1)) {
         c += direction
-        if (str(c) == '\n' ) {
+        if (str(c) == '\n') {
           remaining -= 1
         }
       }
       c
     }
-    val s = seekNewline(template.body, start, -1, count+1)
-    val e = seekNewline(template.body, start, 1, count+1)
+    val s = seekNewline(template.body, start, -1, count + 1)
+    val e = seekNewline(template.body, start, 1, count + 1)
     val highlightStart = start - s
     val highlightEnd = end - e
     template.body.substring(s, e)

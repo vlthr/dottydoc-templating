@@ -1,6 +1,8 @@
 package vlthr.tee.core
 import scala.collection.mutable.Map
 import scala.util.{Try, Success, Failure}
+import vlthr.tee.parser.Liquid
+import java.nio.file.Paths
 
 final case class BlockNode(node: List[Node])(
     implicit val sourcePosition: SourcePosition)
@@ -81,12 +83,22 @@ final case class BreakTag()(implicit val sourcePosition: SourcePosition)
 final case class ContinueTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode
 
-final case class IfTag(condition: Expr, thenBlock: Node, elsifs: List[(Expr, Node)], elseBlock: Option[Node])(
-    implicit val sourcePosition: SourcePosition)
+final case class IfTag(
+    condition: Expr,
+    thenBlock: Node,
+    elsifs: List[(Expr, Node)],
+    elseBlock: Option[Node])(implicit val sourcePosition: SourcePosition)
     extends TagNode {
   override def render()(implicit evalContext: EvalContext): Try[String] = {
-    val condErrors = (condition +: elsifs.collect{ case (c, _) => c}).map(_.eval).collect{ case Failure(LiquidFailure(errors)) => errors }.flatten
-    val renderErrors = (elsifs.collect{ case (_, b) => b} ++ elseBlock.toList).map(_.render).collect{ case Failure(LiquidFailure(errors)) => errors }.flatten
+    val condErrors = (condition +: elsifs.collect { case (c, _) => c })
+      .map(_.eval)
+      .collect { case Failure(LiquidFailure(errors)) => errors }
+      .flatten
+    val renderErrors =
+      (elsifs.collect { case (_, b) => b } ++ elseBlock.toList)
+        .map(_.render)
+        .collect { case Failure(LiquidFailure(errors)) => errors }
+        .flatten
     val allErrors = condErrors ++ renderErrors
     if (allErrors.size > 0) return Error.fail(allErrors: _*)
 
@@ -94,7 +106,7 @@ final case class IfTag(condition: Expr, thenBlock: Node, elsifs: List[(Expr, Nod
     val cond = condition.eval
     val render = thenBlock.render
 
-    val elsifResults = elsifs.map{ case (c, block) => (c.eval, block.render)}
+    val elsifResults = elsifs.map { case (c, block) => (c.eval, block.render) }
 
     val elseResult = elseBlock.map(_.render)
 
@@ -106,8 +118,23 @@ final case class IfTag(condition: Expr, thenBlock: Node, elsifs: List[(Expr, Nod
   }
 }
 
-final case class IncludeTag()(implicit val sourcePosition: SourcePosition)
-    extends TagNode
+final case class IncludeTag(filename: Expr)(
+    implicit val sourcePosition: SourcePosition)
+    extends TagNode {
+  override def render()(implicit evalContext: EvalContext): Try[String] = {
+    Error
+      .all(filename.eval) {
+        case StringValue(f) => {
+          val pathAbsolute = Paths.get(f);
+          val pathBase = Paths.get(sourcePosition.template.path);
+          val pathRelative = pathBase.relativize(pathAbsolute);
+          Liquid.parse(pathRelative.toString).flatMap(_.render)
+        }
+        case e => Error.invalidInclude(this, e)
+      }
+      .flatten
+  }
+}
 
 final case class RawTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode
