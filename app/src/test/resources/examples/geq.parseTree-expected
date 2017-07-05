@@ -1,1 +1,1 @@
-(block (node (output {{ (expr (expr (term 1)) >= (expr (term 0))) }})) (node \n) (node (output {{ (expr (expr (term 1)) >= (expr (term 1))) }})) (node \n) (node (output {{ (expr (expr (term 0)) >= (expr (term 1))) }})) (node \n))
+(block (node (output {{ (output_expr (expr (expr (term 1)) >= (expr (term 0)))) }})) (node \n) (node (output {{ (output_expr (expr (expr (term 1)) >= (expr (term 1)))) }})) (node \n) (node (output {{ (output_expr (expr (expr (term 0)) >= (expr (term 1)))) }})) (node \n))

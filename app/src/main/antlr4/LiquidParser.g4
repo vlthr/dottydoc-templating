@@ -14,6 +14,7 @@ tag : ifTag
     | includeTag
     | rawTag;
 
+
 rawTag : TAGSTART RAWSTART TAGEND non_tag_start TAGSTART RAWEND TAGEND;
 
 non_tag_start : ~TAGSTART*;
@@ -29,14 +30,16 @@ els: TAGSTART ELSE TAGEND block;
 
 includeTag : TAGSTART INCLUDE expr TAGEND;
 
-forStart : TAGSTART FORSTART id IN expr TAGEND;
+forStart : TAGSTART FORSTART id IN output_expr TAGEND;
 forTag : forStart block forEnd;
 forEnd : TAGSTART FOREND TAGEND;
 
-output : OUTPUTSTART expr OUTPUTEND;
+output : OUTPUTSTART output_expr OUTPUTEND;
 
-expr : expr FILTER id args?
-| expr DOTINDEX id
+output_expr : output_expr FILTER id args?
+            | expr;
+
+expr : expr DOTINDEX id
 | expr STARTINDEX expr ENDINDEX
 | expr EQ expr
 | expr NEQ expr

@@ -116,13 +116,29 @@ class LiquidNodeVisitor(template: SourceFile)
   }
 
   override def visitOutput(ctx: LiquidParser.OutputContext): Node = {
-    val expVisitor = new LiquidExprVisitor(template)
-    val t = ctx.expr()
-    val expr = expVisitor.visitExpr(t)
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
                                                  ctx.stop.getStopIndex(),
                                                  template)
-    OutputNode(expr)
+    val output_expr = ctx.output_expr()
+    OutputNode(visitOutputExpr(output_expr))
+  }
+
+  def visitOutputExpr(ctx: LiquidParser.Output_exprContext): Expr = {
+    implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
+                                                 ctx.stop.getStopIndex(),
+                                                 template)
+    val expVisitor = new LiquidExprVisitor(template)
+    if (ctx.FILTER() != null) {
+      val args =
+        if (ctx.args() != null)
+          new LiquidArgsVisitor(template).visitArgs(ctx.args())
+        else Nil
+      FilterExpr(visitOutputExpr(ctx.output_expr()),
+                 Filter.byName(ctx.id().getText()),
+                 args)
+    } else {
+      expVisitor.visitExpr(ctx.expr())
+    }
   }
 
   override def visitTag(ctx: LiquidParser.TagContext): Node = {
@@ -151,9 +167,7 @@ class LiquidNodeVisitor(template: SourceFile)
       IfTag(expr, block, elsifs, els)
     } else if (ctx.forTag() != null) {
       val id = ctx.forTag().forStart().id().getText()
-      val expr =
-        new LiquidExprVisitor(template)
-          .visitExpr(ctx.forTag().forStart().expr())
+      val expr = visitOutputExpr(ctx.forTag().forStart().output_expr())
       val block = visitBlock(ctx.forTag().block())
       ForTag(id, expr, block)
     } else if (ctx.assignTag() != null) {
@@ -202,15 +216,7 @@ class LiquidExprVisitor(template: SourceFile)
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
                                                  ctx.stop.getStopIndex(),
                                                  template)
-    if (ctx.FILTER() != null) {
-      val args =
-        if (ctx.args() != null)
-          new LiquidArgsVisitor(template).visitArgs(ctx.args())
-        else Nil
-      FilterExpr(visitExpr(ctx.expr(0)),
-                 Filter.byName(ctx.id().getText()),
-                 args)
-    } else if (ctx.DOTINDEX() != null) {
+    if (ctx.DOTINDEX() != null) {
       DotExpr(visitExpr(ctx.expr(0)), ctx.id().getText())
     } else if (ctx.STARTINDEX() != null) {
       IndexExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
