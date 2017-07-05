@@ -14,6 +14,7 @@ import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable.Map
 import liqp.Template
+import liqp.tags.Include
 
 /** For every .liquid file in the examples directory, compare the outputs
   * of various stages of template rendering to their expected values.
@@ -66,7 +67,8 @@ class FileTests(file: SourceFile) {
     if (actual.isFailure) return ()
 
     val template = Template.parse(file.body)
-    val expected = template.render(asJava(environment))
+    val expected = template.render(asJava(environment ++ Map(
+      Include.INCLUDES_DIRECTORY_KEY -> "./app/src/test/resources/example/_includes")))
     assertEquals(expected, actual.get)
   }
 

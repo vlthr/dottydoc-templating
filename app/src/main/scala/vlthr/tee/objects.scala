@@ -134,8 +134,13 @@ final case class IncludeTag(filename: Expr)(
   }
 }
 
-final case class RawTag()(implicit val sourcePosition: SourcePosition)
-    extends TagNode
+final case class RawTag(text: String)(
+    implicit val sourcePosition: SourcePosition)
+    extends TagNode {
+  override def render()(implicit evalContext: EvalContext): Try[String] = {
+    Success(text)
+  }
+}
 
 final case class UnlessTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode

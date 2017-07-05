@@ -165,6 +165,8 @@ class LiquidNodeVisitor(template: SourceFile)
       val expr =
         new LiquidExprVisitor(template).visitExpr(ctx.includeTag().expr())
       IncludeTag(expr)
+    } else if (ctx.rawTag() != null) {
+      RawTag(ctx.rawTag().non_tag_start().getText())
     } else throw new Exception("Unknown node type")
   }
 

@@ -11,7 +11,12 @@ node : tag
 tag : ifTag
     | forTag
     | assignTag
-    | includeTag;
+    | includeTag
+    | rawTag;
+
+rawTag : TAGSTART RAWSTART TAGEND non_tag_start TAGSTART RAWEND TAGEND;
+
+non_tag_start : ~TAGSTART*;
 
 assignTag : TAGSTART ASSIGN id EQUALS expr TAGEND;
 
