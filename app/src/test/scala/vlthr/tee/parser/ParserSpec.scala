@@ -47,7 +47,7 @@ class ParserTests {
     }
   }
   @Test def parseFor() = {
-    val input = """{% for a in "1,2,3,4"; | split: ","; %}
+    val input = """{% for a in "1,2,3,4" | split: "," %}
       {{ true }}
       {{ true }}
       {% endfor %}"""
@@ -131,7 +131,6 @@ class ParserTests {
     }
   }
 
-  @Ignore
   @Test def parseMultipleFilterApplication() = {
     val input = "{{ '1,2,3' | split: ',' | reverse }}"
     assertParsed(input) {

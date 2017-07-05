@@ -1,1 +1,1 @@
-(block (node (tag (forTag (forStart {% for (id i) in (expr (term (id map))) %}) (block (node \n    ) (node (output {{ (expr (term (id i))) }})) (node \n)) (forEnd {% endfor %})))) (node \n))
+(block (node (tag (forTag (forStart {% for (id i) in (output_expr (expr (term (id map)))) %}) (block (node \n    ) (node (output {{ (output_expr (expr (term (id i)))) }})) (node \n)) (forEnd {% endfor %})))) (node \n))
