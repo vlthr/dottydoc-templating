@@ -7,65 +7,115 @@
 {% docstring "scala.collection.Seq$" %}
 {% docstring "scala.collection.Seq" %}
 {% docstring "scala.collection.immutable.Seq" %}
-{% else %}
+{% if false %}
 {% elsif forloop.index > 6 and forloop.length > 7 %}
 {% elsif member.isProtected %}
 {% elsif member.kind != "package" %}
 {% elsif member.kind == "package" %}
-{% endfor %}
+{% else %}
 {% endif %}
-{% endraw %}
 {% for annot in entity.annotations %}
+{% endfor %}
 {% for annot in member.annotations %}
+{% endfor %}
 {% for constructor in entity.constructors %}
+{% endfor %}
 {% for css in page.extraCSS %}
+{% endfor %}
 {% for item in titles %}
+{% endfor %}
 {% for js in page.extraJS %}
+{% endfor %}
 {% for member in entity.members %}
+{% endfor %}
 {% for member in pkg.children %}
+{% endfor %}
 {% for namedRef in plist.list %}
+{% endfor %}
 {% for param in entity.typeParams %}
+{% endfor %}
 {% for pkg in docs %}
+{% endfor %}
 {% for plist in constructor %}
+{% endfor %}
 {% for plist in member.paramLists %}
+{% endfor %}
 {% for post in site.posts %}
+{% endfor %}
 {% for super in entity.superTypes %}
+{% endfor %}
 {% for title in sidebar.titles %}
+{% endfor %}
 {% for tparam in member.typeParams %}
+{% endfor %}
 {% if docs.size > 0 %}
+{% endif %}
 {% if entity.comment.body %}
+{% endif %}
 {% if entity.constructors == null or entity.constructors.size == 0 %}
+{% endif %}
 {% if entity.hasVisibleMembers == false %}
+{% endif %}
 {% if entity.modifiers %}
+{% endif %}
 {% if entity.superTypes.size > 0 %}
+{% endif %}
 {% if entity.typeParams.size > 0 %}
+{% endif %}
 {% if forloop.first %}
+{% endif %}
 {% if forloop.index == 6 and forloop.length > 7 %}
+{% endif %}
 {% if forloop.last != true %}
+{% endif %}
 {% if forloop.last %}
+{% endif %}
 {% if forloop.last and forloop.index > 6 %}
+{% endif %}
 {% if item.subsection %}
+{% endif %}
 {% if member.alias != null %}
+{% endif %}
 {% if member.comment.body %}
+{% endif %}
 {% if member.hasCompanion %}
+{% endif %}
 {% if member.isImplicitlyAddedFrom != null %}
+{% endif %}
 {% if member.isPrivate %}
+{% endif %}
 {% if member.kind == "class" or member.kind == "case class" or member.kind == "object" or member.kind == "trait" %}
+{% endif %}
 {% if member.kind == "def" and member.paramLists.size > 0 %}
+{% endif %}
 {% if member.kind == "object" and member.hasCompanion %}
+{% endif %}
 {% if member.kind == "type" %}
+{% endif %}
 {% if member.returnValue %}
+{% endif %}
 {% if namedRef.isByName %}
+{% endif %}
 {% if page.author %}
+{% endif %}
 {% if page.authorImg %}
+{% endif %}
 {% if page.authorImg == null %}
+{% endif %}
 {% if page.extraCSS %}
+{% endif %}
 {% if page.extraJS %}
+{% endif %}
 {% if page.subTitle %}
+{% endif %}
 {% if plist.isImplicit %}
+{% endif %}
 {% if site.projectUrl %}
+{% endif %}
 {% if site.projectUrl contains "github" %}
+{% endif %}
 {% if titles %}
+{% endif %}
 {% include "scala-logo.svg" %}
 {% include "sidebar" %}
 {% include "sidebar.html" %}
@@ -79,6 +129,7 @@
 {% include logo-page.html %}
 {% item.url %}
 {% raw %}
+{% endraw %}
 {% renderLink super %}
 {% renderRef member.alias %}
 {% renderRef member.returnValue %}
