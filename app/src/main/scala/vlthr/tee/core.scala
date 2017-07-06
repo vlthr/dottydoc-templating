@@ -61,10 +61,10 @@ object EvalContext {
 abstract trait Filter {
   def name: String
   def apply(input: Value, args: List[Value])(
-      implicit evalContext: EvalContext): Try[Value]
+      implicit evalContext: EvalContext, parent: FilterExpr): Try[Value]
   def isDefinedForInput(v: Value): Boolean
   def isDefinedForArgs(v: List[Value]): Boolean
-  def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
+  def typeCheck(input: Value, args: List[Value])(implicit parent: FilterExpr): Try[Unit] = {
     val inputErrors =
       if (!isDefinedForInput(input))
         List(TypeError(s"Filter $name is not defined for input $input."))
