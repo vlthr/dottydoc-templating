@@ -11,7 +11,7 @@ object Filter {
 case class NoFilter() extends Filter {
   def name = "NoFilter"
   def apply(input: Value, args: List[Value])(
-      implicit evalContext: EvalContext) = Success(input)
+      implicit evalContext: EvalContext, parent: FilterExpr) = Success(input)
   def isDefinedForInput(v: Value): Boolean = true
   def isDefinedForArgs(v: List[Value]): Boolean = true
 }
@@ -27,7 +27,7 @@ case class Split() extends Filter {
     case _ => false
   }
   def apply(input: Value, args: List[Value])(
-      implicit evalContext: EvalContext) = (input, args) match {
+      implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
     case (StringValue(input), StringValue(pattern) :: Nil) =>
       Try(Value.create(input.split(pattern).toList))
     case _ =>
@@ -48,7 +48,7 @@ case class Size() extends Filter {
     case _ => false
   }
   def apply(input: Value, args: List[Value])(
-      implicit evalContext: EvalContext) = (input, args) match {
+      implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
     case (ListValue(l), Nil) => Try(IntValue(l.size))
     case _ =>
       Error.fail(
