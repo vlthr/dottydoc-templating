@@ -67,11 +67,11 @@ abstract trait Filter {
   def typeCheck(input: Value, args: List[Value])(implicit parent: FilterExpr): Try[Unit] = {
     val inputErrors =
       if (!isDefinedForInput(input))
-        List(TypeError(s"Filter $name is not defined for input $input."))
+        List(InvalidFilterInput(parent, this, input))
       else Nil
     val argsErrors =
       if (!isDefinedForArgs(args))
-        List(TypeError(s"Filter $name is not defined for parameter(s) $args."))
+        List(InvalidFilterArgs(parent, this, args))
       else Nil
     val errors = inputErrors ++ argsErrors
     if (errors.size > 0) Error.fail(errors: _*)

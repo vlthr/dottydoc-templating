@@ -2,6 +2,7 @@ package vlthr.tee.core
 import scala.collection.mutable.Map
 import scala.util.{Try, Success, Failure}
 import vlthr.tee.parser.Liquid
+import vlthr.tee.core.Error._
 import java.nio.file.Paths
 
 final case class BlockNode(node: List[Node])(
@@ -62,7 +63,7 @@ final case class ForTag(id: String, expr: Expr, block: Node)(
   override def render()(implicit evalContext: EvalContext): Try[String] = {
     val iterable: Try[List[_]] = expr.eval.flatMap {
       case ListValue(l) => Success(l)
-      case _ => Error.invalidIterable(expr)
+      case _ => fail(InvalidIterable(expr))
     }
     Error
       .all(iterable) { iterable =>
@@ -128,7 +129,7 @@ final case class IncludeTag(filename: Expr)(
           val path = Paths.get(evalContext.includeDir, f);
           Liquid.parse(path.toString).flatMap(_.render)
         }
-        case e => Error.invalidInclude(this, e)
+        case e => fail(InvalidInclude(this, e))
       }
       .flatten
   }

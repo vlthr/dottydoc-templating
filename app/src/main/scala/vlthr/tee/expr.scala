@@ -1,13 +1,14 @@
 package vlthr.tee.core
 import scala.collection.mutable.Map
 import scala.util.{Try, Success, Failure}
+import vlthr.tee.core.Error._
 
 abstract trait BooleanExpr extends Expr {
   override def eval()(implicit evalContext: EvalContext): Try[Value] =
     Error
       .all(left.eval, right.eval) { (l, r) =>
         Try(BooleanValue(op(l, r))).recoverWith(_ =>
-          Error.incomparableValues(this, l, r))
+          fail(IncomparableValues(this, l, r)))
       }
       .flatten
   def left: Expr
@@ -76,7 +77,7 @@ final case class VariableUseExpr(name: String)(
   override def eval()(implicit evalContext: EvalContext) = {
     evalContext.lookup(name) match {
       case Some(value) => Success(value)
-      case None => Error.undefinedVariable(this)
+      case None => fail(UndefinedVariable(this))
     }
   }
 }
@@ -104,11 +105,11 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
   override def eval()(implicit evalContext: EvalContext) = {
     val i: Try[List[Value]] = indexable.eval.flatMap {
       case ListValue(s) => Success(s)
-      case x => Error.invalidIndexable(this, indexable)
+      case x => fail(InvalidIndexable(this, indexable))
     }
     val k: Try[Int] = key.eval.flatMap {
       case IntValue(i) => Success(i)
-      case x => Error.invalidIndex(this, key)
+      case x => fail(InvalidIndex(this, key))
     }
     Error.all(i, k) { (i, k) =>
       i(k)
@@ -123,13 +124,13 @@ final case class DotExpr(indexable: Expr, key: String)(
   override def eval()(implicit evalContext: EvalContext) = {
     val source: Try[Map[String, Value]] = indexable.eval.flatMap {
       case MapValue(m) => Success(m)
-      case x => Error.invalidMap(this, indexable)
+      case x => fail(InvalidMap(this, indexable))
     }
     Error
       .all(source) { source =>
         source.get(key) match {
           case Some(s) => Success(s)
-          case None => Error.undefinedField(this, indexable, key)
+          case None => fail(UndefinedField(this, indexable, key))
         }
       }
       .flatten
