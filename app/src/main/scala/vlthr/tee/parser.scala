@@ -5,6 +5,7 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
 import scala.collection.mutable.Buffer
 import vlthr.tee.core._
+import vlthr.tee.core.Error._
 import vlthr.tee.filters._
 import vlthr.tee.util.Util
 import scala.util.{Try, Success, Failure}
@@ -48,7 +49,7 @@ object Liquid {
     val tokens = new CommonTokenStream(lexer)
     val parser = new LiquidParser(tokens)
     lexer.removeErrorListeners();
-    val errors = new GatherErrors()
+    val errors = new GatherErrors(file)
     lexer.addErrorListener(errors);
     parser.removeErrorListeners();
     parser.addErrorListener(errors);
@@ -81,7 +82,7 @@ object Liquid {
   }
 }
 
-class GatherErrors extends BaseErrorListener {
+class GatherErrors(template: SourceFile) extends BaseErrorListener {
   val errors = Buffer[Error]()
 
   override def syntaxError(recognizer: Recognizer[_, _],
@@ -90,6 +91,8 @@ class GatherErrors extends BaseErrorListener {
                            charPositionInLine: Int,
                            msg: String,
                            e: RecognitionException) = {
+    // TODO: Get begin/end from line/char
+    implicit val sourcePosition: SourcePosition = SourcePosition(0, 0, template)
     errors.append(ParseError(msg))
   }
 }

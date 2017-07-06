@@ -2,6 +2,7 @@ package vlthr.tee.filters
 import scala.util.{Try, Success, Failure}
 import vlthr.tee.parser.Liquid
 import vlthr.tee.core._
+import vlthr.tee.core.Error._
 
 object Filter {
   def byName(s: String): Filter = registry.get(s).getOrElse(NoFilter())
@@ -31,9 +32,7 @@ case class Split() extends Filter {
     case (StringValue(input), StringValue(pattern) :: Nil) =>
       Try(Value.create(input.split(pattern).toList))
     case _ =>
-      Error.fail(
-        TypeError(
-          s"Filter $name is not defined for input $input and arguments $args"))
+      fail(FilterApplicationError(parent, this, input, args))
   }
 }
 
@@ -51,8 +50,6 @@ case class Size() extends Filter {
       implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
     case (ListValue(l), Nil) => Try(IntValue(l.size))
     case _ =>
-      Error.fail(
-        TypeError(
-          s"Filter $name is not defined for input $input and arguments $args"))
+      fail(FilterApplicationError(parent, this, input, args))
   }
 }
