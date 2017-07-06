@@ -1,3 +1,4 @@
-TypeError(Error: VariableUseExpr(zero) is not indexable
-{{ zero[1] }}
-)
+Type Error: ./app/src/test/resources/examples/err_invalid_indexable.liquid
+Expression `zero` of type `Integer` can not be indexed.
+
+    {{ zero[1] }}

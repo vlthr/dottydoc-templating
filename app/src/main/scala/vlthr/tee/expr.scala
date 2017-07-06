@@ -105,11 +105,11 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
   override def eval()(implicit evalContext: EvalContext) = {
     val i: Try[List[Value]] = indexable.eval.flatMap {
       case ListValue(s) => Success(s)
-      case x => fail(InvalidIndexable(this, indexable))
+      case x => fail(InvalidIndexable(this, indexable, x))
     }
     val k: Try[Int] = key.eval.flatMap {
       case IntValue(i) => Success(i)
-      case x => fail(InvalidIndex(this, key))
+      case x => fail(InvalidIndex(this, key, x))
     }
     Error.all(i, k) { (i, k) =>
       i(k)
@@ -124,7 +124,7 @@ final case class DotExpr(indexable: Expr, key: String)(
   override def eval()(implicit evalContext: EvalContext) = {
     val source: Try[Map[String, Value]] = indexable.eval.flatMap {
       case MapValue(m) => Success(m)
-      case x => fail(InvalidMap(this, indexable))
+      case x => fail(InvalidMap(this, indexable, x))
     }
     Error
       .all(source) { source =>

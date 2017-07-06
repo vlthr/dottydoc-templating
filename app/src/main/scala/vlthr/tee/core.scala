@@ -6,6 +6,7 @@ import scala.util.{Try, Success, Failure}
 case class SourceFile(body: String, path: String)
 
 case class SourcePosition(start: Int, end: Int, template: SourceFile) {
+  def display: String = template.body.substring(start, end+1)
   def report: String = linesOfContext(1)
   def linesOfContext(count: Int): String = {
     def seekNewline(str: String, start: Int, direction: Int, count: Int): Int = {
@@ -88,6 +89,10 @@ trait Truthy extends Truthable {
 }
 
 sealed trait Value extends Renderable with Truthable with Ordered[Value] {
+  def display: String
+
+  def typeName: String
+
   def compare(that: Value): Int = {
     (this, that) match {
       case (IntValue(l), IntValue(r)) => l compare r
@@ -103,16 +108,22 @@ sealed trait Value extends Renderable with Truthable with Ordered[Value] {
 sealed trait IndexedValue extends Value
 
 final case class StringValue(v: String) extends Value with Truthy {
+  def display: String = s""""$v""""
+  def typeName: String = "String"
   def render()(implicit evalContext: EvalContext): Try[String] = Success(v)
 }
 
 final case class BooleanValue(v: Boolean) extends Value {
+  def display: String = s"""$v"""
+  def typeName: String = "Boolean"
   def render()(implicit evalContext: EvalContext): Try[String] =
     Success(v.toString)
   def truthy = v
 }
 
 final case class IntValue(v: Int) extends Value with Truthy {
+  def display: String = s"""$v"""
+  def typeName: String = "Integer"
   def render()(implicit evalContext: EvalContext): Try[String] =
     Success(v.toString)
 }
@@ -120,10 +131,14 @@ final case class IntValue(v: Int) extends Value with Truthy {
 final case class MapValue(v: Map[String, Value])
     extends IndexedValue
     with Truthy {
+  def display: String = ???
+  def typeName: String = "Map"
   def render()(implicit evalContext: EvalContext): Try[String] = ???
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
+  def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
+  def typeName: String = "Array"
   def render()(implicit evalContext: EvalContext): Try[String] = ???
 }
 
