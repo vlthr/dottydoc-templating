@@ -1,1 +1,4 @@
-TypeError(Filter split is not defined for input IntValue(1).)
+Type Error: ./app/src/test/resources/examples/err_invalid_filter_input.liquid
+Filter `split` is not defined for input type Integer.
+
+    {{ 1 | split: "," | size }}

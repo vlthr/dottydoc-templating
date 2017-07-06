@@ -1,3 +1,4 @@
-TypeError(Error: invalid index
-{{ list[list] }}
-)
+Type Error: ./app/src/test/resources/examples/err_invalid_index.liquid
+Invalid index type: Array
+
+    {{ list[list] }}

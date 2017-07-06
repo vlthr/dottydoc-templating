@@ -3,11 +3,10 @@ import scala.util.{Try, Success, Failure}
 
 trait Error(sourcePosition: SourcePosition) {
   def getMessage: String = {
-    s"""
-   |$errorType: ${sourcePosition.template.path}
+    s"""$errorType: ${sourcePosition.template.path}
    |$description
-   |${sourcePosition.report}
-   """.stripMargin
+   |
+   |    ${sourcePosition.report}""".stripMargin
   }
   def errorType: String
   def description: String
@@ -30,35 +29,35 @@ case class ParseError(override val description: String)(implicit sourcePosition:
 case class InvalidIterable(expr: Expr) extends TypeError(expr.sourcePosition) {
   def description = s"Expected an iterable"
 }
-case class InvalidMap(expr: DotExpr, map: Expr) extends TypeError(map.sourcePosition) {
-  def description = s"Type ${map} can not be indexed as a map."
+case class InvalidMap(expr: DotExpr, map: Expr, value: Value) extends TypeError(map.sourcePosition) {
+  def description = s"Expression `${map.sourcePosition.display}` of type ${value.typeName} can not be indexed as a map."
 }
-case class UndefinedVariable(expr: Expr) extends RenderError(expr.sourcePosition) {
-  def description = s"Undefined variable reference"
+case class UndefinedVariable(expr: VariableUseExpr) extends RenderError(expr.sourcePosition) {
+  def description = s"Undefined variable reference `${expr.sourcePosition.display}`"
 }
 case class UndefinedField(expr: DotExpr, map: Expr, field: String) extends RenderError(expr.sourcePosition) {
-  def description = s"Map $expr contains no field `$field`"
+  def description = s"Map `${map.sourcePosition.display}` contains no field `$field`"
 }
-case class InvalidIndex(expr: IndexExpr, index: Expr) extends TypeError(index.sourcePosition) {
-  def description = s"Invalid index type: $index"
+case class InvalidIndex(expr: IndexExpr, index: Expr, value: Value) extends TypeError(index.sourcePosition) {
+  def description = s"Invalid index type: ${value.typeName}"
 }
-case class InvalidIndexable(expr: IndexExpr, indexable: Expr) extends TypeError(expr.sourcePosition) {
-  def description = s"$indexable is not an indexable"
+case class InvalidIndexable(expr: IndexExpr, indexable: Expr, value: Value) extends TypeError(expr.sourcePosition) {
+  def description = s"Expression `${indexable.sourcePosition.display}` of type `${value.typeName}` can not be indexed."
 }
 case class IncomparableValues(expr: Expr, left: Value, right: Value) extends TypeError(expr.sourcePosition) {
-  def description = s"Incomparable values $left and $right"
+  def description = s"Incomparable values ${left.typeName} and ${right.typeName}"
 }
 case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.sourcePosition) {
-  def description = s"Include tag argument must be a filename, not $filename"
+  def description = s"Include tag argument must be a filename, not ${filename.typeName}"
 }
 case class InvalidFilterInput(obj: FilterExpr, filter: Filter, input: Value) extends TypeError(obj.sourcePosition) {
-  def description = s"Filter ${filter.name} is not defined for input $input."
+  def description = s"Filter `${filter.name}` is not defined for input type ${input.typeName}."
 }
 case class InvalidFilterArgs(obj: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(obj.sourcePosition) {
-  def description = s"Filter ${filter.name} is not defined for arguments $args."
+  def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.typeName).mkString(", ")})."
 }
 case class FilterApplicationError(obj: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(obj.sourcePosition) {
-  def description = s"Filter ${filter.name} is not defined for input $input and arguments $args."
+  def description = s"Filter `${filter.name}` is not defined for input type ${input.typeName} and arguments (${args.map(_.typeName).mkString(", ")})."
 }
 case class LiquidFailure(errors: List[Error]) extends Exception {
   override def getMessage(): String = errors.mkString("\n")

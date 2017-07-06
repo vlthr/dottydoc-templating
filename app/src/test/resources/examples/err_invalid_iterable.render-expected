@@ -1,5 +1,6 @@
-TypeError(Type Error: Invalid iterable
-{% for i in map %}
+Type Error: ./app/src/test/resources/examples/err_invalid_iterable.liquid
+Expected an iterable
+
+    {% for i in map %}
     {{ i }}
 {% endfor %}
-)
