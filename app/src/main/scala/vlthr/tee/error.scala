@@ -88,6 +88,13 @@ ${include.sourcePosition.report}
     else Success(successes.map(s => onSuccess(s.get)).toList)
   }
 
+  def condenseAll[A, B](as: Try[A]*)(
+      onSuccess: Function[List[A], Try[B]]): Try[B] = {
+    val (successes, failures) = as.partition(_.isSuccess)
+    if (failures.size > 0) fail(extractErrors(failures: _*): _*)
+    else onSuccess(successes.map(s => s.get).toList)
+  }
+
   def extractErrors[T](sources: Try[T]*): List[Error] = {
     sources.flatMap {
       case Failure(LiquidFailure(errors)) => errors

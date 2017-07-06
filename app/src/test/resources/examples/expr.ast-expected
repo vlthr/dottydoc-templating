@@ -1,2 +1,2 @@
-BlockNode(List(OutputNode(FilterExpr(FilterExpr(LiteralExpr(StringValue(1,2,3)),NoFilter(),List(LiteralExpr(StringValue(,)))),NoFilter(),List())), TextNode(
+BlockNode(List(OutputNode(FilterExpr(FilterExpr(LiteralExpr(StringValue(1,2,3)),Split(),List(LiteralExpr(StringValue(,)))),Size(),List())), TextNode(
 )))

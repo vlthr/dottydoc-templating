@@ -5,6 +5,7 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
 import scala.collection.mutable.Buffer
 import vlthr.tee.core._
+import vlthr.tee.filters._
 import vlthr.tee.util.Util
 import scala.util.{Try, Success, Failure}
 

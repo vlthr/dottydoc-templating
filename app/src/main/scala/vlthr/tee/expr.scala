@@ -85,9 +85,16 @@ final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
     implicit val sourcePosition: SourcePosition)
     extends Expr {
   override def eval()(implicit evalContext: EvalContext) =
-    Error.all(expr.eval) { result =>
-      filter.apply(result)
-    }
+    Error
+      .all(expr.eval) { expr =>
+        Error.condenseAll(args.map(_.eval): _*) { args =>
+          filter
+            .typeCheck(expr, args)
+            .map(_ => filter.apply(expr, args))
+            .flatten
+        }
+      }
+      .flatten
 }
 
 final case class IndexExpr(indexable: Expr, key: Expr)(

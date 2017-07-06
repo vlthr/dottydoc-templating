@@ -1,4 +1,5 @@
 package vlthr.tee.core
+import vlthr.tee.filters._
 import scala.collection.mutable.Map
 import scala.util.{Try, Success, Failure}
 
@@ -58,15 +59,24 @@ object EvalContext {
 }
 
 abstract trait Filter {
-  def apply(input: Value): Value
-}
-
-case class NoFilter() extends Filter {
-  def apply(input: Value) = input
-}
-
-object Filter {
-  def byName(s: String): Filter = NoFilter()
+  def name: String
+  def apply(input: Value, args: List[Value])(
+      implicit evalContext: EvalContext): Try[Value]
+  def isDefinedForInput(v: Value): Boolean
+  def isDefinedForArgs(v: List[Value]): Boolean
+  def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
+    val inputErrors =
+      if (!isDefinedForInput(input))
+        List(TypeError(s"Filter $name is not defined for input $input."))
+      else Nil
+    val argsErrors =
+      if (!isDefinedForArgs(args))
+        List(TypeError(s"Filter $name is not defined for parameter(s) $args."))
+      else Nil
+    val errors = inputErrors ++ argsErrors
+    if (errors.size > 0) Error.fail(errors: _*)
+    else Success(())
+  }
 }
 
 sealed trait Truthable {
