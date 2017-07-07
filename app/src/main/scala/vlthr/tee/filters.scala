@@ -11,9 +11,17 @@ object Filter {
   var registry: scala.collection.mutable.Map[String, Filter] = scala.collection.mutable.Map(
     "split" -> Split(),
     "size" -> Size(),
-    "json" -> Json()
+    "json" -> Json(),
+    "first" -> First()
   )
   def register(f: Filter): Unit = registry.put(f.name, f)
+}
+
+abstract trait NoArgs extends Filter {
+  def isDefinedForArgs(v: List[Value]): Boolean = v match {
+    case Nil => true
+    case _ => false
+  }
 }
 
 case class NoFilter() extends Filter {
@@ -43,14 +51,10 @@ case class Split() extends Filter {
   }
 }
 
-case class Size() extends Filter {
+case class Size() extends Filter with NoArgs {
   def name = "size"
   def isDefinedForInput(v: Value): Boolean = v match {
     case ListValue(_) => true
-    case _ => false
-  }
-  def isDefinedForArgs(v: List[Value]): Boolean = v match {
-    case Nil => true
     case _ => false
   }
   def apply(input: Value, args: List[Value])(
@@ -61,16 +65,28 @@ case class Size() extends Filter {
   }
 }
 
-case class Json() extends Filter {
+case class Json() extends Filter with NoArgs {
   def name = "json"
   def isDefinedForInput(v: Value): Boolean = true
-  def isDefinedForArgs(v: List[Value]): Boolean = v match {
-    case Nil => true
+  def apply(input: Value, args: List[Value])(
+    implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
+    case (l @ ListValue(_), Nil) => Try(new ObjectMapper().writeValueAsString(Util.asJava(l))).map(v => StringValue(v))
+    case _ =>
+      fail(FilterApplicationError(parent, this, input, args))
+  }
+}
+
+case class First() extends Filter with NoArgs {
+  def name = "first"
+  def isDefinedForInput(v: Value): Boolean = v match {
+    case ListValue(_) => true
+    case StringValue(_) => true
     case _ => false
   }
   def apply(input: Value, args: List[Value])(
     implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
-    case (l @ ListValue(_), Nil) => Try(new ObjectMapper().writeValueAsString(Util.asJava(l))).map(v => StringValue(v))
+    case (ListValue(l), Nil) => Try(l.head)
+    case (StringValue(s), Nil) => Try(s.charAt(0).toString).map(v => StringValue(v))
     case _ =>
       fail(FilterApplicationError(parent, this, input, args))
   }
