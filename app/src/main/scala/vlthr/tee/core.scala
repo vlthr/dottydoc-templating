@@ -1,6 +1,6 @@
 package vlthr.tee.core
 import vlthr.tee.filters._
-import scala.collection.mutable.Map
+import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
 
 case class SourceFile(body: String, path: String)
@@ -43,7 +43,7 @@ abstract trait Expr extends Renderable {
     eval.flatMap(_.render)
 }
 
-case class EvalContext(mappings: Map[String, Value],
+case class EvalContext(mappings: MMap[String, Value],
                        parent: Option[EvalContext],
                        includeDir: String) {
   def lookup(s: String): Option[Value] =
@@ -54,9 +54,9 @@ case class EvalContext(mappings: Map[String, Value],
 object EvalContext {
   def createNew(): EvalContext = createNew(Map(), "")
   def createNew(map: Map[String, Value], includeDir: String): EvalContext =
-    EvalContext(map, None, includeDir)
+    EvalContext(MMap(map.toSeq: _*), None, includeDir)
   def createChild(parent: EvalContext): EvalContext =
-    EvalContext(Map(), Some(parent), parent.includeDir)
+    EvalContext(MMap(), Some(parent), parent.includeDir)
 }
 
 abstract trait Filter {

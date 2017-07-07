@@ -1,1 +1,1 @@
-(block (node (tag (includeTag {% include (expr (term "snippet.liquid")) %}))) (node \n))
+(template (block (node (tag (includeTag {% include (expr (term "snippet.liquid")) %}))) (node \n)) <EOF>)

@@ -1,5 +1,5 @@
 package vlthr.tee.core
-import scala.collection.mutable.Map
+import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
 import vlthr.tee.core.Error._
 

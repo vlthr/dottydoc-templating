@@ -1,4 +1,0 @@
-BlockNode(List(OutputNode(GEqExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(0)))), TextNode(
-), OutputNode(GEqExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(1)))), TextNode(
-), OutputNode(GEqExpr(LiteralExpr(IntValue(0)),LiteralExpr(IntValue(1)))), TextNode(
-)))
