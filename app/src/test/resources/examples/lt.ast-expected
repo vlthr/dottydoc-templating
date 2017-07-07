@@ -1,4 +1,0 @@
-BlockNode(List(OutputNode(LtExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(0)))), TextNode(
-), OutputNode(LtExpr(LiteralExpr(IntValue(1)),LiteralExpr(IntValue(2)))), TextNode(
-), OutputNode(LtExpr(LiteralExpr(BooleanValue(true)),LiteralExpr(BooleanValue(false)))), TextNode(
-)))

@@ -1,5 +1,0 @@
-BlockNode(List(TextNode(
-), IfTag(EqExpr(VariableUseExpr(zero),LiteralExpr(IntValue(0))),BlockNode(List(TextNode(
-  Hey Elvis
-))),List(),None), TextNode(
-)))

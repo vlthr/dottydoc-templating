@@ -12,7 +12,7 @@ import vlthr.tee.util._
 import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets
-import scala.collection.mutable.Map
+import scala.collection.mutable.{Map => MMap}
 import liqp.Template
 import liqp.tags.Include
 
@@ -21,7 +21,7 @@ import liqp.tags.Include
   */
 @RunWith(classOf[Parameterized])
 class FileTests(file: SourceFile) {
-  var result: Try[Node] = null
+  val includeDir = "./app/src/test/resources/examples/_includes"
   val environment = Map(
     "zero" -> 0,
     "map" -> Map("id" -> 1, "subMap" -> Map("id" -> 1)),
@@ -35,28 +35,19 @@ class FileTests(file: SourceFile) {
   )
   implicit val ctx: EvalContext = EvalContext.createNew(environment.map {
     case (k: String, v: Object) => (k, Value.create(v))
-  }, "./app/src/test/resources/examples/_includes")
-
-  @Before def setup() = {
-    result = Liquid.parse(file)
-  }
+  }, includeDir)
 
   @Test def testParseTree(): Unit = {
-    fileTest(".parseTree") { templateBody =>
+    fileContentTest(".parseTree") { templateBody =>
       Liquid.getParseTree(templateBody)
     }
   }
 
-  @Test def noErrors() = {
-    assertTrue(result.isSuccess)
-  }
-
   @Test def testRender() = {
-    Assume.assumeTrue(result.isSuccess)
-    fileTest(".render") { templateBody =>
-      result.get.render match {
+    fileTest(".render") { f =>
+      Liquid.render(f.path, environment, includeDir) match {
         case Success(output) => output
-        case Failure(f) => f.getMessage
+        case Failure(f) => f.toString
       }
     }
   }
@@ -72,21 +63,25 @@ class FileTests(file: SourceFile) {
   //   assertEquals(expected, actual.get)
   // }
 
-  @Test def testAST() = {
-    Assume.assumeTrue(result.isSuccess)
-    fileTest(".ast") { templateBody =>
-      result.get.toString
-    }
-  }
-
   /** Asserts that the output of f(template_string) matches the expected
     * value found in filename.ext-expected. Saves the actual output to filename.ext
     */
-  def fileTest(ext: String)(f: Function[String, String]) = {
+  def fileContentTest(ext: String)(f: Function[String, String]) = {
     val outFile = Util.pairedFileWithExt(file.path, ext)
     val expectedFile =
       Util.pairedFileWithExt(file.path, ext + "-expected")
     val actual = f(file.body)
+    Util.writeFile(outFile, actual)
+    Assume.assumeTrue(Files.exists(expectedFile))
+    val expected = Util.readWholeFile(expectedFile)
+    assertEquals(expected, actual)
+  }
+
+  def fileTest(ext: String)(f: Function[SourceFile, String]) = {
+    val outFile = Util.pairedFileWithExt(file.path, ext)
+    val expectedFile =
+      Util.pairedFileWithExt(file.path, ext + "-expected")
+    val actual = f(file)
     Util.writeFile(outFile, actual)
     Assume.assumeTrue(Files.exists(expectedFile))
     val expected = Util.readWholeFile(expectedFile)

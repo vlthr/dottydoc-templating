@@ -2,6 +2,8 @@ parser grammar LiquidParser;
 
 options {tokenVocab = LiquidLexer;}
 
+template : block EOF;
+
 block : node*;
 
 node : tag

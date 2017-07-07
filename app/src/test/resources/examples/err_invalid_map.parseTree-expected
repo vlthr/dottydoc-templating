@@ -1,1 +1,1 @@
-(block (node (output {{ (output_expr (expr (expr (term (id list))) . (id xxx))) }})) (node \n))
+(template (block (node (output {{ (output_expr (expr (expr (term (id list))) . (id xxx))) }})) (node \n)) <EOF>)

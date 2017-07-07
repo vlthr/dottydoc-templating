@@ -1,8 +1,0 @@
-BlockNode(List(IfTag(LiteralExpr(BooleanValue(true)),BlockNode(List(TextNode(
-    TEXT IN BLOCK
-))),List(),None), TextNode(
-), ForTag(a,VariableUseExpr(list),BlockNode(List(TextNode(
-    TEXT TO REPEAT
-)))), TextNode(
-), AssignTag(x,LiteralExpr(IntValue(1))), TextNode(
-)))

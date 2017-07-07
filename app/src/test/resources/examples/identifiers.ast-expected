@@ -1,7 +1,0 @@
-BlockNode(List(OutputNode(VariableUseExpr(zero)), TextNode(
-), OutputNode(DotExpr(VariableUseExpr(map),id)), TextNode(
-), OutputNode(DotExpr(DotExpr(VariableUseExpr(map),subMap),id)), TextNode(
-), OutputNode(IndexExpr(VariableUseExpr(list),LiteralExpr(IntValue(0)))), TextNode(
-), OutputNode(IndexExpr(VariableUseExpr(list),VariableUseExpr(zero))), TextNode(
-), OutputNode(IndexExpr(IndexExpr(VariableUseExpr(listOfLists),LiteralExpr(IntValue(0))),LiteralExpr(IntValue(0)))), TextNode(
-)))

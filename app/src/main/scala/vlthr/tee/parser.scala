@@ -3,7 +3,7 @@ package vlthr.tee.parser
 import scala.collection.JavaConverters._
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
-import scala.collection.mutable.Buffer
+import scala.collection.mutable.{Buffer, Map => MMap}
 import vlthr.tee.core._
 import vlthr.tee.core.Error._
 import vlthr.tee.filters._
@@ -27,7 +27,7 @@ object Liquid {
 
   def parseTemplate(node: String): Node = {
     val parser = makeParser(node)
-    val tree = parser.block()
+    val tree = parser.template()
     val visitor = new LiquidNodeVisitor(SourceFile(node, "./"))
     tree.accept(visitor)
   }
@@ -39,7 +39,7 @@ object Liquid {
     val parser = new LiquidParser(tokens)
     lexer.removeErrorListeners();
     parser.removeErrorListeners();
-    val tree = parser.block()
+    val tree = parser.template()
     tree.toStringTree(parser)
   }
 
@@ -48,12 +48,12 @@ object Liquid {
     val lexer = new LiquidLexer(input)
     val tokens = new CommonTokenStream(lexer)
     val parser = new LiquidParser(tokens)
-    lexer.removeErrorListeners();
     val errors = new GatherErrors(file)
+    lexer.removeErrorListeners();
     lexer.addErrorListener(errors);
     parser.removeErrorListeners();
     parser.addErrorListener(errors);
-    val tree = parser.block()
+    val tree = parser.template()
     val result = tree.accept(new LiquidNodeVisitor(file))
     if (errors.errors.size != 0) Failure(LiquidFailure(errors.errors.toList))
     else Success(result)
@@ -61,6 +61,14 @@ object Liquid {
 
   def parse(path: String): Try[Node] =
     parse(SourceFile(Util.readWholeFile(path), path))
+
+  def render(path: String, params: Map[String, Any], includeDir: String): Try[String] = {
+    val p: Map[String, Value] = params.map {
+                                           case (k: String, v: Any) => (k, Value.create(v))
+                                         }
+    implicit val ctx: EvalContext = EvalContext.createNew(p, includeDir)
+    parse(path).flatMap(_.render)
+  }
 
   sealed trait LexerMode
   final case class Default() extends LexerMode
@@ -111,6 +119,7 @@ class LiquidNodeVisitor(template: SourceFile)
       throw new Exception("Missing node definition");
     }
   }
+
   def visitText(t: TerminalNode): Node = {
     implicit val sourcePosition = SourcePosition(t.getSymbol().getStartIndex(),
                                                  t.getSymbol().getStopIndex(),
@@ -186,6 +195,10 @@ class LiquidNodeVisitor(template: SourceFile)
     } else if (ctx.rawTag() != null) {
       RawTag(ctx.rawTag().non_tag_start().getText())
     } else throw new Exception("Unknown node type")
+  }
+
+  override def visitTemplate(ctx: LiquidParser.TemplateContext): Node = {
+    visitBlock(ctx.block())
   }
 
   override def visitBlock(ctx: LiquidParser.BlockContext): Node = {

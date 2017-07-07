@@ -1,1 +1,1 @@
-(block (node (output {{ (output_expr (expr (expr (term (id map))) . (id noexists))) }})) (node \n))
+(template (block (node (output {{ (output_expr (expr (expr (term (id map))) . (id noexists))) }})) (node \n)) <EOF>)
