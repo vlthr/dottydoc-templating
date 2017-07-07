@@ -61,36 +61,22 @@ class FileTests(file: SourceFile) {
     }
   }
 
-  @Test def testMatchesLiqp(): Unit = {
-    Assume.assumeTrue(result.isSuccess)
-    val actual = result.get.render
-    if (actual.isFailure) return ()
+  // @Test def testMatchesLiqp(): Unit = {
+  //   Assume.assumeTrue(result.isSuccess)
+  //   val actual = result.get.render
+  //   if (actual.isFailure) return ()
 
-    val template = Template.parse(file.body)
-    val expected = template.render(asJava(environment ++ Map(
-      Include.INCLUDES_DIRECTORY_KEY -> "./app/src/test/resources/example/_includes")))
-    assertEquals(expected, actual.get)
-  }
+  //   val template = Template.parse(file.body)
+  //   val expected = template.render(Util.asJava(environment ++ Map(
+  //     Include.INCLUDES_DIRECTORY_KEY -> "./app/src/test/resources/example/_includes")))
+  //   assertEquals(expected, actual.get)
+  // }
 
   @Test def testAST() = {
     Assume.assumeTrue(result.isSuccess)
     fileTest(".ast") { templateBody =>
       result.get.toString
     }
-  }
-
-  def asJava(env: Map[String, Any]): java.util.Map[String, Object] = {
-    def convert(scala: Any): Object = {
-      scala match {
-        case m: Map[String, Any] => asJava(m)
-        case l: List[Any] => l.map(convert).asJava
-        case v => v.asInstanceOf[Object]
-      }
-    }
-    env
-      .map { case (k, v) => (k, convert(v)) }
-      .asJava
-      .asInstanceOf[java.util.Map[String, Object]]
   }
 
   /** Asserts that the output of f(template_string) matches the expected
