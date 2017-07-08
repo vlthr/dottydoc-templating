@@ -1,0 +1,4 @@
+Parse Error: ./app/src/test/resources/examples/err_unmatched_object_open.liquid
+missing '}}' at '<EOF>'
+
+    

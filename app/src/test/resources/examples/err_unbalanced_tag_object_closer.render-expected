@@ -1,0 +1,5 @@
+Parse Error: ./app/src/test/resources/examples/err_unbalanced_tag_object_closer.liquid
+mismatched input '}}' expecting {'.', '[', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
+
+    {% if  x }}
+    OBJECT CLOSE TOKEN
