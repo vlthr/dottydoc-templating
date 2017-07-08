@@ -1,4 +1,5 @@
 package vlthr.tee.core
+import org.antlr.v4.runtime.{Recognizer, RecognitionException}
 import scala.util.{Try, Success, Failure}
 
 trait Error(sourcePosition: SourcePosition) {
@@ -22,7 +23,7 @@ abstract class RuntimeError(sourcePosition: SourcePosition) extends Error(source
   def errorType = "Unexpected Runtime Error"
 }
 
-case class ParseError(override val description: String)(implicit sourcePosition: SourcePosition) extends Error(sourcePosition) {
+case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, override val description: String, e: RecognitionException)(implicit sourcePosition: SourcePosition) extends Error(sourcePosition) {
   def errorType = "Parse Error"
 }
 

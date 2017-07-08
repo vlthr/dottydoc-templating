@@ -90,6 +90,18 @@ object Liquid {
   }
 }
 
+class ErrorStrategy extends DefaultErrorStrategy {
+  override def reportNoViableAlternative(parser: Parser, e: NoViableAltException) = {
+    val msg = s"No viable alternative found"
+    parser.notifyErrorListeners(e.getOffendingToken(), msg, e)
+  }
+  override def reportUnwantedToken(parser: Parser) = {
+    println("AOEU")
+    val msg = s"Unwanted token"
+    parser.notifyErrorListeners(msg)
+  }
+}
+
 class GatherErrors(template: SourceFile) extends BaseErrorListener {
   val errors = Buffer[Error]()
 
@@ -101,7 +113,7 @@ class GatherErrors(template: SourceFile) extends BaseErrorListener {
                            e: RecognitionException) = {
     // TODO: Get begin/end from line/char
     implicit val sourcePosition: SourcePosition = SourcePosition(0, 0, template)
-    errors.append(ParseError(msg))
+    errors.append(ParseError(recognizer, offendingSymbol, msg, e))
   }
 }
 
@@ -202,8 +214,9 @@ class LiquidNodeVisitor(template: SourceFile)
   }
 
   override def visitBlock(ctx: LiquidParser.BlockContext): Node = {
+    val stop = if (ctx.stop != null) ctx.stop else ctx.start
     implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
-                                                 ctx.stop.getStopIndex(),
+                                                 stop.getStopIndex(),
                                                  template)
     BlockNode(ctx.node().asScala.toList.map(n => visitNode(n)))
   }
