@@ -1,6 +1,6 @@
 #!/bin/bash
 shopt -s failglob
-liquidfiles=(./app/src/test/resources/examples/*.liquid)
+liquidfiles=(./examples/*.liquid)
 
 echo "Regenerating expected outputs..."
 for f in ${liquidfiles[@]}; do

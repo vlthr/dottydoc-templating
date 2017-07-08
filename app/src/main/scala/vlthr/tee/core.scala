@@ -188,9 +188,10 @@ object Value {
       case v: Int => IntValue(v)
       case v: String => StringValue(v)
       case v: Boolean => BooleanValue(v)
-      case v: Map[String, Any] =>
+      case v: Char => StringValue(""+v)
+      case v: Map[String, _] =>
         MapValue(v.map { case (key, value) => (key, Value.create(value)) })
-      case v: Seq[Any] => ListValue(v.map(value => Value.create(value)).toList)
+      case v: Seq[_] => ListValue(v.map(value => Value.create(value)).toList)
       case _ => throw new Exception(s"Invalid value: $value")
     }
   }

@@ -1,4 +1,0 @@
-Parse Error: ./app/src/test/resources/examples/err_unrecognized_token.liquid
-mismatched input '{%' expecting <EOF>
-
-    {% 1 %}

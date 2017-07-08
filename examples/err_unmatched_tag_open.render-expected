@@ -1,0 +1,19 @@
+Parse Error: ./examples/err_unmatched_tag_open.liquid
+token recognition error at: '{'
+
+    {% if true
+{% endif %}
+Parse Error: ./examples/err_unmatched_tag_open.liquid
+token recognition error at: '% '
+
+    {% if true
+{% endif %}
+Parse Error: ./examples/err_unmatched_tag_open.liquid
+extraneous input 'endif' expecting {'.', '[', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
+
+    {% if true
+{% endif %}
+Parse Error: ./examples/err_unmatched_tag_open.liquid
+no viable alternative at input '<EOF>'
+
+    

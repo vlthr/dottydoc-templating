@@ -1,14 +1,14 @@
-Parse Error: ./app/src/test/resources/examples/err_unbalanced_object.liquid
+Parse Error: ./examples/err_unbalanced_object.liquid
 token recognition error at: '}\n'
 
     {{ "hello" }
 { "hello" }}
-Parse Error: ./app/src/test/resources/examples/err_unbalanced_object.liquid
+Parse Error: ./examples/err_unbalanced_object.liquid
 token recognition error at: '{'
 
     {{ "hello" }
 { "hello" }}
-Parse Error: ./app/src/test/resources/examples/err_unbalanced_object.liquid
+Parse Error: ./examples/err_unbalanced_object.liquid
 extraneous input '"hello"' expecting {'|', '.', '[', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '}}'}
 
     {{ "hello" }

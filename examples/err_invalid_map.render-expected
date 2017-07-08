@@ -1,4 +1,4 @@
-Type Error: ./app/src/test/resources/examples/err_invalid_map.liquid
+Type Error: ./examples/err_invalid_map.liquid
 Expression `list` of type Array can not be indexed as a map.
 
     {{ list.xxx }}
