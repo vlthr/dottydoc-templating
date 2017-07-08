@@ -6,7 +6,7 @@ echo "Regenerating expected outputs..."
 for f in ${liquidfiles[@]}; do
     base="${f%.*}"
     echo $base ...
-    for output in "$base".{ast,parseTree,render}; do
+    for output in "$base".{parseTree,render}; do
         cp $output $output-expected
     done
 done
