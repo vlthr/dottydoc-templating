@@ -12,7 +12,8 @@ object Filter {
     "split" -> Split(),
     "size" -> Size(),
     "json" -> Json(),
-    "first" -> First()
+    "first" -> First(),
+    "reverse" -> Reverse()
   )
   def register(f: Filter): Unit = registry.put(f.name, f)
 }
@@ -87,6 +88,21 @@ case class First() extends Filter with NoArgs {
     implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
     case (ListValue(l), Nil) => Try(l.head)
     case (StringValue(s), Nil) => Try(s.charAt(0).toString).map(v => StringValue(v))
+    case _ =>
+      fail(FilterApplicationError(parent, this, input, args))
+  }
+}
+case class Reverse() extends Filter with NoArgs {
+  def name = "reverse"
+  def isDefinedForInput(v: Value): Boolean = v match {
+    case ListValue(_) => true
+    case StringValue(_) => true
+    case _ => false
+  }
+  def apply(input: Value, args: List[Value])(
+    implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
+    case (ListValue(l), Nil) => Try(l.reverse).map(v => ListValue(v))
+    case (StringValue(s), Nil) => Try(s.reverse).map(v => StringValue(v))
     case _ =>
       fail(FilterApplicationError(parent, this, input, args))
   }

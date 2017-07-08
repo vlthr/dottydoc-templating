@@ -16,7 +16,6 @@ tag : ifTag
     | includeTag
     | rawTag;
 
-
 rawTag : TAGSTART RAWSTART TAGEND non_tag_start TAGSTART RAWEND TAGEND;
 
 non_tag_start : ~TAGSTART*;
