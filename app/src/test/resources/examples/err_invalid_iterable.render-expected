@@ -3,4 +3,3 @@ Expected an iterable
 
     {% for i in map %}
     {{ i }}
-{% endfor %}

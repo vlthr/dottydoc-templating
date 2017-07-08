@@ -112,7 +112,7 @@ class GatherErrors(template: SourceFile) extends BaseErrorListener {
                            msg: String,
                            e: RecognitionException) = {
     // TODO: Get begin/end from line/char
-    val length = offendingSymbol.asInstanceOf[Token].getText.size
+    val length = if (offendingSymbol != null) offendingSymbol.asInstanceOf[Token].getText.size else 0
     implicit val sourcePosition: SourcePosition = SourcePosition.fromLine(template, line-1, charPositionInLine, length)
     errors.append(ParseError(recognizer, offendingSymbol, msg, e))
   }

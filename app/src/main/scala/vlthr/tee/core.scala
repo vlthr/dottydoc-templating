@@ -45,7 +45,7 @@ case class SourcePosition(start: Int, end: Int, template: SourceFile) {
     def seekNewline(str: String, start: Int, direction: Int, count: Int): Int = {
       var c = start
       var remaining = count
-      while (remaining > 0 && (direction < 0 && c > 0) || (direction > 0 && c < (str.size - 1))) {
+      while (remaining > 0 && ((direction < 0 && c > 0 && c < str.size) || (direction > 0 && c < (str.size - 1) && c >= 0))) {
         if (str(c) == '\n') {
           remaining -= 1
         }

@@ -1,0 +1,1 @@
+(template (block (node assign a = 1 %}\n)) <EOF>)
