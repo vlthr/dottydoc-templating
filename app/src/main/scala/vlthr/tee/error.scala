@@ -27,6 +27,10 @@ case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, ove
   def errorType = "Parse Error"
 }
 
+case class UnrenderableValueException() extends Exception
+case class UnrenderableValue(expr: Expr, value: Value) extends RenderError(expr.sourcePosition) {
+  def description = s"Cannot render type ${value.typeName}"
+}
 case class InvalidIterable(expr: Expr) extends TypeError(expr.sourcePosition) {
   def description = s"Expected an iterable"
 }
