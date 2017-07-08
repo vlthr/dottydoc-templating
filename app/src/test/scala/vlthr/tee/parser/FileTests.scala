@@ -21,7 +21,7 @@ import liqp.tags.Include
   */
 @RunWith(classOf[Parameterized])
 class FileTests(file: SourceFile) {
-  val includeDir = "./app/src/test/resources/examples/_includes"
+  val includeDir = "./examples/_includes"
   val environment = Map(
     "zero" -> 0,
     "map" -> Map("id" -> 1, "subMap" -> Map("id" -> 1)),
@@ -93,7 +93,7 @@ object FileTests {
   @Parameters(name = "{0}")
   def data(): java.util.Collection[Array[Object]] = {
     Util
-      .filesInDir("./app/src/test/resources/examples")
+      .filesInDir("./examples")
       .filter(_.toString.endsWith(".liquid"))
       .filter(!_.toString.contains("_include"))
       .map { file =>

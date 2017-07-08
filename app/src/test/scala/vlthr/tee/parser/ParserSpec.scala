@@ -139,4 +139,9 @@ class ParserTests {
         true
     }
   }
+
+  @Test def valueCreation() = {
+    assertEquals(ListValue(List(StringValue("1"), StringValue("2"), StringValue("3"))), Value.create("1,2,3".split(",").toList))
+    assertEquals(ListValue(List(StringValue("1"), StringValue("2"), StringValue("3"))), Value.create(List("1", "2", "3")))
+  }
 }

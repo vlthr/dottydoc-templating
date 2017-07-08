@@ -1,4 +1,0 @@
-Render Error: ./app/src/test/resources/examples/err_undefined_field.liquid
-Map `map` contains no field `noexists`
-
-    {{ map.noexists }}

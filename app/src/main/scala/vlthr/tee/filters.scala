@@ -25,6 +25,22 @@ abstract trait NoArgs extends Filter {
   }
 }
 
+abstract trait SequenceFilter extends Filter {
+  def isDefinedForInput(v: Value): Boolean = v match {
+    case ListValue(_) => true
+    case StringValue(_) => true
+    case _ => false
+  }
+  def transform(seq: List[_]): Value
+  def apply(input: Value, args: List[Value])(
+    implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
+    case (ListValue(l), Nil) => Success(transform(l))
+    case (StringValue(s), Nil) => Success(transform(s.toList))
+    case _ =>
+      fail(FilterApplicationError(parent, this, input, args))
+  }
+}
+
 case class NoFilter() extends Filter {
   def name = "NoFilter"
   def apply(input: Value, args: List[Value])(
@@ -52,20 +68,6 @@ case class Split() extends Filter {
   }
 }
 
-case class Size() extends Filter with NoArgs {
-  def name = "size"
-  def isDefinedForInput(v: Value): Boolean = v match {
-    case ListValue(_) => true
-    case _ => false
-  }
-  def apply(input: Value, args: List[Value])(
-      implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
-    case (ListValue(l), Nil) => Try(IntValue(l.size))
-    case _ =>
-      fail(FilterApplicationError(parent, this, input, args))
-  }
-}
-
 case class Json() extends Filter with NoArgs {
   def name = "json"
   def isDefinedForInput(v: Value): Boolean = true
@@ -77,33 +79,53 @@ case class Json() extends Filter with NoArgs {
   }
 }
 
-case class First() extends Filter with NoArgs {
-  def name = "first"
-  def isDefinedForInput(v: Value): Boolean = v match {
-    case ListValue(_) => true
-    case StringValue(_) => true
-    case _ => false
-  }
-  def apply(input: Value, args: List[Value])(
-    implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
-    case (ListValue(l), Nil) => Try(l.head)
-    case (StringValue(s), Nil) => Try(s.charAt(0).toString).map(v => StringValue(v))
-    case _ =>
-      fail(FilterApplicationError(parent, this, input, args))
-  }
+// case class First() extends Filter with NoArgs {
+//   def name = "first"
+//   def isDefinedForInput(v: Value): Boolean = v match {
+//     case ListValue(_) => true
+//     case StringValue(_) => true
+//     case _ => false
+//   }
+//   def apply(input: Value, args: List[Value])(
+//     implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
+//     case (ListValue(l), Nil) => Try(l.head)
+//     case (StringValue(s), Nil) => Try(s.charAt(0).toString).map(v => StringValue(v))
+//     case _ =>
+//       fail(FilterApplicationError(parent, this, input, args))
+//   }
+// }
+
+// case class Reverse() extends Filter with NoArgs {
+//   def name = "reverse"
+//   def isDefinedForInput(v: Value): Boolean = v match {
+//     case ListValue(_) => true
+//     case StringValue(_) => true
+//     case _ => false
+//   }
+//   def apply(input: Value, args: List[Value])(
+//     implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
+//     case (ListValue(l), Nil) => Try(ListValue(l.reverse))
+//     case (StringValue(s), Nil) => Try(StringValue(s.reverse))
+//     case _ =>
+//       fail(FilterApplicationError(parent, this, input, args))
+//   }
+// }
+case class Size() extends SequenceFilter with NoArgs {
+  def name = "size"
+  def transform(seq: List[_]) = IntValue(seq.size)
 }
-case class Reverse() extends Filter with NoArgs {
+
+case class First() extends SequenceFilter with NoArgs {
+  def name = "first"
+  def transform(seq: List[_]) = Value.create(seq.head)
+}
+case class Reverse() extends SequenceFilter with NoArgs {
   def name = "reverse"
-  def isDefinedForInput(v: Value): Boolean = v match {
-    case ListValue(_) => true
-    case StringValue(_) => true
-    case _ => false
-  }
-  def apply(input: Value, args: List[Value])(
-    implicit evalContext: EvalContext, parent: FilterExpr) = (input, args) match {
-    case (ListValue(l), Nil) => Try(l.reverse).map(v => ListValue(v))
-    case (StringValue(s), Nil) => Try(s.reverse).map(v => StringValue(v))
-    case _ =>
-      fail(FilterApplicationError(parent, this, input, args))
+  def transform(seq: List[_]) = {
+    println(s"seq=$seq")
+    println(s"reverse=${seq.reverse}")
+    val value = Value.create(seq.reverse)
+    println(s"value=$value")
+    value
   }
 }

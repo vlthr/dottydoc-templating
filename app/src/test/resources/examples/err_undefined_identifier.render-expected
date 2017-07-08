@@ -1,4 +1,0 @@
-Render Error: ./app/src/test/resources/examples/err_undefined_identifier.liquid
-Undefined variable reference `xxx`
-
-    {{ xxx }}

@@ -1,0 +1,4 @@
+Type Error: ./examples/err_invalid_index.liquid
+Invalid index type: Array
+
+    {{ list[list] }}
