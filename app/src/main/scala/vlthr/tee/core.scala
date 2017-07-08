@@ -1,9 +1,42 @@
 package vlthr.tee.core
 import vlthr.tee.filters._
-import scala.collection.mutable.{Map => MMap}
+import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 import scala.util.{Try, Success, Failure}
 
-case class SourceFile(body: String, path: String)
+case class SourceFile(body: String, path: String) {
+  final val LF = '\u000A'
+  final val FF = '\u000C'
+  final val CR = '\u000D'
+  final val SU = '\u001A'
+
+  /** Is character a line break? */
+  def isLineBreakChar(c: Char) = c match {
+    case LF|FF|CR|SU  => true
+    case _            => false
+  }
+
+  private def isLineBreak(idx: Int) =
+    if (idx >= length) false else {
+      val ch = body(idx)
+      // don't identify the CR in CR LF as a line break, since LF will do.
+      if (ch == CR) (idx + 1 == length) || (body(idx + 1) != LF)
+      else isLineBreakChar(ch)
+    }
+
+  private def calculateLineIndices(cs: Array[Char]) = {
+    val buf = new ArrayBuffer[Int]
+    buf += 0
+    for (i <- 0 until cs.length) if (isLineBreak(i)) buf += i + 1
+    buf += cs.length // sentinel, so that findLine below works smoother
+    buf.toArray
+  }
+  private lazy val lineIndices: Array[Int] = calculateLineIndices(body.toArray)
+
+  /** Map line to offset of first character in line */
+  def lineToOffset(index: Int): Int = lineIndices(index)
+
+  val length = body.length
+}
 
 case class SourcePosition(start: Int, end: Int, template: SourceFile) {
   def display: String = template.body.substring(start, end+1)
@@ -12,19 +45,25 @@ case class SourcePosition(start: Int, end: Int, template: SourceFile) {
     def seekNewline(str: String, start: Int, direction: Int, count: Int): Int = {
       var c = start
       var remaining = count
-      while (count > 0 && c > 0 && c < (str.size - 1)) {
-        c += direction
+      while (remaining > 0 && (direction < 0 && c > 0) || (direction > 0 && c < (str.size - 1))) {
         if (str(c) == '\n') {
           remaining -= 1
         }
+        c += direction
       }
       c
     }
     val s = seekNewline(template.body, start, -1, count + 1)
     val e = seekNewline(template.body, start, 1, count + 1)
-    val highlightStart = start - s
-    val highlightEnd = end - e
     template.body.substring(s, e)
+  }
+}
+
+object SourcePosition {
+  def fromLine(sourceFile: SourceFile, line: Int, charPositionInLine: Int, length: Int) = {
+    val start = sourceFile.lineToOffset(line) + charPositionInLine
+    val stop = start + length
+    SourcePosition(start, stop, sourceFile)
   }
 }
 
