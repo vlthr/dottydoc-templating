@@ -1,5 +1,7 @@
 package vlthr.tee.core
 import vlthr.tee.filters._
+import vlthr.tee.core.Error._
+import vlthr.tee.core._
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 import scala.util.{Try, Success, Failure}
 
@@ -172,13 +174,13 @@ final case class MapValue(v: Map[String, Value])
     with Truthy {
   def display: String = ???
   def typeName: String = "Map"
-  def render()(implicit evalContext: EvalContext): Try[String] = ???
+  def render()(implicit evalContext: EvalContext): Try[String] = throw UnrenderableValueException()
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
   def typeName: String = "Array"
-  def render()(implicit evalContext: EvalContext): Try[String] = ???
+  def render()(implicit evalContext: EvalContext): Try[String] = throw UnrenderableValueException()
 }
 
 object Value {
