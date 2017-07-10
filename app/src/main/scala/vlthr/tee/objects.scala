@@ -60,7 +60,9 @@ final case class CaseTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode
 
 final case class CommentTag()(implicit val sourcePosition: SourcePosition)
-    extends TagNode
+    extends TagNode {
+  override def render()(implicit evalContext: EvalContext): Try[String] = Success("")
+}
 
 final case class CycleTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode

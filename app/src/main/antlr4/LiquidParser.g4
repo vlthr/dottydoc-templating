@@ -15,9 +15,12 @@ tag : ifTag
     | assignTag
     | includeTag
     | captureTag
+    | commentTag
     | rawTag;
 
 rawTag : TAGSTART RAWSTART TAGEND non_tag_start TAGSTART RAWEND TAGEND;
+
+commentTag : TAGSTART COMMENTSTART TAGEND block TAGSTART COMMENTEND TAGEND;
 
 captureTag : TAGSTART CAPTURESTART id TAGEND block TAGSTART CAPTUREEND TAGEND;
 
