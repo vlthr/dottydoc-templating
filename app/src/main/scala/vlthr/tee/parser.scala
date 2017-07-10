@@ -201,6 +201,10 @@ class LiquidNodeVisitor(template: SourceFile)
       val expr =
         new LiquidExprVisitor(template).visitExpr(ctx.assignTag().expr())
       AssignTag(id, expr)
+    } else if (ctx.captureTag() != null) {
+      val id = ctx.captureTag().id().getText()
+      val value = visitBlock(ctx.captureTag().block())
+      CaptureTag(id, value)
     } else if (ctx.includeTag() != null) {
       val expr =
         new LiquidExprVisitor(template).visitExpr(ctx.includeTag().expr())

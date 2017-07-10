@@ -14,9 +14,12 @@ tag : ifTag
     | forTag
     | assignTag
     | includeTag
+    | captureTag
     | rawTag;
 
 rawTag : TAGSTART RAWSTART TAGEND non_tag_start TAGSTART RAWEND TAGEND;
+
+captureTag : TAGSTART CAPTURESTART id TAGEND block TAGSTART CAPTUREEND TAGEND;
 
 non_tag_start : ~TAGSTART*;
 
