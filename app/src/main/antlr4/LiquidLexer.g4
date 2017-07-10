@@ -16,6 +16,8 @@ RAWSTART   : 'raw';
 RAWEND     : 'endraw';
 INCLUDE    : 'include';
 ASSIGN     : 'assign';
+CAPTURESTART: 'capture';
+CAPTUREEND : 'endcapture';
 AND        : 'and';
 OR         : 'or';
 ELSE       : 'else';

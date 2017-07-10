@@ -34,6 +34,17 @@ trait TagNode extends Node with Renderable {
   def render()(implicit evalContext: EvalContext): Try[String] = ???
 }
 
+final case class CaptureTag(id: String, value: Node)(
+  implicit val sourcePosition: SourcePosition)
+    extends TagNode {
+  override def render()(implicit evalContext: EvalContext): Try[String] = {
+    Error.all(value.render) { v: String =>
+      evalContext.mappings.put(id, StringValue(v))
+      ""
+    }
+  }
+}
+
 final case class AssignTag(id: String, value: Expr)(
     implicit val sourcePosition: SourcePosition)
     extends TagNode {
@@ -44,9 +55,6 @@ final case class AssignTag(id: String, value: Expr)(
     }
   }
 }
-
-final case class CaptureTag()(implicit val sourcePosition: SourcePosition)
-    extends TagNode
 
 final case class CaseTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode
