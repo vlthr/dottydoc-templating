@@ -18,6 +18,8 @@ INCLUDE    : 'include';
 ASSIGN     : 'assign';
 CAPTURESTART: 'capture';
 CAPTUREEND : 'endcapture';
+COMMENTSTART: 'comment';
+COMMENTEND : 'endcomment';
 AND        : 'and';
 OR         : 'or';
 ELSE       : 'else';
