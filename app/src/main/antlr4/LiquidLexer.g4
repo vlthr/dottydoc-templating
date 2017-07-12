@@ -1,6 +1,5 @@
 lexer grammar LiquidLexer;
 
-// RAWSTART    : '{%' WSCHARS* 'raw' WSCHARS* '%}'  -> pushMode(Raw);
 OUTPUTSTART : '{{' -> pushMode(Object);
 TAGSTART    : '{%' -> pushMode(Object);
 fragment NO_OBJECTS: ( ~'{' | ( '{' ~[/{%]) ) ;
@@ -56,7 +55,3 @@ fragment WSCHARS: [ \t\r\n];
 STRSINGLE   : '\'' ~'\''* '\'';
 STRDOUBLE   : '"' ~'"'* '"';
 WS  :   WSCHARS+ -> skip; // Define whitespace rule, toss it out
-
-// mode Raw;
-// RAWEND    : '{%' WSCHARS* 'endraw' WSCHARS* '%}' -> popMode;
-// RAWTEXT : (. | NEWLINE)+?;
