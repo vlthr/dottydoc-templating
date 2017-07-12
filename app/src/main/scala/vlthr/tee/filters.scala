@@ -19,11 +19,42 @@ object Filter {
 }
 
 abstract trait NoArgs extends Filter {
-  def isDefinedForArgs(v: List[Value]): Boolean = v match {
-    case Nil => true
-    case _ => false
+  def checkArgs(v: List[Value]): List[Error] = v match {
+    case Nil => Nil
+    case _ => ???
   }
 }
+
+abstract trait InputType(t: ValueType) extends Filter {
+  def checkInput(input: Value): List[Error] = {
+    if (input.valueType != t) // Return error
+    else Nil
+  }
+}
+
+enum ValueType {
+  case Integer
+  case String
+  case Boolean
+  case List
+  case Map
+}
+
+abstract trait FixedArgs(types: List[ValueType]) extends Filter {
+  // TODO: A macro could generate typesafe getters for each of the expected arguments.
+
+  def checkArgs(args: List[Value]): List[Error] = {
+    // If wrong number of args, return error
+    // For each arg, its type should match the corresponding ValueType in the types list
+    List()
+  }
+}
+
+// abstract trait SingleArg[T :< Value](t: ValueType) extends FixedArgs(t :: Nil) {
+//   override def checkArgs(args: List[Value]) = {
+//     super.checkArgs ++ args
+//   }
+//   def arg: T = args(0)
 
 abstract trait PartialFilter extends Filter with NoArgs {
   def definedForIntInput: Boolean = false
