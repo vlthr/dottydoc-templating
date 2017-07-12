@@ -1,5 +1,5 @@
 package vlthr.tee.core
-import scala.collection.mutable.Map
+import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
 import vlthr.tee.parser.Liquid
 import vlthr.tee.core.Error._
@@ -155,3 +155,10 @@ final case class RawTag(text: String)(
 
 final case class UnlessTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode
+
+object CustomTag {
+  type TagConstructor = (SourcePosition, List[Expr]) => TagNode
+  val registry: MMap[String, TagConstructor] = MMap()
+  def byName(name: String): Option[TagConstructor] = registry.get(name)
+  def register(id: String, ctor: TagConstructor) = registry.put(id, ctor)
+}

@@ -157,8 +157,8 @@ class LiquidNodeVisitor(template: SourceFile)
     val expVisitor = new LiquidExprVisitor(template)
     if (ctx.FILTER() != null) {
       val args =
-        if (ctx.args() != null)
-          new LiquidArgsVisitor(template).visitArgs(ctx.args())
+        if (ctx.COLON() != null)
+          new LiquidArgsVisitor(template).visitArglist(ctx.arglist())
         else Nil
       FilterExpr(visitOutputExpr(ctx.output_expr()),
                  Filter.byName(ctx.id().getText()),
@@ -215,7 +215,15 @@ class LiquidNodeVisitor(template: SourceFile)
     } else if (ctx.rawTag() != null) {
       val stop = if (ctx.rawTag.any.stop != null) ctx.rawTag.any.stop else ctx.rawTag.any.start
       RawTag(ctx.rawTag.start.getInputStream().getText(new Interval(ctx.rawTag.any.start.getStartIndex, ctx.rawTag.any.stop.getStopIndex)))
-    } else throw new Exception("Unknown node type")
+    } else if (ctx.customTag != null) {
+      val id = ctx.customTag.id.getText
+      val args = if (ctx.customTag.arglist != null) new LiquidArgsVisitor(template).visitArglist(ctx.customTag.arglist) else Nil
+      CustomTag.byName(id).map(ctor => ctor(sourcePosition, args)).getOrElse {
+        throw InvalidTagIdException((InvalidTagId(id)))
+      }
+    } else {
+      throw MalformedTagException(MalformedTag())
+    }
   }
 
   override def visitTemplate(ctx: LiquidParser.TemplateContext): Node = {
@@ -233,9 +241,8 @@ class LiquidNodeVisitor(template: SourceFile)
 
 class LiquidArgsVisitor(template: SourceFile)
     extends LiquidParserBaseVisitor[List[Expr]] {
-  override def visitArgs(ctx: LiquidParser.ArgsContext): List[Expr] = {
+  override def visitArglist(ctx: LiquidParser.ArglistContext): List[Expr] = {
     ctx
-      .arglist()
       .expr()
       .asScala
       .map(ectx => {
