@@ -27,6 +27,18 @@ case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, ove
   def errorType = "Parse Error"
 }
 
+case class InvalidTagIdException(error: InvalidTagId) extends Exception
+case class InvalidTagId(id: String)(implicit sourcePosition: SourcePosition) extends Error(sourcePosition) {
+  def errorType = "Parse Error"
+  def description = s"`$id` does not match any known tag."
+}
+
+case class MalformedTagException(error: MalformedTag) extends Exception
+case class MalformedTag()(implicit sourcePosition: SourcePosition) extends Error(sourcePosition) {
+  def errorType = "Parse Error"
+  def description = s"Malformed tag."
+}
+
 case class UnrenderableValueException() extends Exception
 case class UnrenderableValue(expr: Expr, value: Value) extends RenderError(expr.sourcePosition) {
   def description = s"Cannot render type ${value.typeName}"

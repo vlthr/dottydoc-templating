@@ -16,7 +16,10 @@ tag : ifTag
     | includeTag
     | captureTag
     | commentTag
-    | rawTag;
+    | rawTag
+    | customTag;
+
+customTag : TAGSTART id arglist? TAGEND;
 
 rawTag : TAGSTART RAWSTART TAGEND any TAGSTART RAWEND TAGEND;
 
@@ -43,7 +46,7 @@ forEnd : TAGSTART FOREND TAGEND;
 
 output : OUTPUTSTART output_expr OUTPUTEND;
 
-output_expr : output_expr FILTER id args?
+output_expr : output_expr FILTER id (COLON arglist)?
             | expr;
 
 expr : expr DOTINDEX id
@@ -67,5 +70,4 @@ term : INT
 
 id : ID;
 
-args : COLON arglist;
 arglist : expr (COMMA expr)*;

@@ -139,4 +139,17 @@ class ParserTests {
         true
     }
   }
+
+  @Test def parseCustomTag() = {
+    case class BananaTag(args: List[Expr])(implicit val sourcePosition: SourcePosition) extends TagNode {
+      override def render()(implicit evalContext: EvalContext): Try[String] = ???
+    }
+    CustomTag.register("banana", (sourcePosition, args) => BananaTag(args)(sourcePosition))
+    val input = "{% banana %}"
+    assertParsed(input) {
+      case BlockNode(
+        BananaTag(args) :: Nil) =>
+        true
+    }
+  }
 }
