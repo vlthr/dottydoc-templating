@@ -37,7 +37,7 @@ case class SourceFile(body: String, path: String) {
   /** Map line to offset of first character in line */
   def lineToOffset(index: Int): Int = lineIndices(index)
 
-  val length = body.length
+  def length: Int = body.length
 }
 
 case class SourcePosition(start: Int, end: Int, template: SourceFile) {
@@ -59,6 +59,15 @@ case class SourcePosition(start: Int, end: Int, template: SourceFile) {
     val e = seekNewline(template.body, start, 1, count + 1)
     template.body.substring(s, e)
   }
+}
+
+class NoSourceFile extends SourceFile("", "") {
+  override def length: Int = ???
+  override def lineToOffset(index: Int): Int = ???
+}
+class NoPosition extends SourcePosition(-1, -1, new NoSourceFile()) {
+  override def display: String = ???
+  override def report: String = ???
 }
 
 object SourcePosition {
@@ -100,7 +109,7 @@ object EvalContext {
     EvalContext(MMap(), Some(parent), parent.includeDir)
 }
 
-abstract trait Filter {
+abstract trait Filter()(implicit val sourcePosition: SourcePosition) {
   def name: String
   def apply(input: Value, args: List[Value])(
       implicit evalContext: EvalContext, parent: FilterExpr): Try[Value]
