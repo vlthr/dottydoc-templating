@@ -1,3 +1,4 @@
 
+{% assign somevar = not-rendered-anyway %}
 RAW TEXT
 

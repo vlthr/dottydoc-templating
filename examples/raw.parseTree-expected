@@ -1,1 +1,1 @@
-(template (block (node (tag (rawTag {% raw %} (non_tag_start \nRAW TEXT\n) {% endraw %}))) (node \n)) <EOF>)
+(template (block (node (tag (rawTag {% raw %} (any \n {% assign somevar = not-rendered-anyway %} \nRAW TEXT\n) {% endraw %}))) (node \n)) <EOF>)
