@@ -3,6 +3,7 @@ package vlthr.tee.parser
 import scala.collection.JavaConverters._
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
+import org.antlr.v4.runtime.misc.Interval
 import scala.collection.mutable.{Buffer, Map => MMap}
 import vlthr.tee.core._
 import vlthr.tee.core.Error._
@@ -212,7 +213,8 @@ class LiquidNodeVisitor(template: SourceFile)
     } else if (ctx.commentTag() != null) {
       CommentTag()
     } else if (ctx.rawTag() != null) {
-      RawTag(ctx.rawTag().non_tag_start().getText())
+      val stop = if (ctx.rawTag.any.stop != null) ctx.rawTag.any.stop else ctx.rawTag.any.start
+      RawTag(ctx.rawTag.start.getInputStream().getText(new Interval(ctx.rawTag.any.start.getStartIndex, ctx.rawTag.any.stop.getStopIndex)))
     } else throw new Exception("Unknown node type")
   }
 
