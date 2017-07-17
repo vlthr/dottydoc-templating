@@ -160,8 +160,9 @@ class LiquidNodeVisitor(template: SourceFile)
         if (ctx.COLON() != null)
           new LiquidArgsVisitor(template).visitArglist(ctx.arglist())
         else Nil
+      val filterCtor = Filter.byName(ctx.id().getText())
       FilterExpr(visitOutputExpr(ctx.output_expr()),
-                 Filter.byName(ctx.id().getText()),
+                 filterCtor(sourcePosition),
                  args)
     } else {
       expVisitor.visitExpr(ctx.expr())

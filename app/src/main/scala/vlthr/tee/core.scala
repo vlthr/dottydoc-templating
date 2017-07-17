@@ -5,6 +5,14 @@ import vlthr.tee.core._
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 import scala.util.{Try, Success, Failure}
 
+enum ValueType {
+  case Integer
+  case String
+  case Boolean
+  case List
+  case Map
+}
+
 case class SourceFile(body: String, path: String) {
   final val LF = '\u000A'
   final val FF = '\u000C'
@@ -61,11 +69,11 @@ case class SourcePosition(start: Int, end: Int, template: SourceFile) {
   }
 }
 
-class NoSourceFile extends SourceFile("", "") {
+object NoSourceFile extends SourceFile("", "") {
   override def length: Int = ???
   override def lineToOffset(index: Int): Int = ???
 }
-class NoPosition extends SourcePosition(-1, -1, new NoSourceFile()) {
+class NoPosition extends SourcePosition(-1, -1, NoSourceFile) {
   override def display: String = ???
   override def report: String = ???
 }
@@ -141,7 +149,7 @@ trait Truthy extends Truthable {
 sealed trait Value extends Renderable with Truthable with Ordered[Value] {
   def display: String
 
-  def typeName: String
+  def valueType: ValueType
 
   def compare(that: Value): Int = {
     (this, that) match {
@@ -159,13 +167,13 @@ sealed trait IndexedValue extends Value
 
 final case class StringValue(v: String) extends Value with Truthy {
   def display: String = s""""$v""""
-  def typeName: String = "String"
+  def valueType = ValueType.String
   def render()(implicit evalContext: EvalContext): Try[String] = Success(v)
 }
 
 final case class BooleanValue(v: Boolean) extends Value {
   def display: String = s"""$v"""
-  def typeName: String = "Boolean"
+  def valueType = ValueType.Boolean
   def render()(implicit evalContext: EvalContext): Try[String] =
     Success(v.toString)
   def truthy = v
@@ -173,7 +181,7 @@ final case class BooleanValue(v: Boolean) extends Value {
 
 final case class IntValue(v: Int) extends Value with Truthy {
   def display: String = s"""$v"""
-  def typeName: String = "Integer"
+  def valueType = ValueType.Integer
   def render()(implicit evalContext: EvalContext): Try[String] =
     Success(v.toString)
 }
@@ -182,13 +190,13 @@ final case class MapValue(v: Map[String, Value])
     extends IndexedValue
     with Truthy {
   def display: String = ???
-  def typeName: String = "Map"
+  def valueType = ValueType.Map
   def render()(implicit evalContext: EvalContext): Try[String] = throw UnrenderableValueException()
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
-  def typeName: String = "Array"
+  def valueType = ValueType.List
   def render()(implicit evalContext: EvalContext): Try[String] = throw UnrenderableValueException()
 }
 
