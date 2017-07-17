@@ -89,10 +89,11 @@ final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
     Error
       .all(expr.eval) { expr =>
         Error.condenseAll(args.map(_.eval): _*) { args =>
+          println(s"Applying ${filter.name} to $expr, $args, with typecheck = ${filter.typeCheck(expr, args)}")
           implicit val parent: FilterExpr = this
           filter
             .typeCheck(expr, args)
-            .map(_ => filter.apply(expr, args))
+            .map(_ => filter.apply(expr.asInstanceOf[filter.InputType], args))
             .flatten
         }
       }

@@ -117,25 +117,29 @@ object EvalContext {
     EvalContext(MMap(), Some(parent), parent.includeDir)
 }
 
-abstract trait Filter()(implicit val sourcePosition: SourcePosition) {
+abstract trait Filter() {
   def name: String
-  def apply(input: Value, args: List[Value])(
-      implicit evalContext: EvalContext, parent: FilterExpr): Try[Value]
-  def isDefinedForInput(v: Value): Boolean
-  def isDefinedForArgs(v: List[Value]): Boolean
-  def typeCheck(input: Value, args: List[Value])(implicit parent: FilterExpr): Try[Unit] = {
-    val inputErrors =
-      if (!isDefinedForInput(input))
-        List(InvalidFilterInput(parent, this, input))
-      else Nil
-    val argsErrors =
-      if (!isDefinedForArgs(args))
-        List(InvalidFilterArgs(parent, this, args))
-      else Nil
+  def sourcePosition: SourcePosition
+  type InputType <: Value
+  def checkInput(input: Value): List[Error]
+  def checkArgs(v: List[Value]): List[Error]
+  def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
+    // val inputErrors =
+    //   if (!checkInput(input))
+    //     List(InvalidFilterInput(this, input))
+    //   else Nil
+    // val argsErrors =
+    //   if (!checkArgs(args))
+    //     List(InvalidFilterArgs(this, args))
+    //   else Nil
+    val inputErrors = checkInput(input)
+    val argsErrors = checkArgs(args)
     val errors = inputErrors ++ argsErrors
     if (errors.size > 0) Error.fail(errors: _*)
     else Success(())
   }
+  def apply(input: InputType, args: List[Value])(
+    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value]
 }
 
 sealed trait Truthable {

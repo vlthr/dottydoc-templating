@@ -67,10 +67,10 @@ case class IncomparableValues(expr: Expr, left: Value, right: Value) extends Typ
 case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.sourcePosition) {
   def description = s"Include tag argument must be a filename, not ${filename.valueType}"
 }
-case class InvalidFilterInput(obj: FilterExpr, filter: Filter, input: Value) extends TypeError(obj.sourcePosition) {
+case class InvalidFilterInput(filter: Filter, input: Value) extends TypeError(filter.sourcePosition) {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType}."
 }
-case class InvalidFilterArgs(obj: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(obj.sourcePosition) {
+case class InvalidFilterArgs(filter: Filter, args: List[Value]) extends TypeError(filter.sourcePosition) {
   def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
 case class FilterApplicationError(obj: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(obj.sourcePosition) {
