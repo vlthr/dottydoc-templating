@@ -5,13 +5,39 @@ import vlthr.tee.core._
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 import scala.util.{Try, Success, Failure}
 
-enum ValueType {
-  case Integer
-  case String
-  case Boolean
-  case List
-  case Map
+enum class ValueType {
+  def matches(v: Value): Boolean
 }
+object ValueType {
+  case Integer {
+    def matches(v: Value) = {
+      case v: IntegerValue => true
+      case _ => false
+    }
+    case String {
+      def matches(v: Value) = {
+        case v: IntegerValue => true
+        case _ => false
+      }
+    }
+    case Boolean {
+      def matches(v: Value) = {
+        case v: IntegerValue => true
+        case _ => false
+      }
+    }
+    case List {
+      def matches(v: Value) = {
+        case v: IntegerValue => true
+        case _ => false
+      }
+    }
+    case Map {
+      def matches(v: Value) = {
+        case v: IntegerValue => true
+        case _ => false
+      }
+    }
 
 case class SourceFile(body: String, path: String) {
   final val LF = '\u000A'
@@ -123,14 +149,6 @@ abstract trait Filter(args: List[Value]) {
   def checkInput(input: Value): List[Error]
   def checkArgs(v: List[Value]): List[Error]
   def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
-    // val inputErrors =
-    //   if (!checkInput(input))
-    //     List(InvalidFilterInput(this, input))
-    //   else Nil
-    // val argsErrors =
-    //   if (!checkArgs(args))
-    //     List(InvalidFilterArgs(this, args))
-    //   else Nil
     val inputErrors = checkInput(input)
     val argsErrors = checkArgs(args)
     val errors = inputErrors ++ argsErrors
