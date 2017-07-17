@@ -33,7 +33,7 @@ abstract trait NoArgs { self: Filter =>
 
 abstract trait InputType(t: ValueType) { self: Filter =>
   override def checkInput(input: Value): List[Error] = {
-    if (input.valueType != t) InvalidFilterInput(this, input) :: Nil
+    if (!t.matches(input)) InvalidFilterInput(this, input) :: Nil
     else Nil
   }
 }
@@ -41,7 +41,7 @@ abstract trait InputType(t: ValueType) { self: Filter =>
 abstract trait FixedArgs(types: List[ValueType]) { self: Filter =>
   // TODO: A macro could generate typesafe getters for each of the expected arguments.
   def checkArgs(args: List[Value]): List[Error] = {
-    val correctArgTypes = args.zip(types).forall{ case (v, expected) => v.valueType == expected }
+    val correctArgTypes = args.zip(types).forall{ case (v, expected) => expected.matches(v) }
     val correctNumberOfArgs = args.size == types.size
     if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(this, args))
     else Nil
@@ -51,7 +51,7 @@ abstract trait FixedArgs(types: List[ValueType]) { self: Filter =>
 abstract trait SingleArg(expected: ValueType) { self: Filter =>
   def checkArgs(args: List[Value]): List[Error] = {
     val correctNumberOfArgs = args.size == 1
-    val correctArgTypes = if (correctNumberOfArgs) args(0).valueType == expected else false
+    val correctArgTypes = if (correctNumberOfArgs) expected.matches(args(0)) else false
     if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(this, args))
     else Nil
   }
@@ -80,7 +80,7 @@ case class Json(args: List[Value])(implicit override val sourcePosition: SourceP
     implicit evalContext: EvalContext, parent: FilterExpr) = Success(StringValue(new ObjectMapper().writeValueAsString(Util.asJava(input.asInstanceOf[ListValue]))))
 }
 
-case class Size(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with NoArgs {
+case class Size(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List | ValueType.String) with NoArgs {
   def name = "size"
   override def filter(input: ListValue)(
     implicit evalContext: EvalContext, parent: FilterExpr) = Try(IntValue(input.v.size))
@@ -88,7 +88,7 @@ case class Size(args: List[Value])(implicit val sourcePosition: SourcePosition) 
     implicit evalContext: EvalContext, parent: FilterExpr) = Try(IntValue(input.v.size))
 }
 
-case class First(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with NoArgs {
+case class First(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List | ValueType.String) with NoArgs {
   def name = "first"
   override def filter(input: StringValue)(
     implicit evalContext: EvalContext, parent: FilterExpr) = Try(StringValue(""+input.v.head))
@@ -96,7 +96,7 @@ case class First(args: List[Value])(implicit val sourcePosition: SourcePosition)
     implicit evalContext: EvalContext, parent: FilterExpr) = Try(input.v.head)
 }
 
-case class Reverse(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with NoArgs {
+case class Reverse(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List | ValueType.String) with NoArgs {
   def name = "reverse"
   override def filter(input: StringValue)(
     implicit evalContext: EvalContext, parent: FilterExpr) = Try(StringValue(input.v.reverse))
