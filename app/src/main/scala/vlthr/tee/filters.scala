@@ -7,15 +7,16 @@ import vlthr.tee.core.Error._
 import com.fasterxml.jackson.databind.ObjectMapper
 
 object Filter {
-  def byName(s: String): Filter = registry.get(s).getOrElse(NoFilter())
-  var registry: scala.collection.mutable.Map[String, Filter] = scala.collection.mutable.Map(
-    "split" -> Split(),
-    "size" -> Size(),
-    "json" -> Json(),
-    "first" -> First(),
-    "reverse" -> Reverse()
+  def byName(s: String): Constructor = registry.get(s).getOrElse(sp => new NoFilter()(sp))
+  type Constructor = SourcePosition => Filter
+  var registry: scala.collection.mutable.Map[String, Constructor] = scala.collection.mutable.Map(
+    "split" -> (sp => Split()(sp)),
+    "size" -> (sp => Size()(sp)),
+    "json" -> (sp => Json()(sp)),
+    "first" -> (sp => First()(sp)),
+    "reverse" -> (sp => Reverse()(sp))
   )
-  def register(f: Filter): Unit = registry.put(f.name, f)
+  def register(name: String, f: Constructor): Unit = registry.put(name, f)
 }
 
 abstract trait NoArgs extends Filter {
@@ -27,17 +28,9 @@ abstract trait NoArgs extends Filter {
 
 abstract trait InputType(t: ValueType) extends Filter {
   def checkInput(input: Value): List[Error] = {
-    if (input.valueType != t) // Return error
+    if (input.valueType != t) ??? // Return error
     else Nil
   }
-}
-
-enum ValueType {
-  case Integer
-  case String
-  case Boolean
-  case List
-  case Map
 }
 
 abstract trait FixedArgs(types: List[ValueType]) extends Filter {
@@ -93,7 +86,7 @@ abstract trait ListFilter extends PartialFilter {
   override def definedForListInput: Boolean = true
 }
 
-case class NoFilter() extends Filter {
+case class NoFilter()(implicit sp: SourcePosition) extends Filter()(sp) {
   def name = "NoFilter"
   def apply(input: Value, args: List[Value])(
       implicit evalContext: EvalContext, parent: FilterExpr) = Success(input)
@@ -101,7 +94,7 @@ case class NoFilter() extends Filter {
   def isDefinedForArgs(v: List[Value]): Boolean = true
 }
 
-case class Split() extends Filter {
+case class Split()(implicit sp: SourcePosition) extends Filter()(sp) {
   def name = "split"
   def isDefinedForInput(v: Value): Boolean = v match {
     case StringValue(_) => true
@@ -120,23 +113,23 @@ case class Split() extends Filter {
   }
 }
 
-case class Json() extends ListFilter {
+case class Json()(implicit sp: SourcePosition) extends ListFilter {
   def name = "json"
   override def transform(value: ListValue) = StringValue(new ObjectMapper().writeValueAsString(Util.asJava(value)))
 }
 
-case class Size() extends ListFilter with StringFilter {
+case class Size()(implicit sp: SourcePosition) extends ListFilter with StringFilter {
   def name = "size"
   override def transform(value: ListValue) = IntValue(value.v.size)
   override def transform(value: StringValue) = IntValue(value.v.size)
 }
 
-case class First() extends ListFilter {
+case class First()(implicit sp: SourcePosition) extends ListFilter {
   def name = "first"
   override def transform(value: ListValue) = Value.create(value.v.head)
 }
 
-case class Reverse() extends ListFilter with StringFilter {
+case class Reverse()(implicit sp: SourcePosition) extends ListFilter with StringFilter {
   def name = "reverse"
   override def transform(seq: ListValue) = ListValue(seq.v.reverse)
   override def transform(seq: StringValue) = StringValue(seq.v.reverse)
