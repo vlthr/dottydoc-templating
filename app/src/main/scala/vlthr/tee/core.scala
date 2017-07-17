@@ -7,37 +7,47 @@ import scala.util.{Try, Success, Failure}
 
 enum class ValueType {
   def matches(v: Value): Boolean
+  def |(other: ValueType): ValueType = other match {
+    case u @ ValueType.UnionType(_) => u | this
+    case _ => ValueType.UnionType(Set(this, other))
+  }
 }
 object ValueType {
   case Integer {
-    def matches(v: Value) = {
-      case v: IntegerValue => true
+    def matches(v: Value) = v match {
+      case v: IntValue => true
       case _ => false
     }
-    case String {
-      def matches(v: Value) = {
-        case v: IntegerValue => true
-        case _ => false
-      }
+  }
+  case String {
+    def matches(v: Value) = v match {
+      case StringValue(_) => true
+      case _ => false
     }
-    case Boolean {
-      def matches(v: Value) = {
-        case v: IntegerValue => true
-        case _ => false
-      }
+  }
+  case Boolean {
+    def matches(v: Value) = v match {
+      case v: BooleanValue => true
+      case _ => false
     }
-    case List {
-      def matches(v: Value) = {
-        case v: IntegerValue => true
-        case _ => false
-      }
+  }
+  case List {
+    def matches(v: Value) = v match {
+      case v: ListValue => true
+      case _ => false
     }
-    case Map {
-      def matches(v: Value) = {
-        case v: IntegerValue => true
-        case _ => false
-      }
+  }
+  case Map {
+    def matches(v: Value) = v match {
+      case v: MapValue => true
+      case _ => false
     }
+  }
+  case UnionType(types: Set[ValueType]) {
+    def matches(v: Value) = types.exists(_.matches(v))
+    override def |(other: ValueType): ValueType = ValueType.UnionType(types + other)
+  }
+}
 
 case class SourceFile(body: String, path: String) {
   final val LF = '\u000A'
