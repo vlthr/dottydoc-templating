@@ -7,14 +7,14 @@ import vlthr.tee.core.Error._
 import com.fasterxml.jackson.databind.ObjectMapper
 
 object Filter {
-  def byName(s: String): Constructor = registry.get(s).getOrElse(sp => new NoFilter()(sp))
-  type Constructor = SourcePosition => Filter
+  def byName(s: String): Constructor = registry.get(s).getOrElse((args, sp) => NoFilter()(sp))
+  type Constructor = (List[Value], SourcePosition) => Filter
   var registry: scala.collection.mutable.Map[String, Constructor] = scala.collection.mutable.Map(
-    "split" -> (sp => Split()(sp)),
-    "size" -> (sp => Size()(sp)),
-    "json" -> (sp => Json()(sp)),
-    "first" -> (sp => First()(sp)),
-    "reverse" -> (sp => Reverse()(sp))
+    "split" -> ((args, sp) => Split(args)(sp)),
+    "size" -> ((args, sp) => Size(args)(sp)),
+    "json" -> ((args, sp) => Json(args)(sp)),
+    "first" -> ((args, sp) => First(args)(sp)),
+    "reverse" -> ((args, sp) => Reverse(args)(sp))
   )
   def register(name: String, f: Constructor): Unit = registry.put(name, f)
 }
@@ -25,18 +25,17 @@ abstract trait NoArgs { self: Filter =>
     if (!correctNumberOfArgs) List(InvalidFilterArgs(this, args))
     else Nil
   }
-  def apply(input: InputType)(
+  def apply(input: Value)(
     implicit evalContext: EvalContext, parent: FilterExpr): Try[Value]
-  final def apply(input: InputType, args: List[Value])(
+  final def apply(input: Value, args: List[Value])(
     implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = apply(input)
 }
 
-abstract trait InputType[I <: Value] { self: Filter =>
+abstract trait InputType(t: ValueType) { self: Filter =>
   override def checkInput(input: Value): List[Error] = {
-    if (!input.isInstanceOf[I]) InvalidFilterInput(this, input) :: Nil
+    if (input.valueType != t) InvalidFilterInput(this, input) :: Nil
     else Nil
   }
-  type InputType = I
 }
 
 abstract trait FixedArgs(types: List[ValueType]) { self: Filter =>
@@ -49,65 +48,58 @@ abstract trait FixedArgs(types: List[ValueType]) { self: Filter =>
   }
 }
 
-abstract trait SingleArg[T <: Value] { self: Filter =>
-  type ArgType = T
+abstract trait SingleArg(expected: ValueType) { self: Filter =>
   def checkArgs(args: List[Value]): List[Error] = {
     val correctNumberOfArgs = args.size == 1
-    val correctArgTypes = if (correctNumberOfArgs) args(0).isInstanceOf[T] else false
+    val correctArgTypes = if (correctNumberOfArgs) args(0).valueType == expected else false
     if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(this, args))
     else Nil
   }
-  def applySingle(input: InputType, arg: ArgType): Try[Value]
-  def apply(input: InputType, args: List[Value])(
-    implicit evalContext: EvalContext, parent: FilterExpr) = applySingle(input, args(0).asInstanceOf[ArgType])
 }
 
-case class NoFilter()(implicit val sourcePosition: SourcePosition) extends Filter() {
+case class NoFilter()(implicit val sourcePosition: SourcePosition) extends Filter(Nil) {
   def name = "NoFilter"
-  def apply(input: InputType, args: List[Value])(
+  def apply(input: Value, args: List[Value])(
       implicit evalContext: EvalContext, parent: FilterExpr) = ???
   def checkInput(v: Value) = ???
   def checkArgs(v: List[Value]) = ???
 }
 
-case class Split()(implicit val sourcePosition: SourcePosition) extends Filter with InputType[StringValue] with SingleArg[StringValue] {
+case class Split(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
   def name = "split"
-  def applySingle(input: InputType, arg: ArgType): Try[Value] = {
-    Try(Value.create(input.v.split(arg.v).toList))
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    val pattern = args(0).asInstanceOf[StringValue]
+    Try(Value.create(input.v.split(pattern.v).toList))
   }
 }
 
-case class Json()(implicit override val sourcePosition: SourcePosition) extends Filter with InputType with NoArgs {
+case class Json(args: List[Value])(implicit override val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with NoArgs {
   def name = "json"
-  override def apply(input: InputType)(
+  override def filter(input: ListValue)(
     implicit evalContext: EvalContext, parent: FilterExpr) = Success(StringValue(new ObjectMapper().writeValueAsString(Util.asJava(input.asInstanceOf[ListValue]))))
 }
 
-case class Size()(implicit val sourcePosition: SourcePosition) extends Filter with InputType[StringValue | ListValue] with NoArgs {
+case class Size(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with NoArgs {
   def name = "size"
-  override def apply(input: InputType)(
-    implicit evalContext: EvalContext, parent: FilterExpr) = Try(input match {
-                                                                   case ListValue(l) => IntValue(l.size)
-                                                                   case StringValue(s) => IntValue(s.size)
-                                                                 })
+  override def filter(input: ListValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = Try(IntValue(input.v.size))
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = Try(IntValue(input.v.size))
 }
 
-case class First()(implicit val sourcePosition: SourcePosition) extends Filter with InputType[StringValue | ListValue] with NoArgs {
+case class First(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with NoArgs {
   def name = "first"
-  override def apply(input: InputType)(
-    implicit evalContext: EvalContext, parent: FilterExpr) = Try(input match {
-                                                                   case ListValue(l) => l.head
-                                                                   case StringValue(s) => StringValue(""+s.head)
-                                                                 })
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = Try(StringValue(""+input.v.head))
+  override def filter(input: ListValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = Try(input.v.head)
 }
 
-case class Reverse()(implicit val sourcePosition: SourcePosition) extends Filter with InputType[StringValue | ListValue] with NoArgs {
+case class Reverse(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with NoArgs {
   def name = "reverse"
-  override def apply(input: InputType)(
-    implicit evalContext: EvalContext, parent: FilterExpr) ={
-    Try(input match {
-          case ListValue(l) => ListValue(l.reverse)
-          case StringValue(s) => StringValue(s.reverse)
-        })
-  }
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = Try(StringValue(input.v.reverse))
+  override def filter(input: ListValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = Try(ListValue(input.v.reverse))
 }

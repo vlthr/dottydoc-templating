@@ -2,6 +2,7 @@ package vlthr.tee.core
 import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
 import vlthr.tee.core.Error._
+import vlthr.tee.filters._
 
 abstract trait BooleanExpr extends Expr {
   override def eval()(implicit evalContext: EvalContext): Try[Value] =
@@ -82,19 +83,17 @@ final case class VariableUseExpr(name: String)(
   }
 }
 
-final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
+final case class FilterExpr(expr: Expr, filter: Filter.Constructor, args: List[Expr])(
     implicit val sourcePosition: SourcePosition)
     extends Expr {
   override def eval()(implicit evalContext: EvalContext) =
     Error
       .all(expr.eval) { expr =>
         Error.condenseAll(args.map(_.eval): _*) { args =>
-          println(s"Applying ${filter.name} to $expr, $args, with typecheck = ${filter.typeCheck(expr, args)}")
           implicit val parent: FilterExpr = this
-          filter
-            .typeCheck(expr, args)
-            .map(_ => filter.apply(expr.asInstanceOf[filter.InputType], args))
-            .flatten
+          val f = filter(args, sourcePosition)
+          f.typeCheck(expr, args)
+            .flatMap(_ => f.apply(expr))
         }
       }
       .flatten

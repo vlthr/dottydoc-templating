@@ -162,7 +162,7 @@ class LiquidNodeVisitor(template: SourceFile)
         else Nil
       val filterCtor = Filter.byName(ctx.id().getText())
       FilterExpr(visitOutputExpr(ctx.output_expr()),
-                 filterCtor(sourcePosition),
+                 filterCtor,
                  args)
     } else {
       expVisitor.visitExpr(ctx.expr())

@@ -117,10 +117,9 @@ object EvalContext {
     EvalContext(MMap(), Some(parent), parent.includeDir)
 }
 
-abstract trait Filter() {
+abstract trait Filter(args: List[Value]) {
   def name: String
   def sourcePosition: SourcePosition
-  type InputType <: Value
   def checkInput(input: Value): List[Error]
   def checkArgs(v: List[Value]): List[Error]
   def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
@@ -138,8 +137,25 @@ abstract trait Filter() {
     if (errors.size > 0) Error.fail(errors: _*)
     else Success(())
   }
-  def apply(input: InputType, args: List[Value])(
-    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value]
+
+  def apply(input: Value)(
+    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = input match {
+    case v: StringValue => filter(v)
+    case v: BooleanValue => filter(v)
+    case v: IntValue => filter(v)
+    case v: ListValue => filter(v)
+    case v: MapValue => filter(v)
+  }
+  def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+  def filter(input: BooleanValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+  def filter(input: IntValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+  def filter(input: ListValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+  def filter(input: MapValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
 }
 
 sealed trait Truthable {
