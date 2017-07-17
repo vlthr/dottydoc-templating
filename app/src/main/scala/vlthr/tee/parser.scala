@@ -63,10 +63,12 @@ object Liquid {
   def parse(path: String): Try[Node] =
     parse(SourceFile(Util.readWholeFile(path), path))
 
-  def render(path: String, params: Map[String, Any], includeDir: String): Try[String] = {
+  def render(path: String,
+             params: Map[String, Any],
+             includeDir: String): Try[String] = {
     val p: Map[String, Value] = params.map {
-                                           case (k: String, v: Any) => (k, Value.create(v))
-                                         }
+      case (k: String, v: Any) => (k, Value.create(v))
+    }
     implicit val ctx: EvalContext = EvalContext.createNew(p, includeDir)
     parse(path).flatMap(_.render)
   }
@@ -92,7 +94,8 @@ object Liquid {
 }
 
 class ErrorStrategy extends DefaultErrorStrategy {
-  override def reportNoViableAlternative(parser: Parser, e: NoViableAltException) = {
+  override def reportNoViableAlternative(parser: Parser,
+                                         e: NoViableAltException) = {
     val msg = s"No viable alternative found"
     parser.notifyErrorListeners(e.getOffendingToken(), msg, e)
   }
@@ -113,8 +116,12 @@ class GatherErrors(template: SourceFile) extends BaseErrorListener {
                            msg: String,
                            e: RecognitionException) = {
     // TODO: Get begin/end from line/char
-    val length = if (offendingSymbol != null) offendingSymbol.asInstanceOf[Token].getText.size else 0
-    implicit val sourcePosition: SourcePosition = SourcePosition.fromLine(template, line-1, charPositionInLine, length)
+    val length =
+      if (offendingSymbol != null)
+        offendingSymbol.asInstanceOf[Token].getText.size
+      else 0
+    implicit val sourcePosition: SourcePosition =
+      SourcePosition.fromLine(template, line - 1, charPositionInLine, length)
     errors.append(ParseError(recognizer, offendingSymbol, msg, e))
   }
 }
@@ -161,9 +168,7 @@ class LiquidNodeVisitor(template: SourceFile)
           new LiquidArgsVisitor(template).visitArglist(ctx.arglist())
         else Nil
       val filterCtor = Filter.byName(ctx.id().getText())
-      FilterExpr(visitOutputExpr(ctx.output_expr()),
-                 filterCtor,
-                 args)
+      FilterExpr(visitOutputExpr(ctx.output_expr()), filterCtor, args)
     } else {
       expVisitor.visitExpr(ctx.expr())
     }
@@ -214,11 +219,20 @@ class LiquidNodeVisitor(template: SourceFile)
     } else if (ctx.commentTag() != null) {
       CommentTag()
     } else if (ctx.rawTag() != null) {
-      val stop = if (ctx.rawTag.any.stop != null) ctx.rawTag.any.stop else ctx.rawTag.any.start
-      RawTag(ctx.rawTag.start.getInputStream().getText(new Interval(ctx.rawTag.any.start.getStartIndex, ctx.rawTag.any.stop.getStopIndex)))
+      val stop =
+        if (ctx.rawTag.any.stop != null) ctx.rawTag.any.stop
+        else ctx.rawTag.any.start
+      RawTag(
+        ctx.rawTag.start
+          .getInputStream()
+          .getText(new Interval(ctx.rawTag.any.start.getStartIndex,
+                                ctx.rawTag.any.stop.getStopIndex)))
     } else if (ctx.customTag != null) {
       val id = ctx.customTag.id.getText
-      val args = if (ctx.customTag.arglist != null) new LiquidArgsVisitor(template).visitArglist(ctx.customTag.arglist) else Nil
+      val args =
+        if (ctx.customTag.arglist != null)
+          new LiquidArgsVisitor(template).visitArglist(ctx.customTag.arglist)
+        else Nil
       CustomTag.byName(id).map(ctor => ctor(sourcePosition, args)).getOrElse {
         throw InvalidTagIdException((InvalidTagId(id)))
       }
@@ -233,9 +247,8 @@ class LiquidNodeVisitor(template: SourceFile)
 
   override def visitBlock(ctx: LiquidParser.BlockContext): Node = {
     val stop = if (ctx.stop != null) ctx.stop else ctx.start
-    implicit val sourcePosition = SourcePosition(ctx.start.getStartIndex(),
-                                                 stop.getStopIndex(),
-                                                 template)
+    implicit val sourcePosition =
+      SourcePosition(ctx.start.getStartIndex(), stop.getStopIndex(), template)
     BlockNode(ctx.node().asScala.toList.map(n => visitNode(n)))
   }
 }

@@ -83,8 +83,10 @@ final case class VariableUseExpr(name: String)(
   }
 }
 
-final case class FilterExpr(expr: Expr, filter: Filter.Constructor, args: List[Expr])(
-    implicit val sourcePosition: SourcePosition)
+final case class FilterExpr(
+    expr: Expr,
+    filter: Filter.Constructor,
+    args: List[Expr])(implicit val sourcePosition: SourcePosition)
     extends Expr {
   override def eval()(implicit evalContext: EvalContext) =
     Error

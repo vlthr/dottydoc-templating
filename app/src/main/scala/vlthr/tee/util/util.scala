@@ -33,7 +33,7 @@ object Util {
 
   def convert(value: Value): Object = {
     value match {
-      case MapValue(m) => m.map{ case (k, v) => (k, convert(v))}.asJava
+      case MapValue(m) => m.map { case (k, v) => (k, convert(v)) }.asJava
       case ListValue(l) => l.map(convert).toList.asJava
       case BooleanValue(b) => b.asInstanceOf[Object]
       case IntValue(i) => i.asInstanceOf[Object]
