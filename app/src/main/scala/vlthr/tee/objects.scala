@@ -35,7 +35,7 @@ trait TagNode extends Node with Renderable {
 }
 
 final case class CaptureTag(id: String, value: Node)(
-  implicit val sourcePosition: SourcePosition)
+    implicit val sourcePosition: SourcePosition)
     extends TagNode {
   override def render()(implicit evalContext: EvalContext): Try[String] = {
     Error.all(value.render) { v: String =>
@@ -61,7 +61,8 @@ final case class CaseTag()(implicit val sourcePosition: SourcePosition)
 
 final case class CommentTag()(implicit val sourcePosition: SourcePosition)
     extends TagNode {
-  override def render()(implicit evalContext: EvalContext): Try[String] = Success("")
+  override def render()(implicit evalContext: EvalContext): Try[String] =
+    Success("")
 }
 
 final case class CycleTag()(implicit val sourcePosition: SourcePosition)
