@@ -18,6 +18,7 @@ object Filter {
     "append" -> ((args, sp) => Append(args)(sp)),
     "capitalize" -> ((args, sp) => Capitalize(args)(sp)),
     "downcase" -> ((args, sp) => Downcase(args)(sp)),
+    "upcase" -> ((args, sp) => Upcase(args)(sp)),
     "reverse" -> ((args, sp) => Reverse(args)(sp))
   )
   def register(name: String, f: Constructor): Unit = registry.put(name, f)
@@ -121,7 +122,6 @@ case class Capitalize(args: List[Value])(implicit val sourcePosition: SourcePosi
   def name = "capitalize"
   override def filter(input: StringValue)(
     implicit evalContext: EvalContext, parent: FilterExpr) = {
-    println(input)
     Try(StringValue(Character.toUpperCase(input.v(0)) + input.v.substring(1)))
   }
 }
@@ -131,6 +131,14 @@ case class Downcase(args: List[Value])(implicit val sourcePosition: SourcePositi
   override def filter(input: StringValue)(
     implicit evalContext: EvalContext, parent: FilterExpr) = {
     Try(StringValue(input.v.map(c => Character.toLowerCase(c)).mkString))
+  }
+}
+
+case class Upcase(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.String) with NoArgs {
+  def name = "upcase"
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    Try(StringValue(input.v.map(c => Character.toUpperCase(c)).mkString))
   }
 }
 
