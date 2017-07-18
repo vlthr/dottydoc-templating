@@ -1,0 +1,1 @@
+(template (block (node (output {{ (output_expr (output_expr (expr (term 'Some <tags/> && some "quoted values"'))) | (id escape)) }})) (node \n)) <EOF>)

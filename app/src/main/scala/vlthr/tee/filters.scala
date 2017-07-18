@@ -19,6 +19,7 @@ object Filter {
     "capitalize" -> ((args, sp) => Capitalize(args)(sp)),
     "downcase" -> ((args, sp) => Downcase(args)(sp)),
     "upcase" -> ((args, sp) => Upcase(args)(sp)),
+    "escape" -> ((args, sp) => Escape(args)(sp)),
     "reverse" -> ((args, sp) => Reverse(args)(sp))
   )
   def register(name: String, f: Constructor): Unit = registry.put(name, f)
@@ -148,5 +149,17 @@ case class Append(args: List[Value])(implicit val sourcePosition: SourcePosition
     implicit evalContext: EvalContext, parent: FilterExpr) = {
     val end = args(0).asInstanceOf[StringValue]
     Try(StringValue(input.v + end.v))
+  }
+}
+
+case class Escape(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.String) with NoArgs {
+  def name = "escape"
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    Try(StringValue(input.v
+                      .replace("<", "&lt;")
+                      .replace(">", "&gt;")
+                      .replace("\"", "&quot;")
+                      .replace("&", "&amp;")))
   }
 }
