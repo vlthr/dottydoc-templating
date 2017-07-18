@@ -22,6 +22,7 @@ object Filter {
     "downcase" -> ((args, sp) => Downcase(args)(sp)),
     "upcase" -> ((args, sp) => Upcase(args)(sp)),
     "escape" -> ((args, sp) => Escape(args)(sp)),
+    "remove" -> ((args, sp) => Remove(args)(sp)),
     "reverse" -> ((args, sp) => Reverse(args)(sp))
   )
   def register(name: String, f: Constructor): Unit = registry.put(name, f)
@@ -180,5 +181,14 @@ case class Escape(args: List[Value])(implicit val sourcePosition: SourcePosition
                       .replace(">", "&gt;")
                       .replace("\"", "&quot;")
                       .replace("&", "&amp;")))
+  }
+}
+
+case class Remove(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
+  def name = "remove"
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    val pattern = args(0).asInstanceOf[StringValue]
+    Try(StringValue(input.v.replace(pattern.v, "")))
   }
 }
