@@ -16,6 +16,7 @@ object Filter {
     "json" -> ((args, sp) => Json(args)(sp)),
     "first" -> ((args, sp) => First(args)(sp)),
     "last" -> ((args, sp) => Last(args)(sp)),
+    "prepend" -> ((args, sp) => Prepend(args)(sp)),
     "append" -> ((args, sp) => Append(args)(sp)),
     "capitalize" -> ((args, sp) => Capitalize(args)(sp)),
     "downcase" -> ((args, sp) => Downcase(args)(sp)),
@@ -158,6 +159,15 @@ case class Append(args: List[Value])(implicit val sourcePosition: SourcePosition
     implicit evalContext: EvalContext, parent: FilterExpr) = {
     val end = args(0).asInstanceOf[StringValue]
     Try(StringValue(input.v + end.v))
+  }
+}
+
+case class Prepend(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
+  def name = "prepend"
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    val start = args(0).asInstanceOf[StringValue]
+    Try(StringValue(start.v + input.v))
   }
 }
 
