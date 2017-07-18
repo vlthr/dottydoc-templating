@@ -11,9 +11,11 @@ object Filter {
   type Constructor = (List[Value], SourcePosition) => Filter
   var registry: scala.collection.mutable.Map[String, Constructor] = scala.collection.mutable.Map(
     "split" -> ((args, sp) => Split(args)(sp)),
+    "join" -> ((args, sp) => Join(args)(sp)),
     "size" -> ((args, sp) => Size(args)(sp)),
     "json" -> ((args, sp) => Json(args)(sp)),
     "first" -> ((args, sp) => First(args)(sp)),
+    "capitalize" -> ((args, sp) => Capitalize(args)(sp)),
     "reverse" -> ((args, sp) => Reverse(args)(sp))
   )
   def register(name: String, f: Constructor): Unit = registry.put(name, f)
@@ -102,4 +104,22 @@ case class Reverse(args: List[Value])(implicit val sourcePosition: SourcePositio
     implicit evalContext: EvalContext, parent: FilterExpr) = Try(StringValue(input.v.reverse))
   override def filter(input: ListValue)(
     implicit evalContext: EvalContext, parent: FilterExpr) = Try(ListValue(input.v.reverse))
+}
+
+case class Join(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.List) with SingleArg(ValueType.String) {
+  def name = "join"
+  override def filter(input: ListValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    val delim = args(0).asInstanceOf[StringValue]
+    Try(StringValue(input.v.map(_.render.get).mkString(delim.v)))
+  }
+}
+
+case class Capitalize(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.String) with NoArgs {
+  def name = "capitalize"
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    println(input)
+    Try(StringValue(Character.toUpperCase(input.v(0)) + input.v.substring(1)))
+  }
 }
