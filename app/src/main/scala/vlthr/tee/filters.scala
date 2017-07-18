@@ -15,6 +15,7 @@ object Filter {
     "size" -> ((args, sp) => Size(args)(sp)),
     "json" -> ((args, sp) => Json(args)(sp)),
     "first" -> ((args, sp) => First(args)(sp)),
+    "append" -> ((args, sp) => Append(args)(sp)),
     "capitalize" -> ((args, sp) => Capitalize(args)(sp)),
     "reverse" -> ((args, sp) => Reverse(args)(sp))
   )
@@ -121,5 +122,14 @@ case class Capitalize(args: List[Value])(implicit val sourcePosition: SourcePosi
     implicit evalContext: EvalContext, parent: FilterExpr) = {
     println(input)
     Try(StringValue(Character.toUpperCase(input.v(0)) + input.v.substring(1)))
+  }
+}
+
+case class Append(args: List[Value])(implicit val sourcePosition: SourcePosition) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
+  def name = "append"
+  override def filter(input: StringValue)(
+    implicit evalContext: EvalContext, parent: FilterExpr) = {
+    val end = args(0).asInstanceOf[StringValue]
+    Try(StringValue(input.v + end.v))
   }
 }
