@@ -156,12 +156,11 @@ object Context {
     Context(MMap(), Some(parent), parent.includeDir)
 }
 
-abstract trait Filter(args: List[Value]) {
+abstract trait Filter {
   def name: String
-  def pctx: ParseContext
-  def checkInput(input: Value): List[Error]
-  def checkArgs(v: List[Value]): List[Error]
-  def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
+  def checkInput(input: Value)(implicit ctx: Context, parent: FilterExpr): List[Error]
+  def checkArgs(v: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error]
+  def typeCheck(input: Value, args: List[Value])(implicit ctx: Context, parent: FilterExpr): Try[Unit] = {
     val inputErrors = checkInput(input)
     val argsErrors = checkArgs(args)
     val errors = inputErrors ++ argsErrors
@@ -169,7 +168,7 @@ abstract trait Filter(args: List[Value]) {
     else Success(())
   }
 
-  def apply(input: Value, args: List[Value])(
+  def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr): Try[Value]
 }
 

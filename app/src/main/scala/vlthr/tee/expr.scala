@@ -85,7 +85,7 @@ final case class VariableUseExpr(name: String)(
 
 final case class FilterExpr(
     expr: Expr,
-    filter: Filter.Constructor,
+    filter: Filter,
     args: List[Expr])(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) =
@@ -93,9 +93,8 @@ final case class FilterExpr(
       .all(expr.eval) { expr =>
         Error.condenseAll(args.map(_.eval): _*) { args =>
           implicit val parent: FilterExpr = this
-          val f = filter(args, pctx)
-          f.typeCheck(expr, args)
-            .flatMap(_ => f.apply(expr, args))
+          filter.typeCheck(expr, args)
+            .flatMap(_ => filter.filter(expr, args))
         }
       }
       .flatten
