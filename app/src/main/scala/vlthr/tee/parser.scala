@@ -12,15 +12,16 @@ import vlthr.tee.util.Util
 import scala.util.{Try, Success, Failure}
 
 object Liquid {
-  def makeContext(ctx: ParserRuleContext, template: SourceFile) = {
-    val stop = if (ctx.stop != null) ctx.stop else ctx.start
+  def makeContext(c: ParserRuleContext, template: SourceFile) = {
+    val stop = if (c.stop != null) c.stop else c.start
     val sourcePosition =
-      SourcePosition(ctx.start.getStartIndex(), stop.getStopIndex(), template)
+      SourcePosition(c.start.getStartIndex(), stop.getStopIndex(), template)
     ParseContext(sourcePosition)
   }
   def parseExpr(node: String): Expr = {
     val parser = makeParser(node, lexerMode = Object())
     val tree = parser.expr()
+    implicit val ctx = Context.createNew()
     val visitor = new LiquidExprVisitor(SourceFile(node, "./"))
     tree.accept(visitor)
   }
@@ -28,6 +29,7 @@ object Liquid {
   def parseNode(node: String): Obj = {
     val parser = makeParser(node)
     val tree = parser.node()
+    implicit val ctx = Context.createNew()
     val visitor = new LiquidNodeVisitor(SourceFile(node, "./"))
     tree.accept(visitor)
   }
@@ -35,6 +37,7 @@ object Liquid {
   def parseTemplate(node: String): Obj = {
     val parser = makeParser(node)
     val tree = parser.template()
+    implicit val ctx = Context.createNew()
     val visitor = new LiquidNodeVisitor(SourceFile(node, "./"))
     tree.accept(visitor)
   }
@@ -50,7 +53,7 @@ object Liquid {
     tree.toStringTree(parser)
   }
 
-  def parse(file: SourceFile): Try[Obj] = {
+  def parse(file: SourceFile)(implicit ctx: Context): Try[Obj] = {
     val input = new ANTLRInputStream(file.body)
     val lexer = new LiquidLexer(input)
     val tokens = new CommonTokenStream(lexer)
@@ -66,16 +69,13 @@ object Liquid {
     else Success(result)
   }
 
-  def parse(path: String): Try[Obj] =
+  def parse(path: String)(implicit ctx: Context): Try[Obj] =
     parse(SourceFile(Util.readWholeFile(path), path))
 
   def render(path: String,
              params: Map[String, Any],
              includeDir: String): Try[String] = {
-    val p: Map[String, Value] = params.map {
-      case (k: String, v: Any) => (k, Value.create(v))
-    }
-    implicit val ctx: Context = Context.createNew(p, includeDir)
+    implicit val c: Context = Context.createNew.withParams(params).withIncludeDir(includeDir)
     parse(path).flatMap(_.render)
   }
 
@@ -128,21 +128,21 @@ class GatherErrors(template: SourceFile) extends BaseErrorListener {
       else 0
     implicit val sourcePosition: SourcePosition =
       SourcePosition.fromLine(template, line - 1, charPositionInLine, length)
-    implicit val pctx = ParseContext(sourcePosition)
+    implicit val pc = ParseContext(sourcePosition)
     errors.append(ParseError(recognizer, offendingSymbol, msg, e))
   }
 }
 
-class LiquidNodeVisitor(template: SourceFile)
+class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Obj] {
 
-  override def visitNode(ctx: LiquidParser.NodeContext): Obj = {
-    if (ctx.tag() != null) {
-      visitTag(ctx.tag())
-    } else if (ctx.output() != null) {
-      visitOutput(ctx.output())
-    } else if (ctx.TEXT() != null) {
-      visitText(ctx.TEXT())
+  override def visitNode(c: LiquidParser.NodeContext): Obj = {
+    if (c.tag() != null) {
+      visitTag(c.tag())
+    } else if (c.output() != null) {
+      visitOutput(c.output())
+    } else if (c.TEXT() != null) {
+      visitText(c.TEXT())
     } else {
       throw new Exception("Missing node definition");
     }
@@ -152,41 +152,41 @@ class LiquidNodeVisitor(template: SourceFile)
     val sourcePosition = SourcePosition(t.getSymbol().getStartIndex(),
                                                  t.getSymbol().getStopIndex(),
                                                  template)
-    implicit val pctx = ParseContext(sourcePosition)
+    implicit val pc = ParseContext(sourcePosition)
     TextNode(t.getText())
   }
 
-  override def visitOutput(ctx: LiquidParser.OutputContext): Obj = {
-    implicit val pctx = Liquid.makeContext(ctx, template)
-    val output_expr = ctx.output_expr()
+  override def visitOutput(c: LiquidParser.OutputContext): Obj = {
+    implicit val pc = Liquid.makeContext(c, template)
+    val output_expr = c.output_expr()
     OutputNode(visitOutputExpr(output_expr))
   }
 
-  def visitOutputExpr(ctx: LiquidParser.Output_exprContext): Expr = {
-    implicit val pctx = Liquid.makeContext(ctx, template)
+  def visitOutputExpr(c: LiquidParser.Output_exprContext): Expr = {
+    implicit val pc = Liquid.makeContext(c, template)
     val expVisitor = new LiquidExprVisitor(template)
-    if (ctx.FILTER() != null) {
+    if (c.FILTER() != null) {
       val args =
-        if (ctx.COLON() != null)
-          new LiquidArgsVisitor(template).visitArglist(ctx.arglist())
+        if (c.COLON() != null)
+          new LiquidArgsVisitor(template).visitArglist(c.arglist())
         else Nil
-      val filter = Filter.byName(ctx.id().getText()).getOrElse(NoFilter())
-      FilterExpr(visitOutputExpr(ctx.output_expr()), filter, args)
+      val filter = ctx.getFilter(c.id.getText)
+      FilterExpr(visitOutputExpr(c.output_expr()), filter, args)
     } else {
-      expVisitor.visitExpr(ctx.expr())
+      expVisitor.visitExpr(c.expr())
     }
   }
 
-  override def visitTag(ctx: LiquidParser.TagContext): Obj = {
-    implicit val pctx = Liquid.makeContext(ctx, template)
-    if (ctx.ifTag() != null) {
+  override def visitTag(c: LiquidParser.TagContext): Obj = {
+    implicit val pc = Liquid.makeContext(c, template)
+    if (c.ifTag() != null) {
       val ev = new LiquidExprVisitor(template)
       val expr =
-        ev.visitExpr(ctx.ifTag().ifStart().expr())
-      val block = visitBlock(ctx.ifTag().block())
+        ev.visitExpr(c.ifTag().ifStart().expr())
+      val block = visitBlock(c.ifTag().block())
       val elsifs =
-        if (ctx.ifTag().elsif() != null)
-          ctx
+        if (c.ifTag().elsif() != null)
+          c
             .ifTag()
             .elsif()
             .asScala
@@ -195,46 +195,46 @@ class LiquidNodeVisitor(template: SourceFile)
             .toList
         else Nil
       val els =
-        if (ctx.ifTag().els() != null)
-          Some(visitBlock(ctx.ifTag().els().block()))
+        if (c.ifTag().els() != null)
+          Some(visitBlock(c.ifTag().els().block()))
         else None
       IfTag(expr, block, elsifs, els)
-    } else if (ctx.forTag() != null) {
-      val id = ctx.forTag().forStart().id().getText()
-      val expr = visitOutputExpr(ctx.forTag().forStart().output_expr())
-      val block = visitBlock(ctx.forTag().block())
+    } else if (c.forTag() != null) {
+      val id = c.forTag().forStart().id().getText()
+      val expr = visitOutputExpr(c.forTag().forStart().output_expr())
+      val block = visitBlock(c.forTag().block())
       ForTag(id, expr, block)
-    } else if (ctx.assignTag() != null) {
-      val id = ctx.assignTag().id().getText()
+    } else if (c.assignTag() != null) {
+      val id = c.assignTag().id().getText()
       val expr =
-        new LiquidExprVisitor(template).visitExpr(ctx.assignTag().expr())
+        new LiquidExprVisitor(template).visitExpr(c.assignTag().expr())
       AssignTag(id, expr)
-    } else if (ctx.captureTag() != null) {
-      val id = ctx.captureTag().id().getText()
-      val value = visitBlock(ctx.captureTag().block())
+    } else if (c.captureTag() != null) {
+      val id = c.captureTag().id().getText()
+      val value = visitBlock(c.captureTag().block())
       CaptureTag(id, value)
-    } else if (ctx.includeTag() != null) {
+    } else if (c.includeTag() != null) {
       val expr =
-        new LiquidExprVisitor(template).visitExpr(ctx.includeTag().expr())
+        new LiquidExprVisitor(template).visitExpr(c.includeTag().expr())
       IncludeTag(expr)
-    } else if (ctx.commentTag() != null) {
+    } else if (c.commentTag() != null) {
       CommentTag()
-    } else if (ctx.rawTag() != null) {
+    } else if (c.rawTag() != null) {
       val stop =
-        if (ctx.rawTag.any.stop != null) ctx.rawTag.any.stop
-        else ctx.rawTag.any.start
+        if (c.rawTag.any.stop != null) c.rawTag.any.stop
+        else c.rawTag.any.start
       RawTag(
-        ctx.rawTag.start
+        c.rawTag.start
           .getInputStream()
-          .getText(new Interval(ctx.rawTag.any.start.getStartIndex,
-                                ctx.rawTag.any.stop.getStopIndex)))
-    } else if (ctx.customTag != null) {
-      val id = ctx.customTag.id.getText
+          .getText(new Interval(c.rawTag.any.start.getStartIndex,
+                                c.rawTag.any.stop.getStopIndex)))
+    } else if (c.customTag != null) {
+      val id = c.customTag.id.getText
       val args =
-        if (ctx.customTag.arglist != null)
-          new LiquidArgsVisitor(template).visitArglist(ctx.customTag.arglist)
+        if (c.customTag.arglist != null)
+          new LiquidArgsVisitor(template).visitArglist(c.customTag.arglist)
         else Nil
-      CustomTag.byName(id).map(ctor => ctor(pctx, args)).getOrElse {
+      CustomTag.byName(id).map(ctor => ctor(pc, args)).getOrElse {
         throw InvalidTagIdException((InvalidTagId(id)))
       }
     } else {
@@ -242,77 +242,77 @@ class LiquidNodeVisitor(template: SourceFile)
     }
   }
 
-  override def visitTemplate(ctx: LiquidParser.TemplateContext): Obj = {
-    visitBlock(ctx.block())
+  override def visitTemplate(c: LiquidParser.TemplateContext): Obj = {
+    visitBlock(c.block())
   }
 
-  override def visitBlock(ctx: LiquidParser.BlockContext): Obj = {
-    implicit val pctx = Liquid.makeContext(ctx, template)
-    BlockNode(ctx.node().asScala.toList.map(n => visitNode(n)))
+  override def visitBlock(c: LiquidParser.BlockContext): Obj = {
+    implicit val pc = Liquid.makeContext(c, template)
+    BlockNode(c.node().asScala.toList.map(n => visitNode(n)))
   }
 }
 
-class LiquidArgsVisitor(template: SourceFile)
+class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[List[Expr]] {
-  override def visitArglist(ctx: LiquidParser.ArglistContext): List[Expr] = {
-    ctx
+  override def visitArglist(c: LiquidParser.ArglistContext): List[Expr] = {
+    c
       .expr()
       .asScala
-      .map(ectx => {
-        implicit val pctx = Liquid.makeContext(ctx, template)
-        new LiquidExprVisitor(template).visitExpr(ectx)
+      .map(ec => {
+        implicit val pc = Liquid.makeContext(c, template)
+        new LiquidExprVisitor(template).visitExpr(ec)
       })
       .toList
   }
 }
 
-class LiquidExprVisitor(template: SourceFile)
+class LiquidExprVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Expr] {
-  override def visitExpr(ctx: LiquidParser.ExprContext): Expr = {
-    implicit val pctx = Liquid.makeContext(ctx, template)
-    if (ctx.DOTINDEX() != null) {
-      DotExpr(visitExpr(ctx.expr(0)), ctx.id().getText())
-    } else if (ctx.STARTINDEX() != null) {
-      IndexExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.AND() != null) {
-      AndExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.OR() != null) {
-      OrExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.EQ() != null) {
-      EqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.NEQ() != null) {
-      NEqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.LT() != null) {
-      LtExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.LEQ() != null) {
-      LEqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.GT() != null) {
-      GtExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
-    } else if (ctx.GEQ() != null) {
-      GEqExpr(visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)))
+  override def visitExpr(c: LiquidParser.ExprContext): Expr = {
+    implicit val pc = Liquid.makeContext(c, template)
+    if (c.DOTINDEX() != null) {
+      DotExpr(visitExpr(c.expr(0)), c.id().getText())
+    } else if (c.STARTINDEX() != null) {
+      IndexExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.AND() != null) {
+      AndExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.OR() != null) {
+      OrExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.EQ() != null) {
+      EqExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.NEQ() != null) {
+      NEqExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.LT() != null) {
+      LtExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.LEQ() != null) {
+      LEqExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.GT() != null) {
+      GtExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.GEQ() != null) {
+      GEqExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
     } else {
-      val term = visitTerm(ctx.term())
+      val term = visitTerm(c.term())
       term
     }
   }
 
-  override def visitTerm(ctx: LiquidParser.TermContext): Expr = {
-    implicit val pctx = Liquid.makeContext(ctx, template)
-    ctx.getChild(0) match {
+  override def visitTerm(c: LiquidParser.TermContext): Expr = {
+    implicit val pc = Liquid.makeContext(c, template)
+    c.getChild(0) match {
       case t: TerminalNode => {
-        if (ctx.INT() != null) {
+        if (c.INT() != null) {
           LiteralExpr(IntValue(t.getText().toInt))
-        } else if (ctx.STRSINGLE() != null || ctx.STRDOUBLE() != null) {
+        } else if (c.STRSINGLE() != null || c.STRDOUBLE() != null) {
           LiteralExpr(
             StringValue(t.getText().substring(1, t.getText().size - 1)))
-        } else if (ctx.TRUE() != null) {
+        } else if (c.TRUE() != null) {
           LiteralExpr(BooleanValue(true))
-        } else if (ctx.FALSE() != null) {
+        } else if (c.FALSE() != null) {
           LiteralExpr(BooleanValue(false))
-        } else throw new Exception("Unknown term: " + t + " in context " + ctx)
+        } else throw new Exception("Unknown term: " + t + " in context " + c)
       }
-      case ictx: LiquidParser.IdContext => {
-        VariableUseExpr(ctx.id().getText())
+      case ic: LiquidParser.IdContext => {
+        VariableUseExpr(c.id().getText())
       }
     }
   }

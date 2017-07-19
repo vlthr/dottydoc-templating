@@ -76,7 +76,11 @@ case class InvalidFilterInput(expr: FilterExpr, filter: Filter, input: Value) ex
 case class InvalidFilterArgs(expr: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(expr.pctx) {
   def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
-case class FilterApplicationError(obj: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(obj.pctx) {
+case class UnknownFilterNameException(name: String) extends Exception
+case class UnknownFilterName(pctx: ParseContext, name: String) extends RenderError(pctx) {
+  def description = s"Unknown filter: `$name`."
+}
+case class FilterApplicationError(expr: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(expr.pctx) {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType} and arguments (${args.map(_.valueType).mkString(", ")})."
 }
 case class LiquidFailure(errors: List[Error]) extends Exception {

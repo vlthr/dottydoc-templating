@@ -61,10 +61,9 @@ abstract trait SingleArg(expected: ValueType) { self: Filter =>
   }
 }
 
-case class NoFilter() extends Filter {
-  def name = "NoFilter"
+case class UnknownFilter(name: String) extends Filter {
   def filter(input: Value, args: List[Value])(
-      implicit ctx: Context, parent: FilterExpr) = ???
+      implicit ctx: Context, parent: FilterExpr) = throw UnknownFilterNameException(name)
   def checkInput(v: Value)(implicit ctx: Context, parent: FilterExpr) = ???
   def checkArgs(v: List[Value])(implicit ctx: Context, parent: FilterExpr) = ???
 }
