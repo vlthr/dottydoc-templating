@@ -135,8 +135,8 @@ abstract trait Obj extends ASTNode {
 }
 
 abstract trait Expr extends ASTNode {
-  def eval()(implicit evalContext: Context): Try[Value] = ???
-  def render()(implicit evalContext: Context): Try[String] =
+  def eval()(implicit ctx: Context): Try[Value] = ???
+  def render()(implicit ctx: Context): Try[String] =
     eval.flatMap(_.render)
 }
 
@@ -156,8 +156,9 @@ object Context {
     Context(MMap(), Some(parent), parent.includeDir)
 }
 
-abstract trait Filter(args: List[Value]) extends ASTNode {
+abstract trait Filter(args: List[Value]) {
   def name: String
+  def pctx: ParseContext
   def checkInput(input: Value): List[Error]
   def checkArgs(v: List[Value]): List[Error]
   def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
@@ -169,7 +170,7 @@ abstract trait Filter(args: List[Value]) extends ASTNode {
   }
 
   def apply(input: Value)(
-    implicit evalContext: Context, parent: FilterExpr): Try[Value] = input match {
+    implicit ctx: Context, parent: FilterExpr): Try[Value] = input match {
     case v: StringValue => filter(v)
     case v: BooleanValue => filter(v)
     case v: IntValue => filter(v)
@@ -177,15 +178,15 @@ abstract trait Filter(args: List[Value]) extends ASTNode {
     case v: MapValue => filter(v)
   }
   def filter(input: StringValue)(
-    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
+    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: BooleanValue)(
-    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
+    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: IntValue)(
-    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
+    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: ListValue)(
-    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
+    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: MapValue)(
-    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
+    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
 }
 
 sealed trait Truthable {
@@ -199,7 +200,7 @@ trait Truthy extends Truthable {
 sealed trait Value extends Truthable with Ordered[Value] {
   def display: String
 
-  def render()(implicit evalContext: Context): Try[String]
+  def render()(implicit ctx: Context): Try[String]
 
   def valueType: ValueType
 
@@ -220,13 +221,13 @@ sealed trait IndexedValue extends Value
 final case class StringValue(v: String) extends Value with Truthy {
   def display: String = s""""$v""""
   def valueType = ValueType.String
-  def render()(implicit evalContext: Context): Try[String] = Success(v)
+  def render()(implicit ctx: Context): Try[String] = Success(v)
 }
 
 final case class BooleanValue(v: Boolean) extends Value {
   def display: String = s"""$v"""
   def valueType = ValueType.Boolean
-  def render()(implicit evalContext: Context): Try[String] =
+  def render()(implicit ctx: Context): Try[String] =
     Success(v.toString)
   def truthy = v
 }
@@ -234,7 +235,7 @@ final case class BooleanValue(v: Boolean) extends Value {
 final case class IntValue(v: Int) extends Value with Truthy {
   def display: String = s"""$v"""
   def valueType = ValueType.Integer
-  def render()(implicit evalContext: Context): Try[String] =
+  def render()(implicit ctx: Context): Try[String] =
     Success(v.toString)
 }
 
@@ -243,13 +244,13 @@ final case class MapValue(v: Map[String, Value])
     with Truthy {
   def display: String = ???
   def valueType = ValueType.Map
-  def render()(implicit evalContext: Context): Try[String] = throw UnrenderableValueException()
+  def render()(implicit ctx: Context): Try[String] = throw UnrenderableValueException()
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
   def valueType = ValueType.List
-  def render()(implicit evalContext: Context): Try[String] = throw UnrenderableValueException()
+  def render()(implicit ctx: Context): Try[String] = throw UnrenderableValueException()
 }
 
 object Value {
