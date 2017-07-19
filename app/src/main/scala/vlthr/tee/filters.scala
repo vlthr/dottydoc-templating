@@ -7,24 +7,40 @@ import vlthr.tee.core.Error._
 import com.fasterxml.jackson.databind.ObjectMapper
 
 object Filter {
-  def byName(s: String): Constructor = registry.get(s).getOrElse((args, sp) => NoFilter()(sp))
-  type Constructor = (List[Value], ParseContext) => Filter
-  var registry: scala.collection.mutable.Map[String, Constructor] = scala.collection.mutable.Map(
-    "split" -> ((args, sp) => Split(args)(sp)),
-    "join" -> ((args, sp) => Join(args)(sp)),
-    "size" -> ((args, sp) => Size(args)(sp)),
-    "json" -> ((args, sp) => Json(args)(sp)),
-    "first" -> ((args, sp) => First(args)(sp)),
-    "last" -> ((args, sp) => Last(args)(sp)),
-    "prepend" -> ((args, sp) => Prepend(args)(sp)),
-    "append" -> ((args, sp) => Append(args)(sp)),
-    "capitalize" -> ((args, sp) => Capitalize(args)(sp)),
-    "downcase" -> ((args, sp) => Downcase(args)(sp)),
-    "upcase" -> ((args, sp) => Upcase(args)(sp)),
-    "escape" -> ((args, sp) => Escape(args)(sp)),
-    "remove" -> ((args, sp) => Remove(args)(sp)),
-    "replace" -> ((args, sp) => Replace(args)(sp)),
-    "reverse" -> ((args, sp) => Reverse(args)(sp))
+  def byName(s: String): Option[Filter] = registry.get(s)
+  lazy val registry: scala.collection.mutable.Map[String, Filter] =
+    MMap(List(Split(),
+              Join(),
+              Size(),
+              Json(),
+              First(),
+              Last(),
+              Prepend(),
+              Append(),
+              Capitalize(),
+              Downcase(),
+              Upcase(),
+              Escape(),
+              Remove(),
+              Replace(),
+              Reverse()).map(f => (f.name, f)): _*)
+
+  scala.collection.mutable.Map(
+    "split" -> Split(),
+    "join" -> Join(),
+    "size" -> Size(),
+    "json" -> Json(),
+    "first" -> First(),
+    "last" -> Last(),
+    "prepend" -> Prepend(),
+    "append" -> Append(),
+    "capitalize" -> Capitalize(),
+    "downcase" -> Downcase(),
+    "upcase" -> Upcase(),
+    "escape" -> Escape(),
+    "remove" -> Remove(),
+    "replace" -> Replace(),
+    "reverse" -> Reverse()
   )
   def register(name: String, f: Constructor): Unit = registry.put(name, f)
 }
