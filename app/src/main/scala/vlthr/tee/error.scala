@@ -32,7 +32,7 @@ case class InvalidTagId(id: String)(implicit pctx: ParseContext) extends Error(p
   def errorType = "Parse Error"
   def description = s"`$id` does not match any known tag."
 }
-case class UnexpectedValueType(v: Value)(implicit pctx: ParseContext) extends TypeError(pctx) {
+case class UnexpectedValueType(expr: Expr, v: Value) extends TypeError(expr.pctx) {
   def description = s"Unexpected value type: ${v.valueType}"
 }
 
@@ -70,10 +70,10 @@ case class IncomparableValues(expr: Expr, left: Value, right: Value) extends Typ
 case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.pctx) {
   def description = s"Include tag argument must be a filename, not ${filename.valueType}"
 }
-case class InvalidFilterInput(filter: Filter, input: Value) extends TypeError(filter.pctx) {
+case class InvalidFilterInput(expr: FilterExpr, filter: Filter, input: Value) extends TypeError(expr.pctx) {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType}."
 }
-case class InvalidFilterArgs(filter: Filter, args: List[Value]) extends TypeError(filter.pctx) {
+case class InvalidFilterArgs(expr: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(expr.pctx) {
   def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
 case class FilterApplicationError(obj: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(obj.pctx) {

@@ -4,11 +4,12 @@ import vlthr.tee.parser.Liquid
 import vlthr.tee.core._
 import vlthr.tee.util._
 import vlthr.tee.core.Error._
+import scala.collection.mutable.{Map => MMap}
 import com.fasterxml.jackson.databind.ObjectMapper
 
 object Filter {
   def byName(s: String): Option[Filter] = registry.get(s)
-  lazy val registry: scala.collection.mutable.Map[String, Filter] =
+  lazy val registry: MMap[String, Filter] =
     MMap(List(Split(),
               Join(),
               Size(),
@@ -23,232 +24,213 @@ object Filter {
               Escape(),
               Remove(),
               Replace(),
-              Reverse()).map(f => (f.name, f)): _*)
-
-  scala.collection.mutable.Map(
-    "split" -> Split(),
-    "join" -> Join(),
-    "size" -> Size(),
-    "json" -> Json(),
-    "first" -> First(),
-    "last" -> Last(),
-    "prepend" -> Prepend(),
-    "append" -> Append(),
-    "capitalize" -> Capitalize(),
-    "downcase" -> Downcase(),
-    "upcase" -> Upcase(),
-    "escape" -> Escape(),
-    "remove" -> Remove(),
-    "replace" -> Replace(),
-    "reverse" -> Reverse()
-  )
-  def register(name: String, f: Constructor): Unit = registry.put(name, f)
+              Reverse()).map(f => (f.name, f)).toList: _*)
 }
 
 abstract trait NoArgs { self: Filter =>
-  def checkArgs(args: List[Value]): List[Error] = {
+  def checkArgs(args: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
     val correctNumberOfArgs = args.size == 0
-    if (!correctNumberOfArgs) List(InvalidFilterArgs(this, args))
+    if (!correctNumberOfArgs) List(InvalidFilterArgs(parent, this, args))
     else Nil
   }
 }
 
 abstract trait InputType(t: ValueType) { self: Filter =>
-  override def checkInput(input: Value): List[Error] = {
-    if (!t.matches(input)) InvalidFilterInput(this, input) :: Nil
+  override def checkInput(input: Value)(implicit ctx: Context, parent: FilterExpr): List[Error] = {
+    if (!t.matches(input)) InvalidFilterInput(parent, this, input) :: Nil
     else Nil
   }
 }
 
 abstract trait FixedArgs(types: List[ValueType]) { self: Filter =>
   // TODO: A macro could generate typesafe getters for each of the expected arguments.
-  def checkArgs(args: List[Value]): List[Error] = {
+  def checkArgs(args: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
     val correctArgTypes = args.zip(types).forall{ case (v, expected) => expected.matches(v) }
     val correctNumberOfArgs = args.size == types.size
-    if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(this, args))
+    if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(parent, this, args))
     else Nil
   }
 }
 
 abstract trait SingleArg(expected: ValueType) { self: Filter =>
-  def checkArgs(args: List[Value]): List[Error] = {
+  def checkArgs(args: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
     val correctNumberOfArgs = args.size == 1
     val correctArgTypes = if (correctNumberOfArgs) expected.matches(args(0)) else false
-    if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(this, args))
+    if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(parent, this, args))
     else Nil
   }
 }
 
-case class NoFilter()(implicit val pctx: ParseContext) extends Filter(Nil) {
+case class NoFilter() extends Filter {
   def name = "NoFilter"
-  def apply(input: Value, args: List[Value])(
+  def filter(input: Value, args: List[Value])(
       implicit ctx: Context, parent: FilterExpr) = ???
-  def checkInput(v: Value) = ???
-  def checkArgs(v: List[Value]) = ???
+  def checkInput(v: Value)(implicit ctx: Context, parent: FilterExpr) = ???
+  def checkArgs(v: List[Value])(implicit ctx: Context, parent: FilterExpr) = ???
 }
 
-case class Split(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Split() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
   def name = "split"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     val pattern = args(0).asInstanceOf[StringValue]
     input match {
       case StringValue(v) => Try(Value.create(v.split(pattern.v).toList))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Json(args: List[Value])(implicit override val pctx: ParseContext) extends Filter(args) with InputType(ValueType.List) with NoArgs {
+case class Json() extends Filter with InputType(ValueType.List) with NoArgs {
   def name = "json"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = Success(StringValue(new ObjectMapper().writeValueAsString(Util.asJava(input.asInstanceOf[ListValue]))))
 }
 
-case class Size(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.List | ValueType.String) with NoArgs {
+case class Size() extends Filter with InputType(ValueType.List | ValueType.String) with NoArgs {
   def name = "size"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = input match  {
     case StringValue(v) => Try(IntValue(v.size))
     case ListValue(v) => Try(IntValue(v.size))
-    case v => fail(UnexpectedValueType(v))
+    case v => fail(UnexpectedValueType(parent, v))
   }
 }
 
-case class First(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.List | ValueType.String) with NoArgs {
+case class First() extends Filter with InputType(ValueType.List | ValueType.String) with NoArgs {
   def name = "first"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = input match  {
     case StringValue(v) => Try(StringValue(""+v.head))
     case ListValue(v) => Try(v.head)
-    case v => fail(UnexpectedValueType(v))
+    case v => fail(UnexpectedValueType(parent, v))
   }
 }
 
-case class Last(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.List | ValueType.String) with NoArgs {
+case class Last() extends Filter with InputType(ValueType.List | ValueType.String) with NoArgs {
   def name = "last"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = input match  {
     case StringValue(v) => Try(StringValue(""+v.last))
     case ListValue(v) => Try(v.last)
-    case v => fail(UnexpectedValueType(v))
+    case v => fail(UnexpectedValueType(parent, v))
   }
 }
 
-case class Reverse(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.List | ValueType.String) with NoArgs {
+case class Reverse() extends Filter with InputType(ValueType.List | ValueType.String) with NoArgs {
   def name = "reverse"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = input match  {
     case StringValue(v) => Try(StringValue(v.reverse))
     case ListValue(v) => Try(ListValue(v.reverse))
-    case v => fail(UnexpectedValueType(v))
+    case v => fail(UnexpectedValueType(parent, v))
   }
 }
 
-case class Join(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.List) with SingleArg(ValueType.String) {
+case class Join() extends Filter with InputType(ValueType.List) with SingleArg(ValueType.String) {
   def name = "join"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     val delim = args(0).asInstanceOf[StringValue]
     input match  {
       case ListValue(v) => Try(StringValue(v.map(_.render.get).mkString(delim.v)))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Capitalize(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with NoArgs {
+case class Capitalize() extends Filter with InputType(ValueType.String) with NoArgs {
   def name = "capitalize"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     input match  {
       case StringValue(v) => Try(StringValue(Character.toUpperCase(v(0)) + v.substring(1)))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Downcase(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with NoArgs {
+case class Downcase() extends Filter with InputType(ValueType.String) with NoArgs {
   def name = "downcase"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     input match  {
       case StringValue(v) => Try(StringValue(v.map(c => Character.toLowerCase(c)).mkString))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Upcase(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with NoArgs {
+case class Upcase() extends Filter with InputType(ValueType.String) with NoArgs {
   def name = "upcase"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     input match  {
       case StringValue(v) => Try(StringValue(v.map(c => Character.toUpperCase(c)).mkString))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Append(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Append() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
   def name = "append"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     val end = args(0).asInstanceOf[StringValue]
     input match  {
       case StringValue(v) => Try(StringValue(v + end.v))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Prepend(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Prepend() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
   def name = "prepend"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     val start = args(0).asInstanceOf[StringValue]
     input match  {
       case StringValue(v) => Try(StringValue(start.v + v))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Escape(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with NoArgs {
+case class Escape() extends Filter with InputType(ValueType.String) with NoArgs {
   def name = "escape"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     input match  {
       case StringValue(v) => Try(StringValue(v.replace("<", "&lt;")
                                                .replace(">", "&gt;")
                                                .replace("\"", "&quot;")
                                                .replace("&", "&amp;")))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Remove(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Remove() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
   def name = "remove"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     val pattern = args(0).asInstanceOf[StringValue]
     input match  {
       case StringValue(v) => Try(StringValue(v.replace(pattern.v, "")))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
 
-case class Replace(args: List[Value])(implicit val pctx: ParseContext) extends Filter(args) with InputType(ValueType.String) with FixedArgs(ValueType.String :: ValueType.String :: Nil) {
+case class Replace() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.String :: ValueType.String :: Nil) {
   def name = "replace"
-  override def apply(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
     val pattern = args(0).asInstanceOf[StringValue]
     val replacement = args(1).asInstanceOf[StringValue]
     input match  {
       case StringValue(v) => Try(StringValue(v.replace(pattern.v, replacement.v)))
-      case v => fail(UnexpectedValueType(v))
+      case v => fail(UnexpectedValueType(parent, v))
     }
   }
 }
