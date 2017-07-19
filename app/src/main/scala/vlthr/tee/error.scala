@@ -32,6 +32,9 @@ case class InvalidTagId(id: String)(implicit pctx: ParseContext) extends Error(p
   def errorType = "Parse Error"
   def description = s"`$id` does not match any known tag."
 }
+case class UnexpectedValueType(v: Value)(implicit pctx: ParseContext) extends TypeError(pctx) {
+  def description = s"Unexpected value type: ${v.valueType}"
+}
 
 case class MalformedTagException(error: MalformedTag) extends Exception
 case class MalformedTag()(implicit pctx: ParseContext) extends Error(pctx) {
