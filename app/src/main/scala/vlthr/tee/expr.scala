@@ -5,7 +5,7 @@ import vlthr.tee.core.Error._
 import vlthr.tee.filters._
 
 abstract trait BooleanExpr extends Expr {
-  override def eval()(implicit evalContext: Context): Try[Value] =
+  override def eval()(implicit ctx: Context): Try[Value] =
     Error
       .all(left.eval, right.eval) { (l, r) =>
         Try(BooleanValue(op(l, r))).recoverWith(_ =>
@@ -69,14 +69,14 @@ final case class GtExpr(left: Expr, right: Expr)(
 final case class LiteralExpr(value: Value)(
     implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: Context) = Success(value)
+  override def eval()(implicit ctx: Context) = Success(value)
 }
 
 final case class VariableUseExpr(name: String)(
     implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: Context) = {
-    evalContext.lookup(name) match {
+  override def eval()(implicit ctx: Context) = {
+    ctx.lookup(name) match {
       case Some(value) => Success(value)
       case None => fail(UndefinedVariable(this))
     }
@@ -88,7 +88,7 @@ final case class FilterExpr(
     filter: Filter.Constructor,
     args: List[Expr])(implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: Context) =
+  override def eval()(implicit ctx: Context) =
     Error
       .all(expr.eval) { expr =>
         Error.condenseAll(args.map(_.eval): _*) { args =>
@@ -104,7 +104,7 @@ final case class FilterExpr(
 final case class IndexExpr(indexable: Expr, key: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: Context) = {
+  override def eval()(implicit ctx: Context) = {
     val i: Try[List[Value]] = indexable.eval.flatMap {
       case ListValue(s) => Success(s)
       case x => fail(InvalidIndexable(this, indexable, x))
@@ -123,7 +123,7 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
 final case class DotExpr(indexable: Expr, key: String)(
     implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: Context) = {
+  override def eval()(implicit ctx: Context) = {
     val source: Try[Map[String, Value]] = indexable.eval.flatMap {
       case MapValue(m) => Success(m)
       case x => fail(InvalidMap(this, indexable, x))
