@@ -8,9 +8,9 @@ import vlthr.tee.core._
 
 class ParserTests {
   def assertParsed(str: String)(
-      isMatch: PartialFunction[Node, Boolean]): Unit = {
+      isMatch: PartialFunction[Obj, Boolean]): Unit = {
     val ast = Liquid.parseTemplate(str)
-    val error: PartialFunction[Node, Unit] = {
+    val error: PartialFunction[Obj, Unit] = {
       case bad => {
         val parseTree = Liquid.getParseTree(str)
         fail(
@@ -144,7 +144,7 @@ class ParserTests {
     case class BananaTag(args: List[Expr])(
         implicit val sourcePosition: SourcePosition)
         extends TagNode {
-      override def render()(implicit evalContext: EvalContext): Try[String] =
+      override def render()(implicit evalContext: Context): Try[String] =
         ???
     }
     CustomTag.register(

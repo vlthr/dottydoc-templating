@@ -2,78 +2,78 @@ package vlthr.tee.core
 import org.antlr.v4.runtime.{Recognizer, RecognitionException}
 import scala.util.{Try, Success, Failure}
 
-trait Error(sourcePosition: SourcePosition) {
+trait Error(pctx: ParseContext) {
   def getMessage: String = {
-    s"""$errorType: ${sourcePosition.template.path}
+    s"""$errorType: ${pctx.sourcePosition.template.path}
    |$description
    |
-   |    ${sourcePosition.report}""".stripMargin
+   |    ${pctx.sourcePosition.report}""".stripMargin
   }
   def errorType: String
   def description: String
   override def toString: String = getMessage
 }
-abstract class TypeError(sourcePosition: SourcePosition) extends Error(sourcePosition) {
+abstract class TypeError(pctx: ParseContext) extends Error(pctx) {
   def errorType = "Type Error"
 }
-abstract class RenderError(sourcePosition: SourcePosition) extends Error(sourcePosition) {
+abstract class RenderError(pctx: ParseContext) extends Error(pctx) {
   def errorType = "Render Error"
 }
-abstract class RuntimeError(sourcePosition: SourcePosition) extends Error(sourcePosition) {
+abstract class RuntimeError(pctx: ParseContext) extends Error(pctx) {
   def errorType = "Unexpected Runtime Error"
 }
 
-case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, override val description: String, e: RecognitionException)(implicit sourcePosition: SourcePosition) extends Error(sourcePosition) {
+case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, override val description: String, e: RecognitionException)(implicit pctx: ParseContext) extends Error(pctx) {
   def errorType = "Parse Error"
 }
 
 case class InvalidTagIdException(error: InvalidTagId) extends Exception
-case class InvalidTagId(id: String)(implicit sourcePosition: SourcePosition) extends Error(sourcePosition) {
+case class InvalidTagId(id: String)(implicit pctx: ParseContext) extends Error(pctx) {
   def errorType = "Parse Error"
   def description = s"`$id` does not match any known tag."
 }
 
 case class MalformedTagException(error: MalformedTag) extends Exception
-case class MalformedTag()(implicit sourcePosition: SourcePosition) extends Error(sourcePosition) {
+case class MalformedTag()(implicit pctx: ParseContext) extends Error(pctx) {
   def errorType = "Parse Error"
   def description = s"Malformed tag."
 }
 
 case class UnrenderableValueException() extends Exception
-case class UnrenderableValue(expr: Expr, value: Value) extends RenderError(expr.sourcePosition) {
+case class UnrenderableValue(expr: Expr, value: Value) extends RenderError(expr.pctx) {
   def description = s"Cannot render type ${value.valueType}"
 }
-case class InvalidIterable(expr: Expr) extends TypeError(expr.sourcePosition) {
+case class InvalidIterable(expr: Expr) extends TypeError(expr.pctx) {
   def description = s"Expected an iterable"
 }
-case class InvalidMap(expr: DotExpr, map: Expr, value: Value) extends TypeError(map.sourcePosition) {
-  def description = s"Expression `${map.sourcePosition.display}` of type ${value.valueType} can not be indexed as a map."
+case class InvalidMap(expr: DotExpr, map: Expr, value: Value) extends TypeError(map.pctx) {
+  def description = s"Expression `${map.pctx.sourcePosition.display}` of type ${value.valueType} can not be indexed as a map."
 }
-case class UndefinedVariable(expr: VariableUseExpr) extends RenderError(expr.sourcePosition) {
-  def description = s"Undefined variable reference `${expr.sourcePosition.display}`"
+case class UndefinedVariable(expr: VariableUseExpr) extends RenderError(expr.pctx) {
+  def description = s"Undefined variable reference `${expr.pctx.sourcePosition.display}`"
 }
-case class UndefinedField(expr: DotExpr, map: Expr, field: String) extends RenderError(expr.sourcePosition) {
+case class UndefinedField(expr: DotExpr, map: Expr, field: String) extends RenderError(expr.pctx) {
   def description = s"Map `${map.sourcePosition.display}` contains no field `$field`"
 }
-case class InvalidIndex(expr: IndexExpr, index: Expr, value: Value) extends TypeError(index.sourcePosition) {
+case class InvalidIndex(expr: IndexExpr, index: Expr, value: Value) extends TypeError(index.pctx) {
   def description = s"Invalid index type: ${value.valueType}"
 }
-case class InvalidIndexable(expr: IndexExpr, indexable: Expr, value: Value) extends TypeError(expr.sourcePosition) {
+case class InvalidIndexable(expr: IndexExpr, indexable: Expr, value: Value) extends TypeError(expr.pctx) {
   def description = s"Expression `${indexable.sourcePosition.display}` of type `${value.valueType}` can not be indexed."
 }
-case class IncomparableValues(expr: Expr, left: Value, right: Value) extends TypeError(expr.sourcePosition) {
+case class IncomparableValues(expr: Expr, left: Value, right: Value) extends TypeError(expr.pctx) {
   def description = s"Incomparable values ${left.valueType} and ${right.valueType}"
 }
-case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.sourcePosition) {
+case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.pctx) {
   def description = s"Include tag argument must be a filename, not ${filename.valueType}"
 }
-case class InvalidFilterInput(filter: Filter, input: Value) extends TypeError(filter.sourcePosition) {
+case class InvalidFilterInput(filter: Filter, input: Value) extends TypeError(filter.pctx) {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType}."
 }
-case class InvalidFilterArgs(filter: Filter, args: List[Value]) extends TypeError(filter.sourcePosition) {
+case class InvalidFilterArgs(filter: Filter, args: List[Value]) extends TypeError(filter.pctx) {
   def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
-case class FilterApplicationError(obj: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(obj.sourcePosition) {
+case class FilterApplicationError(obj: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(obj.pctx) {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType} and arguments (${args.map(_.valueType).mkString(", ")})."
 }
 case class LiquidFailure(errors: List[Error]) extends Exception {

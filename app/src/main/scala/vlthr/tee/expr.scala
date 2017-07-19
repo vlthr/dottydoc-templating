@@ -5,7 +5,7 @@ import vlthr.tee.core.Error._
 import vlthr.tee.filters._
 
 abstract trait BooleanExpr extends Expr {
-  override def eval()(implicit evalContext: EvalContext): Try[Value] =
+  override def eval()(implicit evalContext: Context): Try[Value] =
     Error
       .all(left.eval, right.eval) { (l, r) =>
         Try(BooleanValue(op(l, r))).recoverWith(_ =>
@@ -18,64 +18,64 @@ abstract trait BooleanExpr extends Expr {
 }
 
 final case class AndExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(l: Value, r: Value): Boolean = l.truthy && r.truthy
 }
 
 final case class OrExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(left: Value, right: Value): Boolean =
     left.truthy || right.truthy
 }
 
 final case class EqExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(left: Value, right: Value): Boolean = left == right
 }
 
 final case class NEqExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(left: Value, right: Value): Boolean = left != right
 }
 
 final case class LEqExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(left: Value, right: Value): Boolean = left <= right
 }
 
 final case class LtExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(left: Value, right: Value): Boolean = left < right
 }
 
 final case class GEqExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(left: Value, right: Value): Boolean = left >= right
 }
 
 final case class GtExpr(left: Expr, right: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends BooleanExpr {
   override def op(left: Value, right: Value): Boolean = left > right
 }
 
 final case class LiteralExpr(value: Value)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = Success(value)
+  override def eval()(implicit evalContext: Context) = Success(value)
 }
 
 final case class VariableUseExpr(name: String)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = {
+  override def eval()(implicit evalContext: Context) = {
     evalContext.lookup(name) match {
       case Some(value) => Success(value)
       case None => fail(UndefinedVariable(this))
@@ -86,14 +86,14 @@ final case class VariableUseExpr(name: String)(
 final case class FilterExpr(
     expr: Expr,
     filter: Filter.Constructor,
-    args: List[Expr])(implicit val sourcePosition: SourcePosition)
+    args: List[Expr])(implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: EvalContext) =
+  override def eval()(implicit evalContext: Context) =
     Error
       .all(expr.eval) { expr =>
         Error.condenseAll(args.map(_.eval): _*) { args =>
           implicit val parent: FilterExpr = this
-          val f = filter(args, sourcePosition)
+          val f = filter(args, pctx)
           f.typeCheck(expr, args)
             .flatMap(_ => f.apply(expr))
         }
@@ -102,9 +102,9 @@ final case class FilterExpr(
 }
 
 final case class IndexExpr(indexable: Expr, key: Expr)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = {
+  override def eval()(implicit evalContext: Context) = {
     val i: Try[List[Value]] = indexable.eval.flatMap {
       case ListValue(s) => Success(s)
       case x => fail(InvalidIndexable(this, indexable, x))
@@ -121,9 +121,9 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
 }
 
 final case class DotExpr(indexable: Expr, key: String)(
-    implicit val sourcePosition: SourcePosition)
+    implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit evalContext: EvalContext) = {
+  override def eval()(implicit evalContext: Context) = {
     val source: Try[Map[String, Value]] = indexable.eval.flatMap {
       case MapValue(m) => Success(m)
       case x => fail(InvalidMap(this, indexable, x))
