@@ -141,19 +141,24 @@ abstract trait Expr extends ASTNode {
 }
 
 case class Context(mappings: MMap[String, Value],
+                   customFilters: Map[String, Filter],
+                   customTags: Map[String, CustomTag.TagConstructor],
                    parent: Option[Context],
                    includeDir: String) {
   def lookup(s: String): Option[Value] =
     mappings.get(s).orElse(parent.flatMap(_.lookup(s)))
+  def withParams(params: Map[String, Any]) = copy(mappings = mappings ++ Value.createMap(params))
+  def withParamsMap(params: Map[String, Value]) = copy(mappings = mappings ++ params)
+  def withFilter(filters: Filter*) = copy(customFilters = customFilters ++ filters.map(f => (f.name, f)))
+  // def withTag(tags: CustomTag.TagConstructor*) = copy(customTags = customTags ++ tags.map(f => (f.name, f)))
+  def withIncludeDir(includeDir: String) = copy(includeDir = includeDir)
 
+  def getFilter(name: String): Filter = customFilters.get(name).orElse(Filter.byName(name)).getOrElse(UnknownFilter(name))
 }
 
 object Context {
-  def createNew(): Context = createNew(Map(), "")
-  def createNew(map: Map[String, Value], includeDir: String): Context =
-    Context(MMap(map.toSeq: _*), None, includeDir)
-  def createChild(parent: Context): Context =
-    Context(MMap(), Some(parent), parent.includeDir)
+  def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include")
+  def createChild(parent: Context): Context = parent.copy(parent=Some(parent))
 }
 
 abstract trait Filter {
@@ -237,6 +242,9 @@ final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
 }
 
 object Value {
+  def createMap(value: Map[String, Any]): Map[String, Value] = value.map {
+    case (k: String, v: Any) => (k, Value.create(v))
+  }
   def create(value: Any): Value = {
     value match {
       case v: Value => v

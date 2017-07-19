@@ -33,9 +33,9 @@ class FileTests(file: SourceFile) {
     "listOfLists" -> List(List(1)),
     "list" -> List(1)
   )
-  implicit val ctx: Context = Context.createNew(environment.map {
+  implicit val ctx: Context = Context.createNew.withParams(environment.map {
     case (k: String, v: Object) => (k, Value.create(v))
-  }, includeDir)
+  }).withIncludeDir(includeDir)
 
   @Test def testParseTree(): Unit = {
     fileContentTest(".parseTree") { templateBody =>
