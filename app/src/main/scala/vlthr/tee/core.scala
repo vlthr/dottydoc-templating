@@ -196,8 +196,10 @@ trait Truthy extends Truthable {
   def truthy = true
 }
 
-sealed trait Value extends ASTNode with Truthable with Ordered[Value] {
+sealed trait Value extends Truthable with Ordered[Value] {
   def display: String
+
+  def render()(implicit evalContext: Context): Try[String]
 
   def valueType: ValueType
 
