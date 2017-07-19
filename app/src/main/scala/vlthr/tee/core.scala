@@ -141,8 +141,8 @@ abstract trait Expr extends ASTNode {
 }
 
 case class Context(mappings: MMap[String, Value],
-                       parent: Option[Context],
-                       includeDir: String) {
+                   parent: Option[Context],
+                   includeDir: String) {
   def lookup(s: String): Option[Value] =
     mappings.get(s).orElse(parent.flatMap(_.lookup(s)))
 
@@ -169,24 +169,8 @@ abstract trait Filter(args: List[Value]) {
     else Success(())
   }
 
-  def apply(input: Value)(
-    implicit ctx: Context, parent: FilterExpr): Try[Value] = input match {
-    case v: StringValue => filter(v)
-    case v: BooleanValue => filter(v)
-    case v: IntValue => filter(v)
-    case v: ListValue => filter(v)
-    case v: MapValue => filter(v)
-  }
-  def filter(input: StringValue)(
-    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
-  def filter(input: BooleanValue)(
-    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
-  def filter(input: IntValue)(
-    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
-  def filter(input: ListValue)(
-    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
-  def filter(input: MapValue)(
-    implicit ctx: Context, parent: FilterExpr): Try[Value] = ???
+  def apply(input: Value, args: List[Value])(
+    implicit ctx: Context, parent: FilterExpr): Try[Value]
 }
 
 sealed trait Truthable {

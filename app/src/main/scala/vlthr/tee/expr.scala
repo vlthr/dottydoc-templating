@@ -95,7 +95,7 @@ final case class FilterExpr(
           implicit val parent: FilterExpr = this
           val f = filter(args, pctx)
           f.typeCheck(expr, args)
-            .flatMap(_ => f.apply(expr))
+            .flatMap(_ => f.apply(expr, args))
         }
       }
       .flatten
