@@ -122,40 +122,42 @@ object SourcePosition {
   }
 }
 
-trait Renderable {
-  def render()(implicit evalContext: EvalContext): Try[String]
+case class ParseContext(sourcePosition: SourcePosition)
+
+abstract trait ASTNode {
+  // def parent: Option[ASTNode]
+  val pctx: ParseContext
+  def sourcePosition: SourcePosition = pctx.sourcePosition
+  def render()(implicit ctx: Context): Try[String]
 }
 
-abstract trait Node extends Renderable {
-  def sourcePosition: SourcePosition
+abstract trait Obj extends ASTNode {
 }
 
-abstract trait Expr extends Renderable {
-  def sourcePosition: SourcePosition
-  def eval()(implicit evalContext: EvalContext): Try[Value] = ???
-  def render()(implicit evalContext: EvalContext): Try[String] =
+abstract trait Expr extends ASTNode {
+  def eval()(implicit evalContext: Context): Try[Value] = ???
+  def render()(implicit evalContext: Context): Try[String] =
     eval.flatMap(_.render)
 }
 
-case class EvalContext(mappings: MMap[String, Value],
-                       parent: Option[EvalContext],
+case class Context(mappings: MMap[String, Value],
+                       parent: Option[Context],
                        includeDir: String) {
   def lookup(s: String): Option[Value] =
     mappings.get(s).orElse(parent.flatMap(_.lookup(s)))
 
 }
 
-object EvalContext {
-  def createNew(): EvalContext = createNew(Map(), "")
-  def createNew(map: Map[String, Value], includeDir: String): EvalContext =
-    EvalContext(MMap(map.toSeq: _*), None, includeDir)
-  def createChild(parent: EvalContext): EvalContext =
-    EvalContext(MMap(), Some(parent), parent.includeDir)
+object Context {
+  def createNew(): Context = createNew(Map(), "")
+  def createNew(map: Map[String, Value], includeDir: String): Context =
+    Context(MMap(map.toSeq: _*), None, includeDir)
+  def createChild(parent: Context): Context =
+    Context(MMap(), Some(parent), parent.includeDir)
 }
 
-abstract trait Filter(args: List[Value]) {
+abstract trait Filter(args: List[Value]) extends ASTNode {
   def name: String
-  def sourcePosition: SourcePosition
   def checkInput(input: Value): List[Error]
   def checkArgs(v: List[Value]): List[Error]
   def typeCheck(input: Value, args: List[Value]): Try[Unit] = {
@@ -167,7 +169,7 @@ abstract trait Filter(args: List[Value]) {
   }
 
   def apply(input: Value)(
-    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = input match {
+    implicit evalContext: Context, parent: FilterExpr): Try[Value] = input match {
     case v: StringValue => filter(v)
     case v: BooleanValue => filter(v)
     case v: IntValue => filter(v)
@@ -175,15 +177,15 @@ abstract trait Filter(args: List[Value]) {
     case v: MapValue => filter(v)
   }
   def filter(input: StringValue)(
-    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: BooleanValue)(
-    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: IntValue)(
-    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: ListValue)(
-    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
   def filter(input: MapValue)(
-    implicit evalContext: EvalContext, parent: FilterExpr): Try[Value] = ???
+    implicit evalContext: Context, parent: FilterExpr): Try[Value] = ???
 }
 
 sealed trait Truthable {
@@ -194,7 +196,7 @@ trait Truthy extends Truthable {
   def truthy = true
 }
 
-sealed trait Value extends Renderable with Truthable with Ordered[Value] {
+sealed trait Value extends ASTNode with Truthable with Ordered[Value] {
   def display: String
 
   def valueType: ValueType
@@ -216,13 +218,13 @@ sealed trait IndexedValue extends Value
 final case class StringValue(v: String) extends Value with Truthy {
   def display: String = s""""$v""""
   def valueType = ValueType.String
-  def render()(implicit evalContext: EvalContext): Try[String] = Success(v)
+  def render()(implicit evalContext: Context): Try[String] = Success(v)
 }
 
 final case class BooleanValue(v: Boolean) extends Value {
   def display: String = s"""$v"""
   def valueType = ValueType.Boolean
-  def render()(implicit evalContext: EvalContext): Try[String] =
+  def render()(implicit evalContext: Context): Try[String] =
     Success(v.toString)
   def truthy = v
 }
@@ -230,7 +232,7 @@ final case class BooleanValue(v: Boolean) extends Value {
 final case class IntValue(v: Int) extends Value with Truthy {
   def display: String = s"""$v"""
   def valueType = ValueType.Integer
-  def render()(implicit evalContext: EvalContext): Try[String] =
+  def render()(implicit evalContext: Context): Try[String] =
     Success(v.toString)
 }
 
@@ -239,13 +241,13 @@ final case class MapValue(v: Map[String, Value])
     with Truthy {
   def display: String = ???
   def valueType = ValueType.Map
-  def render()(implicit evalContext: EvalContext): Try[String] = throw UnrenderableValueException()
+  def render()(implicit evalContext: Context): Try[String] = throw UnrenderableValueException()
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
   def valueType = ValueType.List
-  def render()(implicit evalContext: EvalContext): Try[String] = throw UnrenderableValueException()
+  def render()(implicit evalContext: Context): Try[String] = throw UnrenderableValueException()
 }
 
 object Value {

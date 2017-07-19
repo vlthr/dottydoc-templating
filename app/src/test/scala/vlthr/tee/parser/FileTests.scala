@@ -33,7 +33,7 @@ class FileTests(file: SourceFile) {
     "listOfLists" -> List(List(1)),
     "list" -> List(1)
   )
-  implicit val ctx: EvalContext = EvalContext.createNew(environment.map {
+  implicit val ctx: Context = Context.createNew(environment.map {
     case (k: String, v: Object) => (k, Value.create(v))
   }, includeDir)
 
