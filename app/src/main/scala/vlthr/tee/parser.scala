@@ -234,9 +234,8 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
         if (c.customTag.arglist != null)
           new LiquidArgsVisitor(template).visitArglist(c.customTag.arglist)
         else Nil
-      CustomTag.byName(id).map(ctor => ctor(pc, args)).getOrElse {
-        throw InvalidTagIdException((InvalidTagId(id)))
-      }
+      val tag = ctx.getTag(id)
+      CustomTag(tag, args)
     } else {
       throw MalformedTagException(MalformedTag())
     }

@@ -139,21 +139,4 @@ class ParserTests {
         true
     }
   }
-
-  @Test def parseCustomTag() = {
-    // case class BananaTag(args: List[Expr])(
-    //     implicit val pctx: ParseContext)
-    //     extends TagNode {
-    //   override def render()(implicit ctx: Context): Try[String] =
-    //     ???
-    // }
-    // CustomTag.register(
-    //   "banana",
-    //   (pctx, args) => BananaTag(args)(pctx))
-    // val input = "{% banana %}"
-    // assertParsed(input) {
-    //   case BlockNode(BananaTag(args) :: Nil) =>
-    //     true
-    // }
-  }
 }

@@ -27,8 +27,23 @@ case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, ove
   def errorType = "Parse Error"
 }
 
-case class InvalidTagIdException(error: InvalidTagId) extends Exception
-case class InvalidTagId(id: String)(implicit pctx: ParseContext) extends Error(pctx) {
+case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) extends Error(pctx) {
+  def errorType = "Uncaught Exception"
+  def description = e.getMessage
+}
+
+case class TagException(desc: String) extends Exception(desc)
+case class TagError(desc: String)(implicit pctx: ParseContext) extends Error(pctx) {
+  def errorType = "Custom Tag Error"
+  def description = desc
+}
+
+case class InvalidTagArgs(tagNode: CustomTag, tag: Tag, args: List[Value]) extends Error(tagNode.pctx) {
+  def errorType = "Parse Error"
+  def description = s"Tag `${tag.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
+}
+case class UnknownTagIdException(id: String) extends Throwable
+case class UnknownTagId(id: String)(implicit pctx: ParseContext) extends Error(pctx) {
   def errorType = "Parse Error"
   def description = s"`$id` does not match any known tag."
 }
@@ -36,13 +51,13 @@ case class UnexpectedValueType(expr: Expr, v: Value) extends TypeError(expr.pctx
   def description = s"Unexpected value type: ${v.valueType}"
 }
 
-case class MalformedTagException(error: MalformedTag) extends Exception
+case class MalformedTagException(error: MalformedTag) extends Throwable
 case class MalformedTag()(implicit pctx: ParseContext) extends Error(pctx) {
   def errorType = "Parse Error"
   def description = s"Malformed tag."
 }
 
-case class UnrenderableValueException() extends Exception
+case class UnrenderableValueException() extends Throwable
 case class UnrenderableValue(expr: Expr, value: Value) extends RenderError(expr.pctx) {
   def description = s"Cannot render type ${value.valueType}"
 }

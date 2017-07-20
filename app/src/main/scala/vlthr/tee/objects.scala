@@ -2,6 +2,7 @@ package vlthr.tee.core
 import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
 import vlthr.tee.parser.Liquid
+import scala.util.control.NonFatal
 import vlthr.tee.core.Error._
 import java.nio.file.Paths
 
@@ -157,9 +158,19 @@ final case class RawTag(text: String)(
 final case class UnlessTag()(implicit val pctx: ParseContext)
     extends TagNode
 
-object CustomTag {
-  type TagConstructor = (ParseContext, List[Expr]) => TagNode
-  val registry: MMap[String, TagConstructor] = MMap()
-  def byName(name: String): Option[TagConstructor] = registry.get(name)
-  def register(id: String, ctor: TagConstructor) = registry.put(id, ctor)
+final case class CustomTag(tag: Tag, args: List[Expr])(implicit val pctx: ParseContext)
+    extends TagNode {
+  override def render()(implicit ctx: Context): Try[String] = {
+    Error.condenseAll(args.map(_.eval): _*) { args =>
+        Try {
+          implicit val parent = this
+          tag.render(args)
+        }
+      }
+      .recoverWith {
+        case TagException(desc) => fail(TagError(desc))
+        case UnknownTagIdException(name) => fail(UnknownTagId(name))
+        case NonFatal(e) => fail(UncaughtExceptionError(e))
+      }
+  }
 }

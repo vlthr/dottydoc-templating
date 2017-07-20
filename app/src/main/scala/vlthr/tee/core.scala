@@ -142,7 +142,7 @@ abstract trait Expr extends ASTNode {
 
 case class Context(mappings: MMap[String, Value],
                    customFilters: Map[String, Filter],
-                   customTags: Map[String, CustomTag.TagConstructor],
+                   customTags: Map[String, Tag],
                    parent: Option[Context],
                    includeDir: String) {
   def lookup(s: String): Option[Value] =
@@ -150,16 +150,41 @@ case class Context(mappings: MMap[String, Value],
   def withParams(params: Map[String, Any]) = copy(mappings = mappings ++ Value.createMap(params))
   def withParamsMap(params: Map[String, Value]) = copy(mappings = mappings ++ params)
   def withFilter(filters: Filter*) = copy(customFilters = customFilters ++ filters.map(f => (f.name, f)))
-  // def withTag(tags: CustomTag.TagConstructor*) = copy(customTags = customTags ++ tags.map(f => (f.name, f)))
+  def withTag(tags: Tag*) = copy(customTags = customTags ++ tags.map(t => (t.name, t)))
   def withIncludeDir(includeDir: String) = copy(includeDir = includeDir)
 
   def getFilter(name: String): Filter = customFilters.get(name).orElse(Filter.byName(name)).getOrElse(UnknownFilter(name))
+  def getTag(name: String): Tag = customTags.get(name).getOrElse(UnknownTag(name))
 }
 
 object Context {
+  type TagConstructor = (ParseContext, List[Expr]) => TagNode
   def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include")
   def createChild(parent: Context): Context = parent.copy(parent=Some(parent))
 }
+
+
+abstract trait NoArgs { self: Tag =>
+  def typeCheck(args: List[Value])(implicit ctx: Context, parent: CustomTag): List[Error] = {
+    val correctNumberOfArgs = args.size == 0
+    if (!correctNumberOfArgs) List(InvalidTagArgs(parent, this, args))
+    else Nil
+  }
+}
+
+case class UnknownTag(n: String) extends Tag(n) {
+  def typeCheck(args: List[Value])(implicit ctx: Context, parent: CustomTag): List[Error] = throw UnknownTagIdException(name)
+  def render(args: List[Value])(
+    implicit ctx: Context, parent: CustomTag): String = throw UnknownTagIdException(name)
+}
+
+abstract trait Tag(val name: String) {
+  def typeCheck(args: List[Value])(implicit ctx: Context, parent: CustomTag): List[Error]
+  def render(args: List[Value])(
+    implicit ctx: Context, parent: CustomTag): String
+}
+
+abstract trait SingleArg
 
 abstract trait Filter {
   def name: String
