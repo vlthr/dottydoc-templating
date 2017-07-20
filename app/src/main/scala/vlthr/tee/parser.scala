@@ -75,7 +75,8 @@ object Liquid {
   def render(path: String,
              params: Map[String, Any],
              includeDir: String): Try[String] = {
-    implicit val c: Context = Context.createNew.withParams(params).withIncludeDir(includeDir)
+    implicit val c: Context =
+      Context.createNew.withParams(params).withIncludeDir(includeDir)
     parse(path).flatMap(_.render)
   }
 
@@ -150,8 +151,8 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
 
   def visitText(t: TerminalNode): Obj = {
     val sourcePosition = SourcePosition(t.getSymbol().getStartIndex(),
-                                                 t.getSymbol().getStopIndex(),
-                                                 template)
+                                        t.getSymbol().getStopIndex(),
+                                        template)
     implicit val pc = ParseContext(sourcePosition)
     TextNode(t.getText())
   }
@@ -186,8 +187,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
       val block = visitBlock(c.ifTag().block())
       val elsifs =
         if (c.ifTag().elsif() != null)
-          c
-            .ifTag()
+          c.ifTag()
             .elsif()
             .asScala
             .map(elsif =>
@@ -254,8 +254,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
 class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[List[Expr]] {
   override def visitArglist(c: LiquidParser.ArglistContext): List[Expr] = {
-    c
-      .expr()
+    c.expr()
       .asScala
       .map(ec => {
         implicit val pc = Liquid.makeContext(c, template)

@@ -6,8 +6,7 @@ import scala.util.control.NonFatal
 import vlthr.tee.core.Error._
 import java.nio.file.Paths
 
-final case class BlockNode(node: List[Obj])(
-    implicit val pctx: ParseContext)
+final case class BlockNode(node: List[Obj])(implicit val pctx: ParseContext)
     extends Obj {
   def render()(implicit ctx: Context) = {
     implicit val newScope = Context.createChild(ctx)
@@ -16,17 +15,14 @@ final case class BlockNode(node: List[Obj])(
   }
 }
 
-final case class OutputNode(expr: Expr)(
-    implicit val pctx: ParseContext)
+final case class OutputNode(expr: Expr)(implicit val pctx: ParseContext)
     extends Obj {
-  def render()(implicit ctx: Context) = Error.all(expr.render) {
-    e =>
-      e
+  def render()(implicit ctx: Context) = Error.all(expr.render) { e =>
+    e
   }
 }
 
-final case class TextNode(text: String)(
-    implicit val pctx: ParseContext)
+final case class TextNode(text: String)(implicit val pctx: ParseContext)
     extends Obj {
   def render()(implicit ctx: Context): Try[String] = Success(text)
 }
@@ -57,8 +53,7 @@ final case class AssignTag(id: String, value: Expr)(
   }
 }
 
-final case class CaseTag()(implicit val pctx: ParseContext)
-    extends TagNode
+final case class CaseTag()(implicit val pctx: ParseContext) extends TagNode
 
 final case class CommentTag()(implicit val pctx: ParseContext)
     extends TagNode {
@@ -66,8 +61,7 @@ final case class CommentTag()(implicit val pctx: ParseContext)
     Success("")
 }
 
-final case class CycleTag()(implicit val pctx: ParseContext)
-    extends TagNode
+final case class CycleTag()(implicit val pctx: ParseContext) extends TagNode
 
 final case class ForTag(id: String, expr: Expr, block: Obj)(
     implicit val pctx: ParseContext)
@@ -90,17 +84,14 @@ final case class ForTag(id: String, expr: Expr, block: Obj)(
   }
 }
 
-final case class BreakTag()(implicit val pctx: ParseContext)
-    extends TagNode
+final case class BreakTag()(implicit val pctx: ParseContext) extends TagNode
 
-final case class ContinueTag()(implicit val pctx: ParseContext)
-    extends TagNode
+final case class ContinueTag()(implicit val pctx: ParseContext) extends TagNode
 
-final case class IfTag(
-    condition: Expr,
-    thenBlock: Obj,
-    elsifs: List[(Expr, Obj)],
-    elseBlock: Option[Obj])(implicit val pctx: ParseContext)
+final case class IfTag(condition: Expr,
+                       thenBlock: Obj,
+                       elsifs: List[(Expr, Obj)],
+                       elseBlock: Option[Obj])(implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Try[String] = {
     val condErrors = (condition +: elsifs.collect { case (c, _) => c })
@@ -131,8 +122,7 @@ final case class IfTag(
   }
 }
 
-final case class IncludeTag(filename: Expr)(
-    implicit val pctx: ParseContext)
+final case class IncludeTag(filename: Expr)(implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Try[String] = {
     Error
@@ -147,21 +137,21 @@ final case class IncludeTag(filename: Expr)(
   }
 }
 
-final case class RawTag(text: String)(
-    implicit val pctx: ParseContext)
+final case class RawTag(text: String)(implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Try[String] = {
     Success(text)
   }
 }
 
-final case class UnlessTag()(implicit val pctx: ParseContext)
-    extends TagNode
+final case class UnlessTag()(implicit val pctx: ParseContext) extends TagNode
 
-final case class CustomTag(tag: Tag, args: List[Expr])(implicit val pctx: ParseContext)
+final case class CustomTag(tag: Tag, args: List[Expr])(
+    implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Try[String] = {
-    Error.condenseAll(args.map(_.eval): _*) { args =>
+    Error
+      .condenseAll(args.map(_.eval): _*) { args =>
         Try {
           implicit val parent = this
           tag.render(args)
