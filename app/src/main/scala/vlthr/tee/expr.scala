@@ -66,14 +66,12 @@ final case class GtExpr(left: Expr, right: Expr)(
   override def op(left: Value, right: Value): Boolean = left > right
 }
 
-final case class LiteralExpr(value: Value)(
-    implicit val pctx: ParseContext)
+final case class LiteralExpr(value: Value)(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = Success(value)
 }
 
-final case class VariableUseExpr(name: String)(
-    implicit val pctx: ParseContext)
+final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
     ctx.lookup(name) match {
@@ -83,17 +81,16 @@ final case class VariableUseExpr(name: String)(
   }
 }
 
-final case class FilterExpr(
-    expr: Expr,
-    filter: Filter,
-    args: List[Expr])(implicit val pctx: ParseContext)
+final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
+    implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) =
     Error
       .all(expr.eval) { expr =>
         Error.condenseAll(args.map(_.eval): _*) { args =>
           implicit val parent: FilterExpr = this
-          filter.typeCheck(expr, args)
+          filter
+            .typeCheck(expr, args)
             .flatMap(_ => filter.filter(expr, args))
         }
       }

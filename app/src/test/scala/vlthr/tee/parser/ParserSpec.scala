@@ -7,8 +7,7 @@ import org.junit.Assert._
 import vlthr.tee.core._
 
 class ParserTests {
-  def assertParsed(str: String)(
-      isMatch: PartialFunction[Obj, Boolean]): Unit = {
+  def assertParsed(str: String)(isMatch: PartialFunction[Obj, Boolean]): Unit = {
     val ast = Liquid.parseTemplate(str)
     val error: PartialFunction[Obj, Unit] = {
       case bad => {
