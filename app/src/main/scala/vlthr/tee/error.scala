@@ -85,6 +85,11 @@ case class IncomparableValues(expr: Expr, left: Value, right: Value) extends Typ
 case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.pctx) {
   def description = s"Include tag argument must be a filename, not ${filename.valueType}"
 }
+case class FilterException(desc: String) extends Throwable
+case class FilterError(desc: String)(implicit pctx: ParseContext) extends Error(pctx) {
+  def errorType = "Filter Error"
+  def description = desc
+}
 case class InvalidFilterInput(expr: FilterExpr, filter: Filter, input: Value) extends TypeError(expr.pctx) {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType}."
 }
@@ -92,7 +97,7 @@ case class InvalidFilterArgs(expr: FilterExpr, filter: Filter, args: List[Value]
   def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
 case class UnknownFilterNameException(name: String) extends Exception
-case class UnknownFilterName(pctx: ParseContext, name: String) extends RenderError(pctx) {
+case class UnknownFilterName(name: String)(implicit pctx: ParseContext) extends RenderError(pctx) {
   def description = s"Unknown filter: `$name`."
 }
 case class FilterApplicationError(expr: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(expr.pctx) {

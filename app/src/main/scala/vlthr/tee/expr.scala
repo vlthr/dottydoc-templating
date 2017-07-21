@@ -1,4 +1,5 @@
 package vlthr.tee.core
+import scala.util.control.NonFatal
 import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
 import vlthr.tee.core.Error._
@@ -87,12 +88,21 @@ final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
   override def eval()(implicit ctx: Context) =
     Error
       .all(expr.eval) { expr =>
-        Error.condenseAll(args.map(_.eval): _*) { args =>
-          implicit val parent: FilterExpr = this
-          filter
-            .typeCheck(expr, args)
-            .flatMap(_ => filter.filter(expr, args))
-        }
+        Error
+          .condenseAll(args.map(_.eval): _*) { args =>
+            implicit val parent: FilterExpr = this
+            Try {
+              filter
+                .typeCheck(expr, args)
+                .flatMap(_ => filter.filter(expr, args))
+            }.recoverWith {
+              case FilterException(desc) => fail(FilterError(desc))
+              case UnknownFilterNameException(name) =>
+                fail(UnknownFilterName(name))
+              case NonFatal(e) => fail(UncaughtExceptionError(e))
+            }
+          }
+          .flatten
       }
       .flatten
 }
