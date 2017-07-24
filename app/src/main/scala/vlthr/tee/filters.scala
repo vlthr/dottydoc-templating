@@ -10,24 +10,25 @@ import com.fasterxml.jackson.databind.ObjectMapper
 
 object Filter {
   def byName(s: String): Option[Filter] = registry.get(s)
-  lazy val registry: MMap[String, Filter] =
-    MMap(List(Split(),
-              Date(),
-              Slice(),
-              Join(),
-              Size(),
-              Json(),
-              First(),
-              Last(),
-              Prepend(),
-              Append(),
-              Capitalize(),
-              Downcase(),
-              Upcase(),
-              Escape(),
-              Remove(),
-              Replace(),
-              Reverse()).map(f => (f.name, f)).toList: _*)
+  val registry: MMap[String, Filter] = MMap(
+    "split" -> Split(),
+    "date" -> Date(),
+    "slice" -> Slice(),
+    "join" -> Join(),
+    "size" -> Size(),
+    "json" -> Json(),
+    "first" -> First(),
+    "last" -> Last(),
+    "prepend" -> Prepend(),
+    "append" -> Append(),
+    "capitalize" -> Capitalize(),
+    "downcase" -> Downcase(),
+    "upcase" -> Upcase(),
+    "escape" -> Escape(),
+    "remove" -> Remove(),
+    "replace" -> Replace(),
+    "reverse" -> Reverse()
+  )
 }
 
 abstract trait ArgSpec { self: Filter with OptArgSpec =>
