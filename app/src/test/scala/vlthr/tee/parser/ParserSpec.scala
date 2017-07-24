@@ -126,7 +126,7 @@ class ParserTests {
   @Test def parseFilterApplication() = {
     val input = "{{ 'str' | reverse }}"
     assertParsed(input) {
-      case BlockNode(OutputNode(FilterExpr(_, _, Nil)) :: Nil) => true
+      case BlockNode(OutputNode(FilterExpr(_, _, Nil, _)) :: Nil) => true
     }
   }
 
@@ -134,7 +134,7 @@ class ParserTests {
     val input = "{{ '1,2,3' | split: ',' | reverse }}"
     assertParsed(input) {
       case BlockNode(
-          OutputNode(FilterExpr(FilterExpr(_, _, _), _, Nil)) :: Nil) =>
+          OutputNode(FilterExpr(FilterExpr(_, _, _, _), _, Nil, _)) :: Nil) =>
         true
     }
   }

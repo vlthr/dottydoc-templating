@@ -46,7 +46,7 @@ forEnd : TAGSTART FOREND TAGEND;
 
 output : OUTPUTSTART output_expr OUTPUTEND;
 
-output_expr : output_expr FILTER id (COLON arglist)?
+output_expr : output_expr FILTER id (COLON arglist? kwargs?)?
             | expr;
 
 expr : expr DOTINDEX id
@@ -60,6 +60,10 @@ expr : expr DOTINDEX id
 | expr AND expr
 | expr OR expr
 | term;
+
+kwarg: id COLON expr;
+
+kwargs: kwarg+;
 
 term : INT
      | STRDOUBLE

@@ -177,8 +177,12 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
         if (c.COLON() != null)
           new LiquidArgsVisitor(template).visitArglist(c.arglist())
         else Nil
+      val kwargs =
+        if (c.COLON() != null)
+          new LiquidKwArgsVisitor(template).visitKwargs(c.kwargs())
+        else Map()
       val filter = ctx.getFilter(c.id.getText)
-      FilterExpr(visitOutputExpr(c.output_expr()), filter, args)
+      FilterExpr(visitOutputExpr(c.output_expr()), filter, args, kwargs)
     } else {
       expVisitor.visitExpr(c.expr())
     }
@@ -260,6 +264,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
 class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[List[Expr]] {
   override def visitArglist(c: LiquidParser.ArglistContext): List[Expr] = {
+    if (c == null) Nil
     c.expr()
       .asScala
       .map(ec => {
@@ -267,6 +272,21 @@ class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
         new LiquidExprVisitor(template).visitExpr(ec)
       })
       .toList
+  }
+}
+
+class LiquidKwArgsVisitor(template: SourceFile)(implicit val ctx: Context)
+    extends LiquidParserBaseVisitor[Map[String, Expr]] {
+  override def visitKwargs(c: LiquidParser.KwargsContext): Map[String, Expr] = {
+    if (c == null) Map()
+    else Map(c.kwarg
+               .asScala
+               .map(ec => {
+                      implicit val pc = Liquid.makeContext(c, template)
+                      val id = ec.id.getText
+                      val expr = new LiquidExprVisitor(template).visitExpr(ec.expr)
+                      (id, expr)
+                    }): _*)
   }
 }
 
