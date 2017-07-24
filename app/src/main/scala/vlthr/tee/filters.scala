@@ -324,9 +324,9 @@ case class Date() extends Filter with InputType(ValueType.String | ValueType.Int
     implicit ctx: Context, parent: FilterExpr) = {
     val seconds = input match {
       case StringValue(v) if v == "now" => System.currentTimeMillis / 1000L
-      case StringValue(v) => toSeconds(v).getOrElse(throw new FilterException(s"`$v` is not a valid date."))
+      case StringValue(v) => toSeconds(v).getOrElse(throw FilterException(s"`$v` is not a valid date."))
       case IntValue(v) => v
-      case v => throw new Exception("Unexpected Type"); 1000L
+      case v => throw FilterException(s"Unexpected Value Type: $v"); 1000L
     }
     val date = new java.util.Date(seconds * 1000L)
 
