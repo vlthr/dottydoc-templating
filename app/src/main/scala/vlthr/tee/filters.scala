@@ -398,9 +398,9 @@ case class Slice() extends Filter with InputType(ValueType.String) with FixedArg
     // TODO: Support negative indexes
     implicit ctx: Context, parent: FilterExpr) = {
     val start = args(0).asInstanceOf[IntValue].v
-    val stop = args.lift(1).map(_.asInstanceOf[IntValue].v).getOrElse(start+1)
+    val stop = args.lift(1).map(_.asInstanceOf[IntValue].v).getOrElse(start)
     input match {
-      case StringValue(v) => Success(StringValue(v.substring(start, stop)))
+      case StringValue(v) => Success(StringValue(v.substring(start, stop+1)))
       case v => fail(UnexpectedValueType(parent, v))
     }
   }

@@ -79,6 +79,13 @@ object Liquid {
       Context.createNew.withParams(params).withIncludeDir(includeDir)
     parse(path).flatMap(_.render)
   }
+  def renderString(body: String,
+             params: Map[String, Any],
+             includeDir: String): Try[String] = {
+    implicit val c: Context =
+      Context.createNew.withParams(params).withIncludeDir(includeDir)
+    parse(SourceFile(body, "In-memory file")).flatMap(_.render)
+  }
 
   sealed trait LexerMode
   final case class Default() extends LexerMode
@@ -107,7 +114,6 @@ class ErrorStrategy extends DefaultErrorStrategy {
     parser.notifyErrorListeners(e.getOffendingToken(), msg, e)
   }
   override def reportUnwantedToken(parser: Parser) = {
-    println("AOEU")
     val msg = s"Unwanted token"
     parser.notifyErrorListeners(msg)
   }

@@ -85,7 +85,7 @@ final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
 final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
     implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit ctx: Context) =
+  override def eval()(implicit ctx: Context) = {
     Error
       .all(expr.eval) { expr =>
         Error
@@ -95,16 +95,18 @@ final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr])(
               filter
                 .typeCheck(expr, args)
                 .flatMap(_ => filter.filter(expr, args))
-            }.recoverWith {
-              case FilterException(desc) => fail(FilterError(desc))
-              case UnknownFilterNameException(name) =>
-                fail(UnknownFilterName(name))
-              case NonFatal(e) => fail(UncaughtExceptionError(e))
-            }
+                .recoverWith {
+                  case f : LiquidFailure => Failure(f)
+                  case FilterException(desc) => fail(FilterError(desc))
+                  case UnknownFilterNameException(name) =>
+                    fail(UnknownFilterName(name))
+                  case NonFatal(e) => fail(UncaughtExceptionError(e))
+                  case e => fail(UncaughtExceptionError(e))
+                }
+            }.flatten
           }
-          .flatten
-      }
-      .flatten
+      }.flatten
+  }
 }
 
 final case class IndexExpr(indexable: Expr, key: Expr)(

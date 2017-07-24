@@ -141,7 +141,8 @@ object Error {
   def extractErrors[T](sources: Try[T]*): List[Error] = {
     sources.flatMap {
       case Failure(LiquidFailure(errors)) => errors
-      case _ => List()
+      case Success(_) => List()
+      case _ => throw new Exception(s"Liquid Error: Unexpected argument to Error.extractErrors: $sources")
     }.toList
   }
 
