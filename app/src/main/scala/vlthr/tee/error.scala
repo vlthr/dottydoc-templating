@@ -96,6 +96,9 @@ case class InvalidFilterInput(expr: FilterExpr, filter: Filter, input: Value) ex
 case class InvalidFilterArgs(expr: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(expr.pctx) {
   def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
+case class TooManyFilterArgs(expr: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(expr.pctx) {
+  def description = s"Too many arguments to filter ${filter.name}."
+}
 case class UnknownFilterNameException(name: String) extends Exception
 case class UnknownFilterName(name: String)(implicit pctx: ParseContext) extends RenderError(pctx) {
   def description = s"Unknown filter: `$name`."

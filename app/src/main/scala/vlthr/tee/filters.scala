@@ -13,6 +13,7 @@ object Filter {
   lazy val registry: MMap[String, Filter] =
     MMap(List(Split(),
               Date(),
+              Slice(),
               Join(),
               Size(),
               Json(),
@@ -29,6 +30,15 @@ object Filter {
               Reverse()).map(f => (f.name, f)).toList: _*)
 }
 
+abstract trait ArgSpec { self: Filter with OptArgSpec =>
+  def checkArgs(args: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error]
+}
+abstract trait OptArgSpec { self: Filter =>
+  def checkOptArgs(optArgs: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error]
+}
+abstract trait InputSpec { self: Filter =>
+  def checkInput(input: Value)(implicit ctx: Context, parent: FilterExpr): List[Error]
+}
 abstract trait NoArgs { self: Filter =>
   def checkArgs(args: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
     val correctNumberOfArgs = args.size == 0
@@ -37,30 +47,46 @@ abstract trait NoArgs { self: Filter =>
   }
 }
 
-abstract trait InputType(t: ValueType) { self: Filter =>
+abstract trait InputType(t: ValueType) extends InputSpec { self: Filter =>
   override def checkInput(input: Value)(implicit ctx: Context, parent: FilterExpr): List[Error] = {
     if (!t.matches(input)) InvalidFilterInput(parent, this, input) :: Nil
     else Nil
   }
 }
 
-abstract trait FixedArgs(types: List[ValueType]) { self: Filter =>
+abstract trait FixedOptArgs(types: ValueType*) extends OptArgSpec { self: Filter =>
+  def checkOptArgs(optArgs: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
+    val correctArgTypes = optArgs.zip(types).forall{ case (v, expected) => expected.matches(v) }
+    val correctNumberOfArgs = optArgs.size == types.size
+    if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(parent, this, optArgs))
+    else Nil
+  }
+}
+
+abstract trait NoOptArgs extends OptArgSpec { self: Filter =>
+  def checkOptArgs(optArgs: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
+    val correctNumberOfArgs = optArgs.size == 0
+    if (!correctNumberOfArgs) List(TooManyFilterArgs(parent, this, optArgs))
+    else Nil
+  }
+}
+
+abstract trait FixedArgs(types: ValueType*) extends ArgSpec { self: Filter with OptArgSpec =>
   // TODO: A macro could generate typesafe getters for each of the expected arguments.
-  def checkArgs(args: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
+  def checkArgs(allArgs: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
+    var errors: List[Error] = Nil
+    // Prune off optional arguments if applicable
+    val args = if (allArgs.size > numArgs) {
+      val (args, optArgs) = allArgs.splitAt(numArgs)
+      errors = errors ++ checkOptArgs(optArgs)
+      args
+    } else allArgs
     val correctArgTypes = args.zip(types).forall{ case (v, expected) => expected.matches(v) }
     val correctNumberOfArgs = args.size == types.size
     if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(parent, this, args))
     else Nil
   }
-}
-
-abstract trait SingleArg(expected: ValueType) { self: Filter =>
-  def checkArgs(args: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error] = {
-    val correctNumberOfArgs = args.size == 1
-    val correctArgTypes = if (correctNumberOfArgs) expected.matches(args(0)) else false
-    if (!correctArgTypes || !correctNumberOfArgs) List(InvalidFilterArgs(parent, this, args))
-    else Nil
-  }
+  def numArgs: Int = types.size
 }
 
 case class UnknownFilter(name: String) extends Filter {
@@ -70,7 +96,7 @@ case class UnknownFilter(name: String) extends Filter {
   def checkArgs(v: List[Value])(implicit ctx: Context, parent: FilterExpr) = ???
 }
 
-case class Split() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Split() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.String) with NoOptArgs {
   def name = "split"
   override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
@@ -128,7 +154,7 @@ case class Reverse() extends Filter with InputType(ValueType.List | ValueType.St
   }
 }
 
-case class Join() extends Filter with InputType(ValueType.List) with SingleArg(ValueType.String) {
+case class Join() extends Filter with InputType(ValueType.List) with FixedArgs(ValueType.String) with NoOptArgs {
   def name = "join"
   override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
@@ -173,7 +199,7 @@ case class Upcase() extends Filter with InputType(ValueType.String) with NoArgs 
   }
 }
 
-case class Append() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Append() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.String) with NoOptArgs {
   def name = "append"
   override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
@@ -185,7 +211,7 @@ case class Append() extends Filter with InputType(ValueType.String) with SingleA
   }
 }
 
-case class Prepend() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Prepend() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.String) with NoOptArgs {
   def name = "prepend"
   override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
@@ -211,7 +237,7 @@ case class Escape() extends Filter with InputType(ValueType.String) with NoArgs 
   }
 }
 
-case class Remove() extends Filter with InputType(ValueType.String) with SingleArg(ValueType.String) {
+case class Remove() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.String) with NoOptArgs {
   def name = "remove"
   override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
@@ -223,7 +249,7 @@ case class Remove() extends Filter with InputType(ValueType.String) with SingleA
   }
 }
 
-case class Replace() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.String :: ValueType.String :: Nil) {
+case class Replace() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.String, ValueType.String) with NoOptArgs {
   def name = "replace"
   override def filter(input: Value, args: List[Value])(
     implicit ctx: Context, parent: FilterExpr) = {
@@ -236,7 +262,7 @@ case class Replace() extends Filter with InputType(ValueType.String) with FixedA
   }
 }
 
-case class Date() extends Filter with InputType(ValueType.String | ValueType.Integer) with SingleArg(ValueType.String) {
+case class Date() extends Filter with InputType(ValueType.String | ValueType.Integer) with FixedArgs(ValueType.String) with NoOptArgs {
   import java.text.SimpleDateFormat
   import java.util.Locale
 
@@ -362,5 +388,19 @@ case class Date() extends Filter with InputType(ValueType.String | ValueType.Int
       i += 1
     }
     Success(StringValue(builder.toString))
+  }
+}
+
+case class Slice() extends Filter with InputType(ValueType.String) with FixedArgs(ValueType.Integer) with FixedOptArgs(ValueType.Integer) {
+  def name = "slice"
+  override def filter(input: Value, args: List[Value])(
+    // TODO: Support negative indexes
+    implicit ctx: Context, parent: FilterExpr) = {
+    val start = args(0).asInstanceOf[IntValue].v
+    val stop = args.lift(1).map(_.asInstanceOf[IntValue].v).getOrElse(start+1)
+    input match {
+      case StringValue(v) => Success(StringValue(v.substring(start, stop)))
+      case v => fail(UnexpectedValueType(parent, v))
+    }
   }
 }
