@@ -1,4 +1,4 @@
-Type Error: ./examples/err_invalid_filter_input.liquid
+Filter Error: ./examples/err_invalid_filter_input.liquid
 Filter `split` is not defined for input type Integer.
 
     {{ 1 | split: "," | size }}

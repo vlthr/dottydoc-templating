@@ -10,6 +10,7 @@ trait Error(pctx: ParseContext) extends ErrorFragment {
    |
    |    ${pctx.sourcePosition.report}""".stripMargin
   }
+  override def toString: String = getMessage
 }
 trait ErrorFragment {
   def getMessage(pctx: ParseContext): String = {
@@ -49,33 +50,29 @@ case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) ext
   def description = e.getMessage
 }
 
-case class TagException(desc: String) extends Exception(desc)
-case class TagError(desc: String) extends ErrorFragment {
+trait TagError extends ErrorFragment {
   def errorType = "Custom Tag Error"
-  def description = desc
 }
 
-case class InvalidTagArgs(tagNode: CustomTag, tag: Tag, args: List[Value]) extends Error(tagNode.pctx) {
-  def errorType = "Parse Error"
+case class InvalidTagArgs(tag: Tag, args: List[Value]) extends TagError {
+  override def errorType = "Parse Error"
   def description = s"Tag `${tag.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
-case class UnknownTagIdException(id: String) extends Throwable
-case class UnknownTagId(id: String)(implicit pctx: ParseContext) extends Error(pctx) {
-  def errorType = "Parse Error"
+case class UnknownTagId(id: String) extends TagError {
+  override def errorType = "Parse Error"
   def description = s"`$id` does not match any known tag."
 }
-case class UnexpectedValueType(expr: Expr, v: Value) extends TypeError(expr.pctx) {
+case class UnexpectedValueType(v: Value) extends FilterError  {
   def description = s"Unexpected value type: ${v.valueType}"
 }
 
-case class MalformedTagException(error: MalformedTag) extends Throwable
 case class MalformedTag()(implicit pctx: ParseContext) extends Error(pctx) {
   def errorType = "Parse Error"
   def description = s"Malformed tag."
 }
 
-case class UnrenderableValueException() extends Throwable
-case class UnrenderableValue(expr: Expr, value: Value) extends RenderError(expr.pctx) {
+case class UnrenderableValue(value: Value) extends ErrorFragment {
+  def errorType = "Render Error"
   def description = s"Cannot render type ${value.valueType}"
 }
 case class InvalidIterable(expr: Expr) extends TypeError(expr.pctx) {
@@ -102,28 +99,25 @@ case class IncomparableValues(expr: Expr, left: Value, right: Value) extends Typ
 case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.pctx) {
   def description = s"Include tag argument must be a filename, not ${filename.valueType}"
 }
-case class FilterException(desc: String) extends Throwable
-case class FilterError(desc: String) extends ErrorFragment {
+trait FilterError extends ErrorFragment {
   def errorType = "Filter Error"
-  def description = desc
 }
-case class InvalidFilterInput(expr: FilterExpr, filter: Filter, input: Value) extends TypeError(expr.pctx) {
+case class InvalidFilterInput(filter: Filter, input: Value) extends FilterError {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType}."
 }
-case class InvalidFilterArgs(expr: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(expr.pctx) {
+case class InvalidFilterArgs(filter: Filter, args: List[Value]) extends FilterError {
   def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
-case class TooManyFilterArgs(expr: FilterExpr, filter: Filter, args: List[Value]) extends TypeError(expr.pctx) {
+case class TooManyFilterArgs(filter: Filter, args: List[Value]) extends FilterError {
   def description = s"Too many arguments to filter ${filter.name}."
 }
-case class UnknownFilterNameException(name: String) extends Exception
-case class UnknownFilterName(name: String)(implicit pctx: ParseContext) extends RenderError(pctx) {
+case class UnknownFilterName(name: String) extends FilterError {
   def description = s"Unknown filter: `$name`."
 }
 case class FilterApplicationError(expr: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(expr.pctx) {
   def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType} and arguments (${args.map(_.valueType).mkString(", ")})."
 }
-case class LiquidFailure(errors: List[Error]) extends Exception {
+case class LiquidFailure(errors: List[ErrorFragment]) extends Exception {
   override def getMessage(): String = errors.mkString("\n")
   override def toString = getMessage
 }
@@ -157,7 +151,7 @@ object Error {
 
   // def all(errors: Seq[Try[_]])(onSuccess: () => Try)
 
-  def extractErrors(sources: Try[_]*): List[Error] = {
+  def extractErrors(sources: Try[_]*): List[ErrorFragment] = {
     sources.flatMap {
       case Failure(LiquidFailure(errors)) => errors
       case Success(_) => List()
@@ -172,5 +166,5 @@ object Error {
     }.toList
   }
 
-  def fail[T](e: Error*): Try[T] = Failure(LiquidFailure(e.toList))
+  def fail[T](e: ErrorFragment*): Try[T] = Failure(LiquidFailure(e.toList))
 }

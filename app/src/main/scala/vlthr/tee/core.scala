@@ -164,33 +164,11 @@ object Context {
 }
 
 
-abstract trait NoArgs { self: Tag =>
-  def typeCheck(args: List[Value])(implicit ctx: Context, parent: CustomTag): List[Error] = {
-    val correctNumberOfArgs = args.size == 0
-    if (!correctNumberOfArgs) List(InvalidTagArgs(parent, this, args))
-    else Nil
-  }
-}
-
-case class UnknownTag(n: String) extends Tag(n) {
-  def typeCheck(args: List[Value])(implicit ctx: Context, parent: CustomTag): List[Error] = throw UnknownTagIdException(name)
-  def render(args: List[Value])(
-    implicit ctx: Context, parent: CustomTag): String = throw UnknownTagIdException(name)
-}
-
-abstract trait Tag(val name: String) {
-  def typeCheck(args: List[Value])(implicit ctx: Context, parent: CustomTag): List[Error]
-  def render(args: List[Value])(
-    implicit ctx: Context, parent: CustomTag): String
-}
-
-abstract trait SingleArg
-
 abstract trait Filter {
   def name: String
-  def checkInput(input: Value)(implicit ctx: Context, parent: FilterExpr): List[Error]
-  def checkArgs(v: List[Value])(implicit ctx: Context, parent: FilterExpr): List[Error]
-  def typeCheck(input: Value, args: List[Value])(implicit ctx: Context, parent: FilterExpr): Try[Unit] = {
+  def checkInput(input: Value)(implicit ctx: Context): List[ErrorFragment]
+  def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
+  def typeCheck(input: Value, args: List[Value])(implicit ctx: Context): Try[Unit] = {
     val inputErrors = checkInput(input)
     val argsErrors = checkArgs(args)
     val errors = inputErrors ++ argsErrors
@@ -199,7 +177,7 @@ abstract trait Filter {
   }
 
   def filter(input: Value, args: List[Value])(
-    implicit ctx: Context, parent: FilterExpr): Try[Value]
+    implicit ctx: Context): Try[Value]
 }
 
 sealed trait Truthable {
@@ -257,13 +235,25 @@ final case class MapValue(v: Map[String, Value])
     with Truthy {
   def display: String = ???
   def valueType = ValueType.Map
-  def render()(implicit ctx: Context): Try[String] = throw UnrenderableValueException()
+  def render()(implicit ctx: Context): Try[String] = fail(UnrenderableValue(this))
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
   def valueType = ValueType.List
-  def render()(implicit ctx: Context): Try[String] = throw UnrenderableValueException()
+  def render()(implicit ctx: Context): Try[String] = fail(UnrenderableValue(this))
+}
+
+case class UnknownTag(n: String) extends Tag(n) {
+  def typeCheck(args: List[Value])(implicit ctx: Context): List[ErrorFragment] = List(UnknownTagId(name))
+  def render(args: List[Value])(
+    implicit ctx: Context): String = ???
+}
+
+abstract trait Tag(val name: String) {
+  def typeCheck(args: List[Value])(implicit ctx: Context): List[ErrorFragment]
+  def render(args: List[Value])(
+    implicit ctx: Context): String
 }
 
 object Value {

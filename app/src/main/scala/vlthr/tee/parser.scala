@@ -80,8 +80,8 @@ object Liquid {
     parse(path).flatMap(_.render)
   }
   def renderString(body: String,
-             params: Map[String, Any],
-             includeDir: String): Try[String] = {
+                   params: Map[String, Any],
+                   includeDir: String): Try[String] = {
     implicit val c: Context =
       Context.createNew.withParams(params).withIncludeDir(includeDir)
     parse(SourceFile(body, "In-memory file")).flatMap(_.render)
@@ -247,7 +247,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
       val tag = ctx.getTag(id)
       CustomTag(tag, args)
     } else {
-      throw MalformedTagException(MalformedTag())
+      throw new Exception(MalformedTag().getMessage) // TODO: Specialize
     }
   }
 
@@ -279,14 +279,15 @@ class LiquidKwArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Map[String, Expr]] {
   override def visitKwargs(c: LiquidParser.KwargsContext): Map[String, Expr] = {
     if (c == null) Map()
-    else Map(c.kwarg
-               .asScala
-               .map(ec => {
-                      implicit val pc = Liquid.makeContext(c, template)
-                      val id = ec.id.getText
-                      val expr = new LiquidExprVisitor(template).visitExpr(ec.expr)
-                      (id, expr)
-                    }): _*)
+    else
+      Map(
+        c.kwarg.asScala
+          .map(ec => {
+            implicit val pc = Liquid.makeContext(c, template)
+            val id = ec.id.getText
+            val expr = new LiquidExprVisitor(template).visitExpr(ec.expr)
+            (id, expr)
+          }): _*)
   }
 }
 
