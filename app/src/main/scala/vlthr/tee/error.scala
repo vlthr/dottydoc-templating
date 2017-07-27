@@ -50,19 +50,15 @@ case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) ext
   def description = e.getMessage
 }
 
-trait TagError extends ErrorFragment {
-  def errorType = "Custom Tag Error"
-}
-
-case class InvalidTagArgs(tag: Tag, args: List[Value]) extends TagError {
+case class InvalidTagArgs(tag: Tag, args: List[Value]) extends ExtensionError {
   override def errorType = "Parse Error"
   def description = s"Tag `${tag.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
-case class UnknownTagId(id: String) extends TagError {
+case class UnknownTagId(id: String) extends ExtensionError {
   override def errorType = "Parse Error"
   def description = s"`$id` does not match any known tag."
 }
-case class UnexpectedValueType(v: Value) extends FilterError  {
+case class UnexpectedValueType(v: Value) extends ExtensionError  {
   def description = s"Unexpected value type: ${v.valueType}"
 }
 
@@ -99,19 +95,19 @@ case class IncomparableValues(expr: Expr, left: Value, right: Value) extends Typ
 case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.pctx) {
   def description = s"Include tag argument must be a filename, not ${filename.valueType}"
 }
-trait FilterError extends ErrorFragment {
-  def errorType = "Filter Error"
+trait ExtensionError extends ErrorFragment {
+  def errorType = "Extension Error"
 }
-case class InvalidFilterInput(filter: Filter, input: Value) extends FilterError {
-  def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType}."
+case class InvalidInput(ext: Extension, input: Value) extends ExtensionError {
+  def description = s"${ext.extensionType} `${ext.name}` is not defined for input type ${input.valueType}."
 }
-case class InvalidFilterArgs(filter: Filter, args: List[Value]) extends FilterError {
-  def description = s"Filter `${filter.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
+case class InvalidArgs(ext: Extension, args: List[Value]) extends ExtensionError {
+  def description = s"${ext.extensionType} `${ext.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
 }
-case class TooManyFilterArgs(filter: Filter, args: List[Value]) extends FilterError {
-  def description = s"Too many arguments to filter ${filter.name}."
+case class TooManyArgs(ext: Extension, args: List[Value]) extends ExtensionError {
+  def description = s"Too many arguments to filter ${ext.name}."
 }
-case class UnknownFilterName(name: String) extends FilterError {
+case class UnknownFilterName(name: String) extends ExtensionError {
   def description = s"Unknown filter: `$name`."
 }
 case class FilterApplicationError(expr: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(expr.pctx) {

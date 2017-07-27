@@ -139,6 +139,10 @@ abstract trait Expr extends ASTNode {
   def render()(implicit ctx: Context): Try[String] =
     eval.flatMap(_.render)
 }
+abstract trait Extension {
+  def name: String
+  def extensionType: String
+}
 
 case class Context(mappings: MMap[String, Value],
                    customFilters: Map[String, Filter],
@@ -164,7 +168,8 @@ object Context {
 }
 
 
-abstract trait Filter {
+abstract trait Filter extends Extension {
+  def extensionType = "filter"
   def name: String
   def checkInput(input: Value)(implicit ctx: Context): List[ErrorFragment]
   def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
@@ -245,13 +250,19 @@ final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
 }
 
 case class UnknownTag(n: String) extends Tag(n) {
-  def typeCheck(args: List[Value])(implicit ctx: Context): List[ErrorFragment] = List(UnknownTagId(name))
+  def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment] = List(UnknownTagId(name))
   def render(args: List[Value])(
     implicit ctx: Context): String = ???
 }
 
-abstract trait Tag(val name: String) {
-  def typeCheck(args: List[Value])(implicit ctx: Context): List[ErrorFragment]
+abstract trait Tag(val name: String) extends Extension {
+  def extensionType = "tag"
+  def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
+  def typeCheck(args: List[Value])(implicit ctx: Context): Try[Unit] = {
+    val errors = checkArgs(args)
+    if (errors.size > 0) Error.fail(errors: _*)
+    else Success(())
+  }
   def render(args: List[Value])(
     implicit ctx: Context): String
 }
