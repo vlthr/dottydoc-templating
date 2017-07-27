@@ -96,8 +96,7 @@ final case class FilterExpr(expr: Expr, filter: Filter, args: List[Expr], kwargs
                 .typeCheck(expr, args)
                 .flatMap(_ => filter.filter(expr, args))
                 .recoverWith {
-                  case f : LiquidFailure => Failure(f)
-                  case FilterException(desc) => fail(FilterError(desc))
+                  case LiquidFailure(errors) => Failure(LiquidFailure(Error.imbueFragments(errors)))
                   case UnknownFilterNameException(name) =>
                     fail(UnknownFilterName(name))
                   case NonFatal(e) => fail(UncaughtExceptionError(e))

@@ -2,16 +2,33 @@ package vlthr.tee.core
 import org.antlr.v4.runtime.{Recognizer, RecognitionException}
 import scala.util.{Try, Success, Failure}
 
-trait Error(pctx: ParseContext) {
-  def getMessage: String = {
+trait Error(pctx: ParseContext) extends ErrorFragment {
+  def getMessage: String = getMessage(pctx)
+  override def getMessage(outerPctx: ParseContext): String = {
     s"""$errorType: ${pctx.sourcePosition.template.path}
    |$description
    |
    |    ${pctx.sourcePosition.report}""".stripMargin
   }
+}
+trait ErrorFragment {
+  def getMessage(pctx: ParseContext): String = {
+    s"""$errorType: ${pctx.sourcePosition.template.path}
+   |$description""".stripMargin
+  }
   def errorType: String
   def description: String
-  override def toString: String = getMessage
+  override def toString: String = ???
+  def imbue(pctx: ParseContext): Error = ImbuedContext(this)(pctx)
+}
+case class ImbuedContext(parent: ErrorFragment)(pctx: ParseContext) extends Error(pctx) {
+  override def getMessage: String = {
+    s"""${parent.getMessage(pctx)}
+   |
+   |    ${pctx.sourcePosition.report}""".stripMargin
+  }
+  def errorType = parent.errorType
+  def description = parent.description
 }
 abstract class TypeError(pctx: ParseContext) extends Error(pctx) {
   def errorType = "Type Error"
@@ -33,7 +50,7 @@ case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) ext
 }
 
 case class TagException(desc: String) extends Exception(desc)
-case class TagError(desc: String)(implicit pctx: ParseContext) extends Error(pctx) {
+case class TagError(desc: String) extends ErrorFragment {
   def errorType = "Custom Tag Error"
   def description = desc
 }
@@ -86,7 +103,7 @@ case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(ob
   def description = s"Include tag argument must be a filename, not ${filename.valueType}"
 }
 case class FilterException(desc: String) extends Throwable
-case class FilterError(desc: String)(implicit pctx: ParseContext) extends Error(pctx) {
+case class FilterError(desc: String) extends ErrorFragment {
   def errorType = "Filter Error"
   def description = desc
 }
@@ -138,11 +155,20 @@ object Error {
     else onSuccess(successes.map(s => s.get).toList)
   }
 
-  def extractErrors[T](sources: Try[T]*): List[Error] = {
+  // def all(errors: Seq[Try[_]])(onSuccess: () => Try)
+
+  def extractErrors(sources: Try[_]*): List[Error] = {
     sources.flatMap {
       case Failure(LiquidFailure(errors)) => errors
       case Success(_) => List()
       case _ => throw new Exception(s"Liquid Error: Unexpected argument to Error.extractErrors: $sources")
+    }.toList
+  }
+
+  def imbueFragments(fragments: List[ErrorFragment])(implicit pctx: ParseContext): List[Error] = {
+    fragments.map {
+      case e: Error => e
+      case e: ErrorFragment => e.imbue(pctx)
     }.toList
   }
 

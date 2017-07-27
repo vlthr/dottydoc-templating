@@ -158,9 +158,10 @@ final case class CustomTag(tag: Tag, args: List[Expr])(
         }
       }
       .recoverWith {
-        case TagException(desc) => fail(TagError(desc))
+        case LiquidFailure(errors) => Failure(LiquidFailure(Error.imbueFragments(errors)))
         case UnknownTagIdException(name) => fail(UnknownTagId(name))
         case NonFatal(e) => fail(UncaughtExceptionError(e))
+        case e => fail(UncaughtExceptionError(e))
       }
   }
 }
