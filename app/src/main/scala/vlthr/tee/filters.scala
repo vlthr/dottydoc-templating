@@ -33,7 +33,7 @@ object Filter {
 }
 
 case class UnknownFilter(name: String) extends Filter {
-  def filter(input: Value, args: List[Value])(implicit ctx: Context) =
+  def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) =
     fail(UnknownFilterName(name))
   def checkInput(v: Value)(implicit ctx: Context) = ???
   def checkArgs(v: List[Value])(implicit ctx: Context) = ???
@@ -45,7 +45,7 @@ case class Split()
     with FixedArgs(ValueType.String)
     with NoOptArgs {
   def name = "split"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     val pattern = args(0).asInstanceOf[StringValue]
     input match {
       case StringValue(v) => Try(Value.create(v.split(pattern.v).toList))
@@ -56,7 +56,7 @@ case class Split()
 
 case class Json() extends Filter with InputType(ValueType.List) with NoArgs {
   def name = "json"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) =
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) =
     Success(
       StringValue(
         new ObjectMapper()
@@ -68,7 +68,7 @@ case class Size()
     with InputType(ValueType.List | ValueType.String)
     with NoArgs {
   def name = "size"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) =
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) =
     input match {
       case StringValue(v) => Try(IntValue(v.size))
       case ListValue(v) => Try(IntValue(v.size))
@@ -81,7 +81,7 @@ case class First()
     with InputType(ValueType.List | ValueType.String)
     with NoArgs {
   def name = "first"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) =
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) =
     input match {
       case StringValue(v) => Try(StringValue("" + v.head))
       case ListValue(v) => Try(v.head)
@@ -94,7 +94,7 @@ case class Last()
     with InputType(ValueType.List | ValueType.String)
     with NoArgs {
   def name = "last"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) =
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) =
     input match {
       case StringValue(v) => Try(StringValue("" + v.last))
       case ListValue(v) => Try(v.last)
@@ -107,7 +107,7 @@ case class Reverse()
     with InputType(ValueType.List | ValueType.String)
     with NoArgs {
   def name = "reverse"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) =
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) =
     input match {
       case StringValue(v) => Try(StringValue(v.reverse))
       case ListValue(v) => Try(ListValue(v.reverse))
@@ -121,7 +121,7 @@ case class Join()
     with FixedArgs(ValueType.String)
     with NoOptArgs {
   def name = "join"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     val delim = args(0).asInstanceOf[StringValue]
     input match {
       case ListValue(v) =>
@@ -136,7 +136,7 @@ case class Capitalize()
     with InputType(ValueType.String)
     with NoArgs {
   def name = "capitalize"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     input match {
       case StringValue(v) =>
         Try(StringValue(Character.toUpperCase(v(0)) + v.substring(1)))
@@ -150,7 +150,7 @@ case class Downcase()
     with InputType(ValueType.String)
     with NoArgs {
   def name = "downcase"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     input match {
       case StringValue(v) =>
         Try(StringValue(v.map(c => Character.toLowerCase(c)).mkString))
@@ -164,7 +164,7 @@ case class Upcase()
     with InputType(ValueType.String)
     with NoArgs {
   def name = "upcase"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     input match {
       case StringValue(v) =>
         Try(StringValue(v.map(c => Character.toUpperCase(c)).mkString))
@@ -179,7 +179,7 @@ case class Append()
     with FixedArgs(ValueType.String)
     with NoOptArgs {
   def name = "append"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     val end = args(0).asInstanceOf[StringValue]
     input match {
       case StringValue(v) => Try(StringValue(v + end.v))
@@ -194,7 +194,7 @@ case class Prepend()
     with FixedArgs(ValueType.String)
     with NoOptArgs {
   def name = "prepend"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     val start = args(0).asInstanceOf[StringValue]
     input match {
       case StringValue(v) => Try(StringValue(start.v + v))
@@ -208,7 +208,7 @@ case class Escape()
     with InputType(ValueType.String)
     with NoArgs {
   def name = "escape"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     input match {
       case StringValue(v) =>
         Try(
@@ -228,7 +228,7 @@ case class Remove()
     with FixedArgs(ValueType.String)
     with NoOptArgs {
   def name = "remove"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     val pattern = args(0).asInstanceOf[StringValue]
     input match {
       case StringValue(v) => Try(StringValue(v.replace(pattern.v, "")))
@@ -243,7 +243,7 @@ case class Replace()
     with FixedArgs(ValueType.String, ValueType.String)
     with NoOptArgs {
   def name = "replace"
-  override def filter(input: Value, args: List[Value])(implicit ctx: Context) = {
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(implicit ctx: Context) = {
     val pattern = args(0).asInstanceOf[StringValue]
     val replacement = args(1).asInstanceOf[StringValue]
     input match {
@@ -332,7 +332,7 @@ case class Date()
   case class InvalidDate(filter: Filter, date: String) extends ExtensionError {
     def description = s"`$date` is not a valid date."
   }
-  override def filter(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
       implicit ctx: Context): Try[Value] = {
     val seconds = input match {
       case StringValue(v) if v == "now" => System.currentTimeMillis / 1000L
@@ -382,7 +382,7 @@ case class Slice()
     with FixedArgs(ValueType.Integer)
     with FixedOptArgs(ValueType.Integer) {
   def name = "slice"
-  override def filter(input: Value, args: List[Value])(
+  override def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
       // TODO: Support negative indexes
       implicit ctx: Context): Try[Value] = {
     val start = args(0).asInstanceOf[IntValue].v

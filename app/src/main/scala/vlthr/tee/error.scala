@@ -50,6 +50,12 @@ case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) ext
   def description = e.getMessage
 }
 
+case class InvalidKwArg(ext: Extension, key: String) extends ExtensionError {
+  def description = s"${ext.extensionType} `${ext.name}` does not take a keyword argument named `$key`."
+}
+case class InvalidKwArgType(ext: Extension, key: String, value: Value, expectedType: ValueType) extends ExtensionError {
+  def description = s"${ext.extensionType} `${ext.name}` keyword argument `$key` received expression of type ${value.valueType}. Required $expectedType."
+}
 case class InvalidTagArgs(tag: Tag, args: List[Value]) extends ExtensionError {
   override def errorType = "Parse Error"
   def description = s"Tag `${tag.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
@@ -145,7 +151,11 @@ object Error {
     else onSuccess(successes.map(s => s.get).toList)
   }
 
-  // def all(errors: Seq[Try[_]])(onSuccess: () => Try)
+  def all[T](tries: Seq[Try[_]])(onSuccess: => Try[T]): Try[T] = {
+    val errors = extractErrors(tries: _*)
+    if (errors.size == 0) onSuccess
+    else fail(errors: _*)
+  }
 
   def extractErrors(sources: Try[_]*): List[ErrorFragment] = {
     sources.flatMap {

@@ -89,28 +89,27 @@ final case class FilterExpr(
     kwargs: Map[String, Expr])(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
-    Error
-      .all(expr.eval) { expr =>
-        Error
-          .condenseAll(args.map(_.eval): _*) { args =>
-            implicit val parent: FilterExpr = this
-            Try {
-              filter
-                .typeCheck(expr, args)
-                .flatMap(_ => filter.filter(expr, args))
-                .recoverWith {
-                  case LiquidFailure(errors) =>
-                    fail(Error.imbueFragments(errors): _*)
-                  case NonFatal(e) => fail(UncaughtExceptionError(e))
-                  case e => fail(UncaughtExceptionError(e))
-                }
-            }.flatten
+    val exprVal = expr.eval
+    val argsVal = args.map(_.eval)
+    val kwArgsVal = kwargs.map{case (k, v) => (k, v.eval)}
+    val kwEvals = kwArgsVal.values
+    val possibleErrors = argsVal ++ kwEvals :+ exprVal
+    Error.all(possibleErrors) {
+      val expr = exprVal.get
+      val args = argsVal.map(_.get)
+      val kwargs = kwArgsVal.map{case (k, v) => (k, v.get)}
+      Try {
+        filter
+          .typeCheck(expr, args)
+          .flatMap(_ => filter.filter(expr, args, kwargs))
+          .recoverWith {
+            case LiquidFailure(errors) =>
+              fail(Error.imbueFragments(errors): _*)
+            case NonFatal(e) => fail(UncaughtExceptionError(e))
+            case e => fail(UncaughtExceptionError(e))
           }
-      }
-      .flatten
-      .recoverWith {
-        case LiquidFailure(errors) => fail(Error.imbueFragments(errors): _*)
-      }
+      }.flatten
+    }
   }
 }
 

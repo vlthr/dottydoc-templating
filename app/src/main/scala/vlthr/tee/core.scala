@@ -181,7 +181,7 @@ abstract trait Filter extends Extension {
     else Success(())
   }
 
-  def filter(input: Value, args: List[Value])(
+  def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
     implicit ctx: Context): Try[Value]
 }
 

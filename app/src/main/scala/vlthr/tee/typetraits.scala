@@ -6,12 +6,19 @@ package object TypeTraits {
   abstract trait ArgSpec { self: Extension with OptArgSpec =>
     def checkArgs(args: List[Value])(implicit ctx: Context): List[ErrorFragment]
   }
+
   abstract trait OptArgSpec { self: Extension =>
     def checkOptArgs(optArgs: List[Value])(implicit ctx: Context): List[ErrorFragment]
   }
+
+  abstract trait KwArgSpec { self: Extension =>
+    def checkKwArgs(kwargs: Map[String, Value])(implicit ctx: Context): List[ErrorFragment]
+  }
+
   abstract trait InputSpec { self: Extension =>
     def checkInput(input: Value)(implicit ctx: Context): List[ErrorFragment]
   }
+
   abstract trait NoArgs { self: Extension =>
     def checkArgs(args: List[Value])(implicit ctx: Context): List[ErrorFragment] = {
       val correctNumberOfArgs = args.size == 0
@@ -58,6 +65,20 @@ package object TypeTraits {
       val correctNumberOfArgs = args.size == types.size
       if (!correctArgTypes || !correctNumberOfArgs) List(InvalidArgs(this, args))
       else Nil
+    }
+    def numArgs: Int = types.size
+  }
+
+  abstract trait OptKwArgs(types: (String, ValueType)*) extends KwArgSpec { self: Extension =>
+    def checkKwArgs(kwargs: Map[String, Value])(implicit ctx: Context): List[ErrorFragment] = {
+      val expectedMap: Map[String, ValueType] = Map(types: _*)
+      val errors = kwargs.map { case (key, value) =>
+        if (!expectedMap.contains(key)) Some(InvalidKwArg(this, key))
+        else if (value.valueType != expectedMap(key)) Some(InvalidKwArgType(this, key, value, expectedMap(key)))
+        else None
+      }.flatten
+      if (errors.size == 0) Nil
+      else errors.toList
     }
     def numArgs: Int = types.size
   }
