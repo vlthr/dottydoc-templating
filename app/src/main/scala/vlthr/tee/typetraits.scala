@@ -80,6 +80,9 @@ package object TypeTraits {
       if (errors.size == 0) Nil
       else errors.toList
     }
-    def numArgs: Int = types.size
+  }
+
+  abstract trait NoKwArgs extends KwArgSpec { self: Extension =>
+    def checkKwArgs(kwargs: Map[String, Value])(implicit ctx: Context): List[ErrorFragment] = Nil
   }
 }

@@ -91,13 +91,13 @@ final case class FilterExpr(
   override def eval()(implicit ctx: Context) = {
     val exprVal = expr.eval
     val argsVal = args.map(_.eval)
-    val kwArgsVal = kwargs.map{case (k, v) => (k, v.eval)}
+    val kwArgsVal = kwargs.map { case (k, v) => (k, v.eval) }
     val kwEvals = kwArgsVal.values
     val possibleErrors = argsVal ++ kwEvals :+ exprVal
     Error.all(possibleErrors) {
       val expr = exprVal.get
       val args = argsVal.map(_.get)
-      val kwargs = kwArgsVal.map{case (k, v) => (k, v.get)}
+      val kwargs = kwArgsVal.map { case (k, v) => (k, v.get) }
       Try {
         filter
           .typeCheck(expr, args)

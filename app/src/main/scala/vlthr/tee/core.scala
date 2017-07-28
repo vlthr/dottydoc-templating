@@ -173,6 +173,7 @@ abstract trait Filter extends Extension {
   def name: String
   def checkInput(input: Value)(implicit ctx: Context): List[ErrorFragment]
   def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
+  def checkKwArgs(kwargs: Map[String, Value])(implicit ctx: Context): List[ErrorFragment]
   def typeCheck(input: Value, args: List[Value])(implicit ctx: Context): Try[Unit] = {
     val inputErrors = checkInput(input)
     val argsErrors = checkArgs(args)
