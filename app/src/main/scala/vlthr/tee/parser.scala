@@ -18,6 +18,7 @@ object Liquid {
       SourcePosition(c.start.getStartIndex(), stop.getStopIndex(), template)
     ParseContext(sourcePosition)
   }
+
   def parseExpr(node: String): Expr = {
     val parser = makeParser(node, lexerMode = Object())
     val tree = parser.expr()
@@ -210,6 +211,21 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
           Some(visitBlock(c.ifTag().els().block()))
         else None
       IfTag(expr, block, elsifs, els)
+    } else if (c.caseTag != null) {
+      val ev = new LiquidExprVisitor(template)
+      val expr =
+        ev.visitExpr(c.caseTag.expr)
+      val whens =
+        if (c.caseTag.whenBlock != null)
+          c.caseTag.whenBlock.asScala
+            .map(when => (ev.visitExpr(when.expr), visitBlock(when.block)))
+            .toList
+        else Nil
+      val els =
+        if (c.caseTag.els != null)
+          Some(visitBlock(c.caseTag.els.block))
+        else None
+      CaseTag(expr, whens, els)
     } else if (c.forTag() != null) {
       val id = c.forTag().forStart().id().getText()
       val expr = visitOutputExpr(c.forTag().forStart().output_expr())

@@ -11,6 +11,7 @@ node : tag
      | TEXT;
 
 tag : ifTag
+    | caseTag
     | forTag
     | assignTag
     | includeTag
@@ -21,13 +22,17 @@ tag : ifTag
 
 customTag : TAGSTART id arglist? TAGEND;
 
+caseTag : TAGSTART CASESTART expr TAGEND any whenBlock+ els? TAGSTART CASEEND TAGEND;
+
+whenBlock : TAGSTART WHEN expr TAGEND block;
+
 rawTag : TAGSTART RAWSTART TAGEND any TAGSTART RAWEND TAGEND;
 
 commentTag : TAGSTART COMMENTSTART TAGEND block TAGSTART COMMENTEND TAGEND;
 
 captureTag : TAGSTART CAPTURESTART id TAGEND block TAGSTART CAPTUREEND TAGEND;
 
-any : .*;
+any : .*?;
 
 assignTag : TAGSTART ASSIGN id EQUALS expr TAGEND;
 

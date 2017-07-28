@@ -1,0 +1,1 @@
+(template (block (node (tag (caseTag {% case (expr (term (id zero))) %} (any \n  ) (whenBlock {% when (expr (term 0)) %} (block (node \n      Correct\n  ))) (whenBlock {% when (expr (term 1)) %} (block (node \n      Incorrect\n))) {% endcase %}))) (node \n)) <EOF>)

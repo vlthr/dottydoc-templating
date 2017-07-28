@@ -53,8 +53,6 @@ final case class AssignTag(id: String, value: Expr)(
   }
 }
 
-final case class CaseTag()(implicit val pctx: ParseContext) extends TagNode
-
 final case class CommentTag()(implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Try[String] =
@@ -163,5 +161,33 @@ final case class CustomTag(tag: Tag, args: List[Expr])(
         case NonFatal(e) => fail(UncaughtExceptionError(e))
         case e => fail(UncaughtExceptionError(e))
       }
+  }
+}
+
+final case class CaseTag(switchee: Expr,
+                         whens: List[(Expr, Obj)],
+                         els: Option[Obj])(implicit val pctx: ParseContext)
+    extends TagNode {
+  override def render()(implicit ctx: Context): Try[String] = {
+    val condErrors = (switchee +: whens.collect { case (c, _) => c })
+      .map(_.eval)
+      .collect { case Failure(LiquidFailure(errors)) => errors }
+      .flatten
+    val renderErrors =
+      (whens.collect { case (_, b) => b } ++ els.toList)
+        .map(_.render)
+        .collect { case Failure(LiquidFailure(errors)) => errors }
+        .flatten
+    val allErrors = condErrors ++ renderErrors
+    if (allErrors.size > 0) return Error.fail(allErrors: _*)
+
+    val s = switchee.eval
+
+    val whenRenders = whens.map { case (c, block) => (c.eval, block.render) }
+
+    val elseRender = els.map(_.render)
+
+    for ((c, block) <- whenRenders) if (c.get == s.get) return block
+    elseRender.getOrElse(Success(""))
   }
 }
