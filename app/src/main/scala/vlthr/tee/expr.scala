@@ -19,14 +19,15 @@ abstract trait BooleanExpr extends Expr {
 }
 
 final case class RangeExpr(left: Expr, right: Expr)(
-  implicit val pctx: ParseContext)
+    implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context): Try[Value] = {
     val l = left.eval.flatMap {
       case v: IntValue => Success(v)
       case v =>
         fail(
-          UnexpectedValueType(v, expected = Some(ValueType.Integer)).imbue(pctx))
+          UnexpectedValueType(v, expected = Some(ValueType.Integer))
+            .imbue(pctx))
     }
     val r = right.eval.flatMap {
       case v: IntValue => Success(v)
@@ -37,8 +38,8 @@ final case class RangeExpr(left: Expr, right: Expr)(
     }
     Error
       .all(l, r) { (l, r) =>
-        Value.create((
-                    l.asInstanceOf[IntValue].v to r.asInstanceOf[IntValue].v).toList)
+        Value.create(
+          (l.asInstanceOf[IntValue].v to r.asInstanceOf[IntValue].v).toList)
       }
   }
 }

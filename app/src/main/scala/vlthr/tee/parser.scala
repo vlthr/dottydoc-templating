@@ -316,6 +316,8 @@ class LiquidExprVisitor(template: SourceFile)(implicit val ctx: Context)
       DotExpr(visitExpr(c.expr(0)), c.id().getText())
     } else if (c.STARTINDEX() != null) {
       IndexExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
+    } else if (c.LPAR != null && c.RPAR != null && c.RANGE() == null) {
+      visitExpr(c.expr(0)) // ParenExpr
     } else if (c.RANGE() != null) {
       RangeExpr(visitExpr(c.expr(0)), visitExpr(c.expr(1)))
     } else if (c.CONTAINS() != null) {
