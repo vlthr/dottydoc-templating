@@ -43,6 +43,9 @@ LEQ        : '<=';
 GEQ        : '>=';
 COLON      : ':';
 COMMA      : ',';
+RANGE      : '..';
+LPAR       : '(';
+RPAR       : ')';
 
 OUTPUTEND   : '}}' -> popMode;
 TAGEND      : '%}' -> popMode;

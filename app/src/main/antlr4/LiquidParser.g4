@@ -55,6 +55,7 @@ output_expr : output_expr FILTER id (COLON arglist? kwargs?)?
             | expr;
 
 expr : expr DOTINDEX id
+| LPAR expr RANGE expr RPAR
 | expr STARTINDEX expr ENDINDEX
 | expr EQ expr
 | expr NEQ expr

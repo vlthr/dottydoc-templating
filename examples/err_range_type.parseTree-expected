@@ -1,0 +1,1 @@
+(template (block (node (tag (forTag (forStart {% for (id a) in (output_expr (expr ( (expr (term "hi")) .. (expr (term 5)) ))) %}) (block (node \n)) (forEnd {% endfor %})))) (node \n) (node (tag (forTag (forStart {% for (id a) in (output_expr (expr ( (expr (term 5)) .. (expr (term "hi")) ))) %}) (block (node \n)) (forEnd {% endfor %})))) (node \n)) <EOF>)
