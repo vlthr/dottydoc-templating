@@ -202,7 +202,6 @@ sealed trait Value extends Truthable with Ordered[Value] {
   def valueType: ValueType
 
   def compare(that: Value): Int = {
-    println(s"$this == $that")
     (this, that) match {
       case (IntValue(l), IntValue(r)) => l compare r
       case (StringValue(l), StringValue(r)) => l compare r
