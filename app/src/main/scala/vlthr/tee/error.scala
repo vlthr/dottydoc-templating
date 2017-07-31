@@ -64,8 +64,12 @@ case class UnknownTagId(id: String) extends ExtensionError {
   override def errorType = "Parse Error"
   def description = s"`$id` does not match any known tag."
 }
-case class UnexpectedValueType(v: Value) extends ExtensionError  {
-  def description = s"Unexpected value type: ${v.valueType}"
+case class UnexpectedValueType(v: Value, expected: Option[ValueType] = None) extends ExtensionError  {
+  override def errorType = "Type Error"
+  def description = expected match {
+    case Some(e) => s"Unexpected value type: ${v.valueType}. Expected $e."
+    case None => s"Unexpected value type: ${v.valueType}."
+  }
 }
 
 case class MalformedTag()(implicit pctx: ParseContext) extends Error(pctx) {

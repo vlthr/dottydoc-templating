@@ -18,6 +18,31 @@ abstract trait BooleanExpr extends Expr {
   def op(left: Value, right: Value): Boolean
 }
 
+final case class ContainsExpr(left: Expr, right: Expr)(
+    implicit val pctx: ParseContext)
+    extends Expr {
+  override def eval()(implicit ctx: Context): Try[Value] = {
+    val l = left.eval.flatMap {
+      case MapValue(m) => Success(m)
+      case v =>
+        fail(
+          UnexpectedValueType(v, expected = Some(ValueType.Map)).imbue(pctx))
+    }
+    val r = right.eval.flatMap {
+      case StringValue(s) => Success(s)
+      case v =>
+        fail(
+          UnexpectedValueType(v, expected = Some(ValueType.String))
+            .imbue(pctx))
+    }
+    Error
+      .all(l, r) { (l, r) =>
+        BooleanValue(
+          l.asInstanceOf[Map[String, Value]].contains(r.asInstanceOf[String]))
+      }
+  }
+}
+
 final case class AndExpr(left: Expr, right: Expr)(
     implicit val pctx: ParseContext)
     extends BooleanExpr {

@@ -9,7 +9,7 @@ token recognition error at: '% '
     {% if true
 {% endif %}
 Parse Error: ./examples/err_unmatched_tag_open.liquid
-extraneous input 'endif' expecting {'.', '[', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
+extraneous input 'endif' expecting {'.', '[', 'contains', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
 
     {% if true
 {% endif %}

@@ -1,0 +1,4 @@
+Type Error: ./examples/err_contains_invalid_key.liquid
+Unexpected value type: Integer. Expected String.
+
+    {{ page contains 1 }}

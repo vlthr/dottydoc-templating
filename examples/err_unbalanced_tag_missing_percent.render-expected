@@ -5,7 +5,7 @@ token recognition error at: '}\n'
     MISSING PERCENT
 
 Parse Error: ./examples/err_unbalanced_tag_missing_percent.liquid
-mismatched input 'MISSING' expecting {'.', '[', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
+mismatched input 'MISSING' expecting {'.', '[', 'contains', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
 
     {% if  x }
     MISSING PERCENT

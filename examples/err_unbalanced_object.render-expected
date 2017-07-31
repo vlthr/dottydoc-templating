@@ -9,7 +9,7 @@ token recognition error at: '{'
     {{ "hello" }
 { "hello" }}
 Parse Error: ./examples/err_unbalanced_object.liquid
-extraneous input '"hello"' expecting {'|', '.', '[', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '}}'}
+extraneous input '"hello"' expecting {'|', '.', '[', 'contains', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '}}'}
 
     {{ "hello" }
 { "hello" }}

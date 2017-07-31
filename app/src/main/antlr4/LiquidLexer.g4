@@ -22,6 +22,7 @@ COMMENTEND : 'endcomment';
 CASESTART  : 'case';
 CASEEND    : 'endcase';
 WHEN       : 'when';
+CONTAINS   : 'contains';
 AND        : 'and';
 OR         : 'or';
 ELSE       : 'else';

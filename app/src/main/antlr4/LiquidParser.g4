@@ -64,6 +64,7 @@ expr : expr DOTINDEX id
 | expr GEQ expr
 | expr AND expr
 | expr OR expr
+| expr CONTAINS expr
 | term;
 
 kwarg: id COLON expr;
