@@ -137,7 +137,7 @@ abstract trait Obj extends ASTNode {
 abstract trait Expr extends ASTNode {
   def eval()(implicit ctx: Context): Try[Value] = ???
   def render()(implicit ctx: Context): Try[String] =
-    eval.flatMap(_.render)
+    eval().flatMap(_.render())
 }
 abstract trait Extension {
   def name: String

@@ -153,7 +153,7 @@ case class Join()
     val delim = args(0).asInstanceOf[StringValue]
     input match {
       case ListValue(v) =>
-        Try(StringValue(v.map(_.render.get).mkString(delim.v)))
+        Try(StringValue(v.map(_.render().get).mkString(delim.v)))
       case v => fail(UnexpectedValueType(v))
     }
   }
@@ -389,7 +389,7 @@ case class Date()
       input: Value,
       args: List[Value],
       kwargs: Map[String, Value])(implicit ctx: Context): Try[Value] = {
-    val seconds = input match {
+    val seconds: Long = input match {
       case StringValue(v) if v == "now" => System.currentTimeMillis / 1000L
       case StringValue(v) =>
         toSeconds(v).getOrElse(return fail(InvalidDate(this, v)))

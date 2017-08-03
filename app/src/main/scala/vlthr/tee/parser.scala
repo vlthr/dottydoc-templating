@@ -77,16 +77,16 @@ object Liquid {
              params: Map[String, Any],
              includeDir: String): Try[String] = {
     implicit val c: Context =
-      Context.createNew.withParams(params).withIncludeDir(includeDir)
-    parse(path).flatMap(_.render)
+      Context.createNew().withParams(params).withIncludeDir(includeDir)
+    parse(path).flatMap(_.render())
   }
   def renderString(body: String,
                    params: Map[String, Any],
                    includeDir: String,
                    ctx: Option[Context] = None): Try[String] = {
     implicit val c = ctx.getOrElse(
-      Context.createNew.withParams(params).withIncludeDir(includeDir))
-    parse(SourceFile(body, "In-memory file")).flatMap(_.render)
+      Context.createNew().withParams(params).withIncludeDir(includeDir))
+    parse(SourceFile(body, "In-memory file")).flatMap(_.render())
   }
 
   sealed trait LexerMode
