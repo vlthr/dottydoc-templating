@@ -451,3 +451,21 @@ case class Slice()
     }
   }
 }
+
+import shapeless._
+import shapeless.syntax.std.traversable._
+abstract trait NFilter() {
+  type Args
+  def filter(args: Args): Value
+  def checkArgs(args: List[Value]) = {
+    val l = List(args(0), args(1)).toHList
+    filter(l)
+  }
+}
+
+case class F1() extends NFilter {
+  type Args = IntValue :: StringValue :: HNil
+  def filter(args: Args) = {
+    println(args)
+  }
+}
