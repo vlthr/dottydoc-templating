@@ -504,10 +504,9 @@ object ValueTypeables {
       def describe: String = s"BooleanValue"
     }
 }
-abstract trait NFilter() {
+import UnaryTCConstraint._
+abstract trait NFilter[Args <: HList: *->*[Option]#λ]() {
   import ValueTypeables._
-  import UnaryTCConstraint._
-  type Args <: HList
   def filter(args: Args): Value
   def checkArgs(args: List[Value]) = {
     // val l = List(IntValue(1), StringValue("hi")).toHList[Args].get
