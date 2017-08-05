@@ -454,11 +454,65 @@ case class Slice()
 
 import shapeless._
 import shapeless.syntax.std.traversable._
+
+
+object ValueTypeables {
+  implicit val intTypeable: Typeable[IntValue] =
+    new Typeable[IntValue] {
+      def cast(t: Any): Option[IntValue] = t match {
+        case c: IntValue => Some(c)
+        case _ => None
+      }
+
+      def describe: String = s"IntValue"
+    }
+
+  implicit val stringTypeable: Typeable[StringValue] =
+    new Typeable[StringValue] {
+      def cast(t: Any): Option[StringValue] = t match {
+        case v: StringValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"StringValue"
+    }
+  implicit val mapTypeable: Typeable[MapValue] =
+    new Typeable[MapValue] {
+      def cast(t: Any): Option[MapValue] = t match {
+        case v: MapValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"MapValue"
+    }
+  implicit val listTypeable: Typeable[ListValue] =
+    new Typeable[ListValue] {
+      def cast(t: Any): Option[ListValue] = t match {
+        case v: ListValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"ListValue"
+    }
+  implicit val boolTypeable: Typeable[BooleanValue] =
+    new Typeable[BooleanValue] {
+      def cast(t: Any): Option[BooleanValue] = t match {
+        case v: BooleanValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"BooleanValue"
+    }
+}
 abstract trait NFilter() {
-  type Args
+  import ValueTypeables._
+  import UnaryTCConstraint._
+  type Args <: HList
   def filter(args: Args): Value
   def checkArgs(args: List[Value]) = {
-    val l = List(args(0), args(1)).toHList
+    // val l = List(IntValue(1), StringValue("hi")).toHList[Args].get
+    val l = List(IntValue(1), StringValue("hi")).toHList[IntValue :: StringValue :: HNil].get
+    // val l = args.toHList[Args].get
     filter(l)
   }
 }
