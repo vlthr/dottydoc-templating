@@ -8,6 +8,9 @@ import vlthr.tee.core.Error._
 import vlthr.tee.typetraits.TypeTraits._
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
+import shapeless._
+import shapeless.ops.traversable._
+import ValueTypeables._
 
 object Filter {
   def byName(s: String): Option[Filter] = registry.get(s)
@@ -504,21 +507,12 @@ object ValueTypeables {
       def describe: String = s"BooleanValue"
     }
 }
-import UnaryTCConstraint._
-abstract trait NFilter[Args <: HList: *->*[Option]#λ]() {
-  import ValueTypeables._
-  def filter(args: Args): Value
-  def checkArgs(args: List[Value]) = {
-    // val l = List(IntValue(1), StringValue("hi")).toHList[Args].get
-    val l = List(IntValue(1), StringValue("hi")).toHList[IntValue :: StringValue :: HNil].get
-    // val l = args.toHList[Args].get
-    filter(l)
-  }
-}
 
-case class F1() extends NFilter {
-  type Args = IntValue :: StringValue :: HNil
-  def filter(args: Args) = {
-    println(args)
+abstract trait NFilter() {
+  type Args <: HList
+  def filter(args: Args): Try[Value]
+  def apply(args: List[Value])(implicit ctx: Context, ft: FromTraversable[Args]): Try[Value] = {
+    val a = ft(args).get
+    filter(a)
   }
 }

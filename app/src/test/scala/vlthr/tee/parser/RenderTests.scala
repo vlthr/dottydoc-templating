@@ -60,4 +60,22 @@ class RenderTests {
     }
     ()
   }
+
+  @Test def testHListFilter() = {
+    import vlthr.tee.filters._
+    import shapeless._
+    import ValueTypeables._
+    case class F1() extends NFilter {
+      type Args = IntValue :: StringValue :: HNil
+      def filter(args: Args) = {
+        Success(args.head)
+      }
+    }
+    val filter = F1()
+    filter(IntValue(1) :: StringValue("a") :: Nil) match {
+      case Success(output) => assertEquals(IntValue(1), output)
+      case Failure(f) => fail("Filter could not render.")
+    }
+    ()
+  }
 }
