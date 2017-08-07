@@ -67,7 +67,9 @@ class RenderTests {
     import ValueTypeables._
     case class F1() extends NFilter {
       type Args = IntValue :: StringValue :: HNil
-      def filter(args: Args) = {
+      type OptArgs = HNil
+      type KwArgs = HNil
+      def filter(args: Args, optArgs: OptArgs, kwArgs: KwArgs) = {
         Success(args.head)
       }
     }
