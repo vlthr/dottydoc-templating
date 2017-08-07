@@ -30,7 +30,8 @@ class RenderTests {
     "listOfLists" -> List(List(1)),
     "list" -> List(1)
   )
-  implicit val ctx: Context = Context.createNew()
+  implicit val ctx: Context = Context
+    .createNew()
     .withParams(environment.map {
       case (k: String, v: Object) => (k, Value.create(v))
     })
@@ -65,16 +66,17 @@ class RenderTests {
     import vlthr.tee.filters._
     import shapeless._
     import ValueTypeables._
+    case class F1KwArgs(x: Option[IntValue])
     case class F1() extends NFilter {
       type Args = IntValue :: StringValue :: HNil
       type OptArgs = HNil
-      type KwArgs = HNil
+      type KwArgs = F1KwArgs
       def filter(args: Args, optArgs: OptArgs, kwArgs: KwArgs) = {
         Success(args.head)
       }
     }
     val filter = F1()
-    filter(IntValue(1) :: StringValue("a") :: Nil) match {
+    filter(IntValue(1) :: StringValue("a") :: Nil, Map("x" -> IntValue(1))) match {
       case Success(output) => assertEquals(IntValue(1), output)
       case Failure(f) => fail("Filter could not render.")
     }

@@ -108,7 +108,9 @@ final case class IfTag(condition: Expr,
     val cond = condition.eval()
     val render = thenBlock.render()
 
-    val elsifResults = elsifs.map { case (c, block) => (c.eval(), block.render()) }
+    val elsifResults = elsifs.map {
+      case (c, block) => (c.eval(), block.render())
+    }
 
     val elseResult = elseBlock.map(_.render())
 
@@ -183,7 +185,9 @@ final case class CaseTag(switchee: Expr,
 
     val s = switchee.eval()
 
-    val whenRenders = whens.map { case (c, block) => (c.eval(), block.render()) }
+    val whenRenders = whens.map {
+      case (c, block) => (c.eval(), block.render())
+    }
 
     val elseRender = els.map(_.render())
 
