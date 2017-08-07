@@ -10,7 +10,8 @@ import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import shapeless._
 import shapeless.ops.traversable._
-import labelled.FieldType
+import shapeless.labelled._
+import shapeless.syntax.typeable._
 import ValueTypeables._
 
 object Filter {
@@ -509,22 +510,21 @@ object ValueTypeables {
     }
 }
 
-object KwFromMap {
-  implicit def kwsFromMap[K <: Symbol, H <: Value, T <: HList, C]: ToKwArgs[FieldType[K, H] :: T, C] = new ToKwArgs[FieldType[K, H] :: T, C] {
-    def apply(map: Map[String, Value])(implicit w: Witness.Aux[K],
-                                       tailToKw: KwFromMap[T, KwArgs],
-                                       gen: LabelledGeneric.Aux[]
-                                       ): C = {
-      val key = w.value.name
-      val value = map.get(key)
-      gen.f(key, value)
-    }
-  }
+object FromMap {
+  implicit def caseClassFromMap[T <: HList, C](map: Map[String, Value])(implicit kw: Lazy[FromMap[T]],
+                                                                        gen: LabelledGeneric.Aux[C, T]): C = gen.from(kw.value(map))
 
-  trait KwFromMap[L <: HList KwArgs] {
-    def apply[K <, H <: Value, T <: HList, ](map: Map[String, Value])(implicit w: Witness.Aux[K],
-                                                                      gen: LabelledGeneric[KwArgs],
-                                                                      gen: KwFromMap[T, KwArgs])
+  implicit def kwsFromMap[K <: Symbol, H <: Value, T <: HList](implicit w: Witness.Aux[K],
+                                                               tailToKw: Lazy[FromMap[T]]
+  ): FromMap[FieldType[K, Option[H]] :: T] = (map) => {
+      val key = w.value.name
+      // TODO: Add error checking
+      val value = map.get(key).flatMap(v => v.cast[H])
+      field[K](value) :: tailToKw.value(map)
+    }
+
+  trait FromMap[L <: HList] {
+    def apply(map: Map[String, Value]): L
   }
 }
 
@@ -533,10 +533,12 @@ abstract trait NFilter() {
   type OptArgs <: HList
   type KwArgs
   def filter(args: Args, optArgs: OptArgs, kwArgs: KwArgs): Try[Value]
-  def apply(args: List[Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], ftOpt: FromTraversable[OptArgs], kwGen: LabelledGeneric.Aux[Map[String, Value], KwArgs]): Try[Value] = {
+  def apply[L <: HList](args: List[Value], kwArgs: Map[String, Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], ftOpt: FromTraversable[OptArgs], kwGen: Lazy[LabelledGeneric.Aux[KwArgs, L]], kwFromMap: FromMap.FromMap[L]): Try[Value] = {
     val a = ftArgs(args).get
-    val o = ftArgs(optArgs).get
-    val kws = kwGen.from()
-    filter(a)
+    val o = ftOpt(Nil).get
+    import FromMap._
+    // val kws = caseClassFromMap[kwGen.Repr, KwArgs](kwArgs)
+    val kws = kwGen.value.from(kwFromMap(kwArgs))
+    filter(a, o, kws)
   }
 }
