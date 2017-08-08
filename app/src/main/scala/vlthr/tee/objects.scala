@@ -170,27 +170,23 @@ final case class CaseTag(switchee: Expr,
                          els: Option[Obj])(implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Validated[String] = {
-    val condErrors = (switchee +: whens.collect { case (c, _) => c })
-      .map(_.eval())
-      .collect { case Failure(LiquidFailure(errors)) => errors }
-      .flatten
-    val renderErrors =
-      (whens.collect { case (_, b) => b } ++ els.toList)
-        .map(_.render())
-        .collect { case Failure(LiquidFailure(errors)) => errors }
-        .flatten
-    val allErrors = condErrors ++ renderErrors
-    if (allErrors.size > 0) return Error.fail(allErrors: _*)
-
-    val s = switchee.eval()
-
-    val whenRenders = whens.map {
-      case (c, block) => (c.eval(), block.render())
+    val switcheeEval = switchee.eval()
+    val whenEvals = Result.sequence(whens.map {
+      case (comparison, body) => comparison.eval() zip body.render()
+    })
+    // If there is an else, invert it so that it is a Validated[Option[String]]
+    // That way it can be used with the Result combinators
+    val elseEval: Validated[Option[String]] = els
+      .map(_.render())
+      .map(r => r.map(s => Some(s)))
+      .getOrElse(succeed(None))
+    (switcheeEval zip whenEvals zip elseEval) map {
+      case ((s, ws), e) =>
+        // Add else clause to the end of the when cases, guaranteed to match the switchee
+        (ws ++ e.map(r => (s, r)).toList)
+          .find { case (comparison, body) => comparison == s }
+          .get
+          ._2
     }
-
-    val elseRender = els.map(_.render())
-
-    for ((c, block) <- whenRenders) if (c.get == s.get) return block
-    elseRender.getOrElse(Result.valid(""))
   }
 }
