@@ -67,9 +67,11 @@ object Liquid {
     parser.addErrorListener(errors);
     val tree = parser.template()
     val result = tree.accept(new LiquidNodeVisitor(file))
-    if (errors.errors.size != 0)
-      Result.invalids(validation.NonEmptyVector(errors.errors.toList: _*))
-    else Result.valid(result)
+    if (errors.errors.size != 0) {
+      val (firstError, rest) = errors.errors.toList.splitAt(1)
+      Result.invalids(
+        validation.NonEmptyVector(firstError.head, rest.toVector))
+    } else Result.valid(result)
   }
 
   def parse(path: String)(implicit ctx: Context): Validated[Obj] =

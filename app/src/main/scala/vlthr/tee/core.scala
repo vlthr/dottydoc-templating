@@ -1,6 +1,10 @@
 package vlthr.tee.core
 import vlthr.tee.filters._
 import vlthr.tee.core.Errors._
+import shapeless._
+import shapeless.ops.hlist.HKernelAux
+import shapeless.ops.traversable._
+import shapeless.syntax.typeable._
 import validation.Result
 import vlthr.tee.core._
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
@@ -135,10 +139,11 @@ abstract trait Obj extends ASTNode {
 }
 
 abstract trait Expr extends ASTNode {
-  def eval()(implicit ctx: Context): Validated[Value] = ???
-  def render()(implicit ctx: Context): Validated[String] =
-    eval().flatMap(value => value.render())
+  implicit val pctx: ParseContext
+  def eval()(implicit ctx: Context): Validated[Value]
+  def render()(implicit ctx: Context): Validated[String] = eval().flatMap(v => imbueFragments(v.render()))
 }
+
 abstract trait Extension {
   def name: String
   def extensionType: String
@@ -169,17 +174,18 @@ object Context {
 
 
 abstract trait Filter extends Extension {
-  def extensionType = "filter"
+  type Args <: HList
+  type OptArgs <: HList
   def name: String
-  def checkInput(input: Value)(implicit ctx: Context): List[ErrorFragment]
-  def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
-  def checkKwArgs(kwargs: Map[String, Value])(implicit ctx: Context): List[ErrorFragment]
-  def typeCheck(input: Value, args: List[Value])(implicit ctx: Context): Validated[Unit] = {
-    Result.valid(())
+  def filter(args: Args, optArgs: OptArgs)(implicit ctx: Context): ValidatedFragment[Value]
+  def extensionType = "filter"
+  def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
+  def apply[L <: HList](allArgs: List[Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], hkArgs: HKernelAux[Args], ftOpt: FromTraversable[OptArgs]): ValidatedFragment[Value] = {
+    val (args, optArgs) = allArgs.splitAt(intLen[Args])
+    val a = ftArgs(args).get
+    val o = ftOpt(optArgs).get
+    filter(a, o)
   }
-
-  def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
-    implicit ctx: Context): Validated[Value]
 }
 
 sealed trait Truthable {
@@ -279,4 +285,76 @@ object Value {
       case _ => throw new Exception(s"Invalid value: $value")
     }
   }
+  def makeValueTypeable[V](name: String)(f: PartialFunction[Any, Option[V]]) =
+    new Typeable[V] {
+      def cast(t: Any): Option[V] = f(t)
+      def describe = name
+    }
+
+  implicit val intTypeable: Typeable[IntValue] = makeValueTypeable("IntValue") {
+    case c: IntValue => Some(c)
+    case _ => None
+  }
+  implicit val mapTypeable: Typeable[MapValue] = makeValueTypeable("MapValue") {
+    case c: MapValue => Some(c)
+    case _ => None
+  }
+  implicit val listTypeable: Typeable[ListValue] = makeValueTypeable("ListValue") {
+    case c: ListValue => Some(c)
+    case _ => None
+  }
+  implicit val booleanTypeable: Typeable[BooleanValue] = makeValueTypeable("BooleanValue") {
+    case c: BooleanValue => Some(c)
+    case _ => None
+  }
+  implicit val stringTypeable: Typeable[StringValue] = makeValueTypeable("StringValue") {
+    case c: StringValue => Some(c)
+    case _ => None
+  }
+//   implicit val intTypeable: Typeable[IntValue] =
+//     new Typeable[IntValue] {
+//       def cast(t: Any): Option[IntValue] = t match {
+//         case c: IntValue => Some(c)
+//         case _ => None
+//       }
+
+//       def describe: String = s"IntValue"
+//     }
+
+//   implicit val stringTypeable: Typeable[StringValue] =
+//     new Typeable[StringValue] {
+//       def cast(t: Any): Option[StringValue] = t match {
+//         case v: StringValue => Some(v)
+//         case _ => None
+//       }
+
+//       def describe: String = s"StringValue"
+//     }
+//   implicit val mapTypeable: Typeable[MapValue] =
+//     new Typeable[MapValue] {
+//       def cast(t: Any): Option[MapValue] = t match {
+//         case v: MapValue => Some(v)
+//         case _ => None
+//       }
+
+//       def describe: String = s"MapValue"
+//     }
+//   implicit val listTypeable: Typeable[ListValue] =
+//     new Typeable[ListValue] {
+//       def cast(t: Any): Option[ListValue] = t match {
+//         case v: ListValue => Some(v)
+//         case _ => None
+//       }
+
+//       def describe: String = s"ListValue"
+//     }
+//   implicit val boolTypeable: Typeable[BooleanValue] =
+//     new Typeable[BooleanValue] {
+//       def cast(t: Any): Option[BooleanValue] = t match {
+//         case v: BooleanValue => Some(v)
+//         case _ => None
+//       }
+
+//       def describe: String = s"BooleanValue"
+//     }
 }
