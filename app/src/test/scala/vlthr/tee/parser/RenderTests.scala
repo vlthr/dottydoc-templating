@@ -69,14 +69,13 @@ class RenderTests {
     case class F1KwArgs(x: Option[IntValue])
     case class F1() extends NFilter {
       type Args = IntValue :: StringValue :: HNil
-      type OptArgs = HNil
-      type KwArgs = F1KwArgs
-      def filter(args: Args, optArgs: OptArgs, kwArgs: KwArgs) = {
+      type OptArgs = IntValue :: HNil
+      def filter(args: Args, optArgs: OptArgs) = {
         Success(args.head)
       }
     }
     val filter = F1()
-    filter(IntValue(1) :: StringValue("a") :: Nil, Map("x" -> IntValue(1))) match {
+    filter(IntValue(1) :: StringValue("a") :: Nil) match {
       case Success(output) => assertEquals(IntValue(1), output)
       case Failure(f) => fail("Filter could not render.")
     }
