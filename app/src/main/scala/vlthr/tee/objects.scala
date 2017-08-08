@@ -92,32 +92,22 @@ final case class IfTag(condition: Expr,
                        elseBlock: Option[Obj])(implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Validated[String] = {
-    // val condErrors = (condition +: elsifs.collect { case (c, _) => c })
-    //   .map(_.eval())
-    //   .collect { case Failure(LiquidFailure(errors)) => errors }
-    //   .flatten
-    // val renderErrors =
-    //   (elsifs.collect { case (_, b) => b } ++ elseBlock.toList)
-    //     .map(_.render())
-    //     .collect { case Failure(LiquidFailure(errors)) => errors }
-    //     .flatten
-    // val allErrors = condErrors ++ renderErrors
-    // if (allErrors.size > 0) return fail(allErrors: _*)
-
-    // TODO: Don't evaluate/render twice
-    val cond = condition.eval()
-    val render = thenBlock.render()
-
-    val elsifResults = elsifs.map {
-      case (c, block) => (c.eval(), block.render())
-    }
-
-    val elseResult = elseBlock.map(_.render())
-
-    if (cond.get.truthy) render
-    else {
-      for ((c, block) <- elsifResults) if (c.get.truthy) return block
-      elseResult.getOrElse(Result.valid(""))
+    val condEval = condition.eval()
+    val thenEval = condition.render()
+    val elsifEvals = Result.sequence(elsifs.map {
+      case (cond, body) => cond.eval() zip body.render()
+    })
+    val elseEval: Validated[Option[String]] = elseBlock
+      .map(_.render())
+      .map(r => r.map(s => Some(s)))
+      .getOrElse(succeed(None))
+    (condEval zip thenEval zip elsifEvals zip elseEval) map {
+      case (((c, t), eis), e) =>
+        // Join all of the ifs to a (condition, body) form and find the first that matches
+        (((c, t) +: eis) ++ e.map(r => (BooleanValue(true), r)).toList)
+          .find { case (cond, body) => cond.truthy }
+          .get
+          ._2
     }
   }
 }
@@ -127,7 +117,7 @@ final case class IncludeTag(filename: Expr)(implicit val pctx: ParseContext)
   override def render()(implicit ctx: Context): Validated[String] = {
     filename.eval().flatMap {
       case StringValue(f) => {
-        val path = Paths.get(ctx.includeDir, f);
+        val path = Paths.get(ctx.includeDir, f)
         Liquid.parse(path.toString).flatMap(_.render())
       }
       case e => fail(InvalidInclude(this, e))
