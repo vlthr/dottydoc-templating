@@ -1,9 +1,9 @@
 package vlthr.tee.core
 import vlthr.tee.filters._
-import vlthr.tee.core.Error._
+import vlthr.tee.core.Errors._
+import validation.Result
 import vlthr.tee.core._
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
-import scala.util.{Try, Success, Failure}
 
 enum class ValueType {
   def matches(v: Value): Boolean
@@ -128,16 +128,16 @@ abstract trait ASTNode {
   // def parent: Option[ASTNode]
   val pctx: ParseContext
   def sourcePosition: SourcePosition = pctx.sourcePosition
-  def render()(implicit ctx: Context): Try[String]
+  def render()(implicit ctx: Context): Validated[String]
 }
 
 abstract trait Obj extends ASTNode {
 }
 
 abstract trait Expr extends ASTNode {
-  def eval()(implicit ctx: Context): Try[Value] = ???
-  def render()(implicit ctx: Context): Try[String] =
-    eval().flatMap(_.render())
+  def eval()(implicit ctx: Context): Validated[Value] = ???
+  def render()(implicit ctx: Context): Validated[String] =
+    eval().flatMap(value => value.render())
 }
 abstract trait Extension {
   def name: String
@@ -174,16 +174,12 @@ abstract trait Filter extends Extension {
   def checkInput(input: Value)(implicit ctx: Context): List[ErrorFragment]
   def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
   def checkKwArgs(kwargs: Map[String, Value])(implicit ctx: Context): List[ErrorFragment]
-  def typeCheck(input: Value, args: List[Value])(implicit ctx: Context): Try[Unit] = {
-    val inputErrors = checkInput(input)
-    val argsErrors = checkArgs(args)
-    val errors = inputErrors ++ argsErrors
-    if (errors.size > 0) Error.fail(errors: _*)
-    else Success(())
+  def typeCheck(input: Value, args: List[Value])(implicit ctx: Context): Validated[Unit] = {
+    Result.valid(())
   }
 
   def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
-    implicit ctx: Context): Try[Value]
+    implicit ctx: Context): Validated[Value]
 }
 
 sealed trait Truthable {
@@ -197,7 +193,7 @@ trait Truthy extends Truthable {
 sealed trait Value extends Truthable with Ordered[Value] {
   def display: String
 
-  def render()(implicit ctx: Context): Try[String]
+  def render()(implicit ctx: Context): ValidatedFragment[String]
 
   def valueType: ValueType
 
@@ -218,22 +214,22 @@ sealed trait IndexedValue extends Value
 final case class StringValue(v: String) extends Value with Truthy {
   def display: String = s""""$v""""
   def valueType = ValueType.String
-  def render()(implicit ctx: Context): Try[String] = Success(v)
+  def render()(implicit ctx: Context): ValidatedFragment[String] = Result.valid(v)
 }
 
 final case class BooleanValue(v: Boolean) extends Value {
   def display: String = s"""$v"""
   def valueType = ValueType.Boolean
-  def render()(implicit ctx: Context): Try[String] =
-    Success(v.toString)
+  def render()(implicit ctx: Context): ValidatedFragment[String] =
+    Result.valid(v.toString)
   def truthy = v
 }
 
 final case class IntValue(v: Int) extends Value with Truthy {
   def display: String = s"""$v"""
   def valueType = ValueType.Integer
-  def render()(implicit ctx: Context): Try[String] =
-    Success(v.toString)
+  def render()(implicit ctx: Context): ValidatedFragment[String] =
+    Result.valid(v.toString)
 }
 
 final case class MapValue(v: Map[String, Value])
@@ -241,13 +237,13 @@ final case class MapValue(v: Map[String, Value])
     with Truthy {
   def display: String = ???
   def valueType = ValueType.Map
-  def render()(implicit ctx: Context): Try[String] = fail(UnrenderableValue(this))
+  def render()(implicit ctx: Context): ValidatedFragment[String] = failFragment(UnrenderableValue(this))
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
   def valueType = ValueType.List
-  def render()(implicit ctx: Context): Try[String] = fail(UnrenderableValue(this))
+  def render()(implicit ctx: Context): ValidatedFragment[String] = failFragment(UnrenderableValue(this))
 }
 
 case class UnknownTag(n: String) extends Tag(n) {
@@ -259,10 +255,8 @@ case class UnknownTag(n: String) extends Tag(n) {
 abstract trait Tag(val name: String) extends Extension {
   def extensionType = "tag"
   def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
-  def typeCheck(args: List[Value])(implicit ctx: Context): Try[Unit] = {
-    val errors = checkArgs(args)
-    if (errors.size > 0) Error.fail(errors: _*)
-    else Success(())
+  def typeCheck(args: List[Value])(implicit ctx: Context): Validated[Unit] = {
+    Result.valid(())
   }
   def render(args: List[Value])(
     implicit ctx: Context): String

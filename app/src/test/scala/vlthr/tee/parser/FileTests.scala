@@ -49,14 +49,14 @@ class FileTests(file: SourceFile) {
   @Test def testRender() = {
     fileTest(".render") { f =>
       Liquid.render(f.path, environment, includeDir) match {
-        case Success(output) => output
+        case Result.valid(output) => output
         case Failure(f) => f.toString
       }
     }
   }
 
   // @Test def testMatchesLiqp(): Unit = {
-  //   Assume.assumeTrue(result.isSuccess)
+  //   Assume.assumeTrue(result.isValid)
   //   val actual = result.get.render
   //   if (actual.isFailure) return ()
 

@@ -1,180 +1,146 @@
 package vlthr.tee.core
 import org.antlr.v4.runtime.{Recognizer, RecognitionException}
 import scala.util.{Try, Success, Failure}
+import validation._
+import validation.Result.{Valid, Invalids, Invalid}
 
-trait Error(pctx: ParseContext) extends ErrorFragment {
-  def getMessage: String = getMessage(pctx)
-  override def getMessage(outerPctx: ParseContext): String = {
-    s"""$errorType: ${pctx.sourcePosition.template.path}
+package object Errors {
+  type Validated[A] = Result[Error, A]
+  type ValidatedFragment[A] = Result[ErrorFragment, A]
+
+  trait Error(pctx: ParseContext) {
+    def errorType: String
+    def description: String
+    def getMessage: String = {
+      s"""$errorType: ${pctx.sourcePosition.template.path}
    |$description
    |
    |    ${pctx.sourcePosition.report}""".stripMargin
+    }
+    override def toString: String = getMessage
   }
-  override def toString: String = getMessage
-}
-trait ErrorFragment {
-  def getMessage(pctx: ParseContext): String = {
-    s"""$errorType: ${pctx.sourcePosition.template.path}
-   |$description""".stripMargin
+
+  trait ErrorFragment {
+    def errorType: String
+    def description: String
+    def imbue(pctx: ParseContext): Error = ImbuedContext(this)(pctx)
   }
-  def errorType: String
-  def description: String
-  override def toString: String = ???
-  def imbue(pctx: ParseContext): Error = ImbuedContext(this)(pctx)
-}
-case class ImbuedContext(parent: ErrorFragment)(pctx: ParseContext) extends Error(pctx) {
-  override def getMessage: String = {
-    s"""${parent.getMessage(pctx)}
-   |
-   |    ${pctx.sourcePosition.report}""".stripMargin
+
+  case class ImbuedContext(parent: ErrorFragment)(pctx: ParseContext) extends Error(pctx) {
+    def errorType = parent.errorType
+    def description = parent.description
   }
-  def errorType = parent.errorType
-  def description = parent.description
-}
-abstract class TypeError(pctx: ParseContext) extends Error(pctx) {
-  def errorType = "Type Error"
-}
-abstract class RenderError(pctx: ParseContext) extends Error(pctx) {
-  def errorType = "Render Error"
-}
-abstract class RuntimeError(pctx: ParseContext) extends Error(pctx) {
-  def errorType = "Unexpected Runtime Error"
-}
 
-case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, override val description: String, e: RecognitionException)(implicit pctx: ParseContext) extends Error(pctx) {
-  def errorType = "Parse Error"
-}
+  def succeed[T](value: T): Validated[T] = Result.valid(value)
 
-case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) extends Error(pctx) {
-  def errorType = "Uncaught Exception"
-  def description = e.getMessage
-}
-
-case class InvalidKwArg(ext: Extension, key: String) extends ExtensionError {
-  def description = s"${ext.extensionType} `${ext.name}` does not take a keyword argument named `$key`."
-}
-case class InvalidKwArgType(ext: Extension, key: String, value: Value, expectedType: ValueType) extends ExtensionError {
-  def description = s"${ext.extensionType} `${ext.name}` keyword argument `$key` received expression of type ${value.valueType}. Required $expectedType."
-}
-case class InvalidTagArgs(tag: Tag, args: List[Value]) extends ExtensionError {
-  override def errorType = "Parse Error"
-  def description = s"Tag `${tag.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
-}
-case class UnknownTagId(id: String) extends ExtensionError {
-  override def errorType = "Parse Error"
-  def description = s"`$id` does not match any known tag."
-}
-case class UnexpectedValueType(v: Value, expected: Option[ValueType] = None) extends ExtensionError  {
-  override def errorType = "Type Error"
-  def description = expected match {
-    case Some(e) => s"Unexpected value type: ${v.valueType}. Expected $e."
-    case None => s"Unexpected value type: ${v.valueType}."
+  def toTry[T](v: Validated[T]) = v match {
+    case Valid(output) => Success(output)
+    case Invalids(errs) => Failure(LiquidFailure(errs.toList))
+    case Invalid(errs) => Failure(LiquidFailure(errs :: Nil))
   }
-}
 
-case class MalformedTag()(implicit pctx: ParseContext) extends Error(pctx) {
-  def errorType = "Parse Error"
-  def description = s"Malformed tag."
-}
+  def fail[T](error: Error): Validated[T] = {
+    Result.invalid(error)
+  }
 
-case class UnrenderableValue(value: Value) extends ErrorFragment {
-  def errorType = "Render Error"
-  def description = s"Cannot render type ${value.valueType}"
-}
-case class InvalidIterable(expr: Expr) extends TypeError(expr.pctx) {
-  def description = s"Expected an iterable"
-}
-case class InvalidMap(expr: DotExpr, map: Expr, value: Value) extends TypeError(map.pctx) {
-  def description = s"Expression `${map.pctx.sourcePosition.display}` of type ${value.valueType} can not be indexed as a map."
-}
-case class UndefinedVariable(expr: VariableUseExpr) extends RenderError(expr.pctx) {
-  def description = s"Undefined variable reference `${expr.pctx.sourcePosition.display}`"
-}
-case class UndefinedField(expr: DotExpr, map: Expr, field: String) extends RenderError(expr.pctx) {
-  def description = s"Map `${map.sourcePosition.display}` contains no field `$field`"
-}
-case class InvalidIndex(expr: IndexExpr, index: Expr, value: Value) extends TypeError(index.pctx) {
-  def description = s"Invalid index type: ${value.valueType}"
-}
-case class InvalidIndexable(expr: IndexExpr, indexable: Expr, value: Value) extends TypeError(expr.pctx) {
-  def description = s"Expression `${indexable.sourcePosition.display}` of type `${value.valueType}` can not be indexed."
-}
-case class IncomparableValues(expr: Expr, left: Value, right: Value) extends TypeError(expr.pctx) {
-  def description = s"Incomparable values ${left.valueType} and ${right.valueType}"
-}
-case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.pctx) {
-  def description = s"Include tag argument must be a filename, not ${filename.valueType}"
-}
-trait ExtensionError extends ErrorFragment {
-  def errorType = "Extension Error"
-}
-case class InvalidInput(ext: Extension, input: Value) extends ExtensionError {
-  def description = s"${ext.extensionType} `${ext.name}` is not defined for input type ${input.valueType}."
-}
-case class InvalidArgs(ext: Extension, args: List[Value]) extends ExtensionError {
-  def description = s"${ext.extensionType} `${ext.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
-}
-case class TooManyArgs(ext: Extension, args: List[Value]) extends ExtensionError {
-  def description = s"Too many arguments to filter ${ext.name}."
-}
-case class UnknownFilterName(name: String) extends ExtensionError {
-  def description = s"Unknown filter: `$name`."
-}
-case class FilterApplicationError(expr: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(expr.pctx) {
-  def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType} and arguments (${args.map(_.valueType).mkString(", ")})."
-}
-case class LiquidFailure(errors: List[ErrorFragment]) extends Exception {
-  override def getMessage(): String = errors.mkString("\n")
-  override def toString = getMessage
-}
+  def failFragment[T](error: ErrorFragment): ValidatedFragment[T] = {
+    Result.invalid(error)
+  }
 
-object Error {
-  def all[A, B](a: Try[A])(onSuccess: Function[A, B]): Try[B] =
-    all(Success(null), a)((_, r) => onSuccess(r))
+  abstract class TypeError(pctx: ParseContext) extends Error(pctx) {
+    def errorType = "Type Error"
+  }
+  abstract class RenderError(pctx: ParseContext) extends Error(pctx) {
+    def errorType = "Render Error"
+  }
+  abstract class RuntimeError(pctx: ParseContext) extends Error(pctx) {
+    def errorType = "Unexpected Runtime Error"
+  }
 
-  // TODO: can this be made to work for any number of args?
-  def all[A, B, C](a: Try[A], b: Try[B])(
-      onSuccess: Function[(A, B), C]): Try[C] = {
-    (a, b) match {
-      case (Success(innerA), Success(innerB)) =>
-        Success(onSuccess(innerA, innerB))
-      case (a, b) => Failure(LiquidFailure(extractErrors(a, b)))
+  case class ParseError(recognizer: Recognizer[_, _], offendingSymbol: Object, override val description: String, e: RecognitionException)(implicit pctx: ParseContext) extends Error(pctx) {
+    def errorType = "Parse Error"
+  }
+
+  case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) extends Error(pctx) {
+    def errorType = "Uncaught Exception"
+    def description = e.getMessage
+  }
+
+  case class InvalidKwArg(ext: Extension, key: String) extends ExtensionError {
+    def description = s"${ext.extensionType} `${ext.name}` does not take a keyword argument named `$key`."
+  }
+  case class InvalidKwArgType(ext: Extension, key: String, value: Value, expectedType: ValueType) extends ExtensionError {
+    def description = s"${ext.extensionType} `${ext.name}` keyword argument `$key` received expression of type ${value.valueType}. Required $expectedType."
+  }
+  case class InvalidTagArgs(tag: Tag, args: List[Value]) extends ExtensionError {
+    override def errorType = "Parse Error"
+    def description = s"Tag `${tag.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
+  }
+  case class UnknownTagId(id: String) extends ExtensionError {
+    override def errorType = "Parse Error"
+    def description = s"`$id` does not match any known tag."
+  }
+  case class UnexpectedValueType(v: Value, expected: Option[ValueType] = None) extends ExtensionError  {
+    override def errorType = "Type Error"
+    def description = expected match {
+      case Some(e) => s"Unexpected value type: ${v.valueType}. Expected $e."
+      case None => s"Unexpected value type: ${v.valueType}."
     }
   }
 
-  def all[A, B](as: Try[A]*)(onSuccess: Function[A, B]): Try[List[B]] = {
-    val (successes, failures) = as.partition(_.isSuccess)
-    if (failures.size > 0) fail(extractErrors(failures: _*): _*)
-    else Success(successes.map(s => onSuccess(s.get)).toList)
+  case class MalformedTag()(implicit pctx: ParseContext) extends Error(pctx) {
+    def errorType = "Parse Error"
+    def description = s"Malformed tag."
   }
 
-  def condenseAll[A, B](as: Try[A]*)(
-      onSuccess: Function[List[A], Try[B]]): Try[B] = {
-    val (successes, failures) = as.partition(_.isSuccess)
-    if (failures.size > 0) fail(extractErrors(failures: _*): _*)
-    else onSuccess(successes.map(s => s.get).toList)
+  case class UnrenderableValue(value: Value) extends ErrorFragment {
+    def errorType = "Render Error"
+    def description = s"Cannot render type ${value.valueType}"
   }
-
-  def all[T](tries: Seq[Try[_]])(onSuccess: => Try[T]): Try[T] = {
-    val errors = extractErrors(tries: _*)
-    if (errors.size == 0) onSuccess
-    else fail(errors: _*)
+  case class InvalidIterable(expr: Expr) extends TypeError(expr.pctx) {
+    def description = s"Expected an iterable"
   }
-
-  def extractErrors(sources: Try[_]*): List[ErrorFragment] = {
-    sources.flatMap {
-      case Failure(LiquidFailure(errors)) => errors
-      case Success(_) => List()
-      case _ => throw new Exception(s"Liquid Error: Unexpected argument to Error.extractErrors: $sources")
-    }.toList
+  case class InvalidMap(expr: DotExpr, map: Expr, value: Value) extends TypeError(map.pctx) {
+    def description = s"Expression `${map.pctx.sourcePosition.display}` of type ${value.valueType} can not be indexed as a map."
   }
-
-  def imbueFragments(fragments: List[ErrorFragment])(implicit pctx: ParseContext): List[Error] = {
-    fragments.map {
-      case e: Error => e
-      case e: ErrorFragment => e.imbue(pctx)
-    }.toList
+  case class UndefinedVariable(expr: VariableUseExpr) extends RenderError(expr.pctx) {
+    def description = s"Undefined variable reference `${expr.pctx.sourcePosition.display}`"
   }
-
-  def fail[T](e: ErrorFragment*): Try[T] = Failure(LiquidFailure(e.toList))
+  case class UndefinedField(expr: DotExpr, map: Expr, field: String) extends RenderError(expr.pctx) {
+    def description = s"Map `${map.sourcePosition.display}` contains no field `$field`"
+  }
+  case class InvalidIndex(expr: IndexExpr, index: Expr, value: Value) extends TypeError(index.pctx) {
+    def description = s"Invalid index type: ${value.valueType}"
+  }
+  case class InvalidIndexable(expr: IndexExpr, indexable: Expr, value: Value) extends TypeError(expr.pctx) {
+    def description = s"Expression `${indexable.sourcePosition.display}` of type `${value.valueType}` can not be indexed."
+  }
+  case class IncomparableValues(expr: Expr, left: Value, right: Value) extends TypeError(expr.pctx) {
+    def description = s"Incomparable values ${left.valueType} and ${right.valueType}"
+  }
+  case class InvalidInclude(obj: IncludeTag, filename: Value) extends TypeError(obj.pctx) {
+    def description = s"Include tag argument must be a filename, not ${filename.valueType}"
+  }
+  trait ExtensionError extends ErrorFragment {
+    def errorType = "Extension Error"
+  }
+  case class InvalidInput(ext: Extension, input: Value) extends ExtensionError {
+    def description = s"${ext.extensionType} `${ext.name}` is not defined for input type ${input.valueType}."
+  }
+  case class InvalidArgs(ext: Extension, args: List[Value]) extends ExtensionError {
+    def description = s"${ext.extensionType} `${ext.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
+  }
+  case class TooManyArgs(ext: Extension, args: List[Value]) extends ExtensionError {
+    def description = s"Too many arguments to filter ${ext.name}."
+  }
+  case class UnknownFilterName(name: String) extends ExtensionError {
+    def description = s"Unknown filter: `$name`."
+  }
+  case class FilterApplicationError(expr: FilterExpr, filter: Filter, input: Value, args: List[Value]) extends RenderError(expr.pctx) {
+    def description = s"Filter `${filter.name}` is not defined for input type ${input.valueType} and arguments (${args.map(_.valueType).mkString(", ")})."
+  }
+  case class LiquidFailure(errors: List[Error]) extends Exception {
+    override def getMessage(): String = errors.mkString("\n")
+    override def toString = getMessage
+  }
 }

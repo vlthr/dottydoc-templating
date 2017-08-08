@@ -6,10 +6,11 @@ import org.antlr.v4.runtime.tree._
 import org.antlr.v4.runtime.misc.Interval
 import scala.collection.mutable.{Buffer, Map => MMap}
 import vlthr.tee.core._
-import vlthr.tee.core.Error._
+import vlthr.tee.core.Errors._
 import vlthr.tee.filters._
 import vlthr.tee.util.Util
-import scala.util.{Try, Success, Failure}
+import scala.util.{Success, Failure, Try}
+import validation.Result
 
 object Liquid {
   def makeContext(c: ParserRuleContext, template: SourceFile) = {
@@ -54,7 +55,7 @@ object Liquid {
     tree.toStringTree(parser)
   }
 
-  def parse(file: SourceFile)(implicit ctx: Context): Try[Obj] = {
+  def parse(file: SourceFile)(implicit ctx: Context): Validated[Obj] = {
     val input = new ANTLRInputStream(file.body)
     val lexer = new LiquidLexer(input)
     val tokens = new CommonTokenStream(lexer)
@@ -66,11 +67,12 @@ object Liquid {
     parser.addErrorListener(errors);
     val tree = parser.template()
     val result = tree.accept(new LiquidNodeVisitor(file))
-    if (errors.errors.size != 0) Failure(LiquidFailure(errors.errors.toList))
-    else Success(result)
+    if (errors.errors.size != 0)
+      Result.invalids(validation.NonEmptyVector(errors.errors.toList: _*))
+    else Result.valid(result)
   }
 
-  def parse(path: String)(implicit ctx: Context): Try[Obj] =
+  def parse(path: String)(implicit ctx: Context): Validated[Obj] =
     parse(SourceFile(Util.readWholeFile(path), path))
 
   def render(path: String,
@@ -78,7 +80,7 @@ object Liquid {
              includeDir: String): Try[String] = {
     implicit val c: Context =
       Context.createNew().withParams(params).withIncludeDir(includeDir)
-    parse(path).flatMap(_.render())
+    toTry(parse(path).flatMap(_.render()))
   }
   def renderString(body: String,
                    params: Map[String, Any],
@@ -86,7 +88,7 @@ object Liquid {
                    ctx: Option[Context] = None): Try[String] = {
     implicit val c = ctx.getOrElse(
       Context.createNew().withParams(params).withIncludeDir(includeDir))
-    parse(SourceFile(body, "In-memory file")).flatMap(_.render())
+    toTry(parse(SourceFile(body, "In-memory file")).flatMap(_.render()))
   }
 
   sealed trait LexerMode

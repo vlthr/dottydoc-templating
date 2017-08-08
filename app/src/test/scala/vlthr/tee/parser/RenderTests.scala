@@ -46,17 +46,17 @@ class RenderTests {
         with OptKwArgs("limit" -> ValueType.Integer) {
       def name = "customFilter"
       def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
-          implicit ctx: Context): Try[Value] = {
+          implicit ctx: Context): Validated[Value] = {
         val a = args(0).asInstanceOf[IntValue].v
         val b = args(1).asInstanceOf[IntValue].v
         val c = kwargs("c").asInstanceOf[IntValue].v
-        Success(IntValue(a + b + c))
+        Valid(IntValue(a + b + c))
       }
     }
     val body = """{{ 1 | customFilter: 1, 1 c: 1 }}"""
     implicit val newCtx: Context = ctx.withFilter(CustomFilter())
     Liquid.renderString(body, environment, includeDir, ctx = Some(newCtx)) match {
-      case Success(output) => assertEquals("3", output)
+      case Result.valid(output) => assertEquals("3", output)
       case Failure(f) => fail("Custom filter could not render.")
     }
     ()
@@ -71,12 +71,12 @@ class RenderTests {
       type Args = IntValue :: StringValue :: HNil
       type OptArgs = IntValue :: HNil
       def filter(args: Args, optArgs: OptArgs) = {
-        Success(args.head)
+        Result.valid(args.head)
       }
     }
     val filter = F1()
     filter(IntValue(1) :: StringValue("a") :: Nil) match {
-      case Success(output) => assertEquals(IntValue(1), output)
+      case Result.valid(output) => assertEquals(IntValue(1), output)
       case Failure(f) => fail("Filter could not render.")
     }
     ()
