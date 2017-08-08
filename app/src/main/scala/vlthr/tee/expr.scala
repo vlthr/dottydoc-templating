@@ -1,18 +1,16 @@
 package vlthr.tee.core
 import scala.util.control.NonFatal
 import scala.collection.mutable.{Map => MMap}
-import scala.util.{Try, Success, Failure}
-import vlthr.tee.core.Error._
+import vlthr.tee.core.Errors._
+import validation.Result
 import vlthr.tee.filters._
 
 abstract trait BooleanExpr extends Expr {
-  override def eval()(implicit ctx: Context): Try[Value] =
-    Error
-      .all(left.eval(), right.eval()) { (l, r) =>
-        Try(BooleanValue(op(l, r))).recoverWith(_ =>
-          fail(IncomparableValues(this, l, r)))
-      }
-      .flatten
+  override def eval()(implicit ctx: Context): Validated[Value] =
+    (left.eval() and right.eval()) { (l, r) =>
+      BooleanValue(op(l, r))
+    // fail(IncomparableValues(this, l, r)))
+    }
   def left: Expr
   def right: Expr
   def op(left: Value, right: Value): Boolean
@@ -21,51 +19,49 @@ abstract trait BooleanExpr extends Expr {
 final case class RangeExpr(left: Expr, right: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit ctx: Context): Try[Value] = {
+  override def eval()(implicit ctx: Context): Validated[Value] = {
     val l = left.eval().flatMap {
-      case v: IntValue => Success(v)
+      case v: IntValue => Result.valid(v)
       case v =>
         fail(
           UnexpectedValueType(v, expected = Some(ValueType.Integer))
             .imbue(pctx))
     }
     val r = right.eval().flatMap {
-      case v: IntValue => Success(v)
+      case v: IntValue => Result.valid(v)
       case v =>
         fail(
           UnexpectedValueType(v, expected = Some(ValueType.Integer))
             .imbue(pctx))
     }
-    Error
-      .all(l, r) { (l, r) =>
-        Value.create(
-          (l.asInstanceOf[IntValue].v to r.asInstanceOf[IntValue].v).toList)
-      }
+    (l and r) { (l, r) =>
+      Value.create(
+        (l.asInstanceOf[IntValue].v to r.asInstanceOf[IntValue].v).toList)
+    }
   }
 }
 
 final case class ContainsExpr(left: Expr, right: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit ctx: Context): Try[Value] = {
+  override def eval()(implicit ctx: Context): Validated[Value] = {
     val l = left.eval().flatMap {
-      case MapValue(m) => Success(m)
+      case MapValue(m) => Result.valid(m)
       case v =>
         fail(
           UnexpectedValueType(v, expected = Some(ValueType.Map)).imbue(pctx))
     }
     val r = right.eval().flatMap {
-      case StringValue(s) => Success(s)
+      case StringValue(s) => Result.valid(s)
       case v =>
         fail(
           UnexpectedValueType(v, expected = Some(ValueType.String))
             .imbue(pctx))
     }
-    Error
-      .all(l, r) { (l, r) =>
-        BooleanValue(
-          l.asInstanceOf[Map[String, Value]].contains(r.asInstanceOf[String]))
-      }
+    (l and r) { (l, r) =>
+      BooleanValue(
+        l.asInstanceOf[Map[String, Value]].contains(r.asInstanceOf[String]))
+    }
   }
 }
 
@@ -120,14 +116,14 @@ final case class GtExpr(left: Expr, right: Expr)(
 
 final case class LiteralExpr(value: Value)(implicit val pctx: ParseContext)
     extends Expr {
-  override def eval()(implicit ctx: Context) = Success(value)
+  override def eval()(implicit ctx: Context) = Result.valid(value)
 }
 
 final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
     ctx.lookup(name) match {
-      case Some(value) => Success(value)
+      case Some(value) => Result.valid(value)
       case None => fail(UndefinedVariable(this))
     }
   }
@@ -140,27 +136,28 @@ final case class FilterExpr(
     kwargs: Map[String, Expr])(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
-    val exprVal = expr.eval()
-    val argsVal = args.map(_.eval())
-    val kwArgsVal = kwargs.map { case (k, v) => (k, v.eval()) }
-    val kwEvals = kwArgsVal.values
-    val possibleErrors = argsVal ++ kwEvals :+ exprVal
-    Error.all(possibleErrors) {
-      val expr = exprVal.get
-      val args = argsVal.map(_.get)
-      val kwargs = kwArgsVal.map { case (k, v) => (k, v.get) }
-      Try {
-        filter
-          .typeCheck(expr, args)
-          .flatMap(_ => filter.filter(expr, args, kwargs))
-          .recoverWith {
-            case LiquidFailure(errors) =>
-              fail(Error.imbueFragments(errors): _*)
-            case NonFatal(e) => fail(UncaughtExceptionError(e))
-            case e => fail(UncaughtExceptionError(e))
-          }
-      }.flatten
-    }
+    // val exprVal = expr.eval()
+    // val argsVal = args.map(_.eval())
+    // val kwArgsVal = kwargs.map { case (k, v) => (k, v.eval()) }
+    // val kwEvals = kwArgsVal.values
+    // val possibleErrors = argsVal ++ kwEvals :+ exprVal
+    // Error.all(possibleErrors) {
+    //   val expr = exprVal.get
+    //   val args = argsVal.map(_.get)
+    //   val kwargs = kwArgsVal.map { case (k, v) => (k, v.get) }
+    //   Try {
+    //     filter
+    //       .typeCheck(expr, args)
+    //       .flatMap(_ => filter.filter(expr, args, kwargs))
+    //       .recoverWith {
+    //         case LiquidFailure(errors) =>
+    //           fail(Error.imbueFragments(errors): _*)
+    //         case NonFatal(e) => fail(UncaughtExceptionError(e))
+    //         case e => fail(UncaughtExceptionError(e))
+    //       }
+    //   }.flatten
+    // }
+    succeed(StringValue(""))
   }
 }
 
@@ -168,15 +165,15 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
-    val i: Try[List[Value]] = indexable.eval().flatMap {
-      case ListValue(s) => Success(s)
+    val i: Validated[List[Value]] = indexable.eval().flatMap {
+      case ListValue(s) => Result.valid(s)
       case x => fail(InvalidIndexable(this, indexable, x))
     }
-    val k: Try[Int] = key.eval().flatMap {
-      case IntValue(i) => Success(i)
+    val k: Validated[Int] = key.eval().flatMap {
+      case IntValue(i) => Result.valid(i)
       case x => fail(InvalidIndex(this, key, x))
     }
-    Error.all(i, k) { (i, k) =>
+    (i and k) { (i, k) =>
       i(k)
     }
 
@@ -187,17 +184,15 @@ final case class DotExpr(indexable: Expr, key: String)(
     implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
-    val source: Try[Map[String, Value]] = indexable.eval().flatMap {
-      case MapValue(m) => Success(m)
+    val source: Validated[Map[String, Value]] = indexable.eval().flatMap {
+      case MapValue(m) => Result.valid(m)
       case x => fail(InvalidMap(this, indexable, x))
     }
-    Error
-      .all(source) { source =>
-        source.get(key) match {
-          case Some(s) => Success(s)
-          case None => fail(UndefinedField(this, indexable, key))
-        }
+    (source) flatMap { source =>
+      source.get(key) match {
+        case Some(s) => succeed(s)
+        case None => fail(UndefinedField(this, indexable, key))
       }
-      .flatten
+    }
   }
 }

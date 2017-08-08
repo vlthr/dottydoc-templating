@@ -1,5 +1,6 @@
 package vlthr.tee.typetraits
-import vlthr.tee.core.Error._
+import vlthr.tee.core.Errors._
+import validation.Result
 import vlthr.tee.core._
 
 package object TypeTraits {

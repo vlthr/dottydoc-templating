@@ -102,7 +102,7 @@ class ParserTests {
   @Test def shouldWorkOnAllDottyDocTags() = {
     val source = Source.fromURL(getClass.getResource("/tags.txt"))
     val (successes, failures) =
-      source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isSuccess)
+      source.getLines.map(l => Try(Liquid.parseNode(l))).partition(_.isValid)
     println(failures)
     assertEquals(0, failures.size)
   }
