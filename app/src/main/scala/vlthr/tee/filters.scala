@@ -9,6 +9,7 @@ import vlthr.tee.typetraits.TypeTraits._
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import shapeless._
+import shapeless.ops.hlist.HKernelAux
 import shapeless.ops.traversable._
 import shapeless.labelled._
 import shapeless.syntax.typeable._
@@ -531,14 +532,12 @@ object FromMap {
 abstract trait NFilter() {
   type Args <: HList
   type OptArgs <: HList
-  type KwArgs
-  def filter(args: Args, optArgs: OptArgs, kwArgs: KwArgs): Try[Value]
-  def apply[L <: HList](args: List[Value], kwArgs: Map[String, Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], ftOpt: FromTraversable[OptArgs], kwGen: Lazy[LabelledGeneric.Aux[KwArgs, L]], kwFromMap: FromMap.FromMap[L]): Try[Value] = {
+  def filter(args: Args, optArgs: OptArgs): Try[Value]
+  def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
+  def apply[L <: HList](allArgs: List[Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], hkArgs: HKernelAux[Args], ftOpt: FromTraversable[OptArgs]): Try[Value] = {
+    val (args, optArgs) = allArgs.splitAt(intLen[Args])
     val a = ftArgs(args).get
-    val o = ftOpt(Nil).get
-    import FromMap._
-    // val kws = caseClassFromMap[kwGen.Repr, KwArgs](kwArgs)
-    val kws = kwGen.value.from(kwFromMap(kwArgs))
-    filter(a, o, kws)
+    val o = ftOpt(optArgs).get
+    filter(a, o)
   }
 }
