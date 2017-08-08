@@ -33,6 +33,12 @@ package object Errors {
 
   def succeed[T](value: T): Validated[T] = Result.valid(value)
 
+  def imbueFragments[T](v: ValidatedFragment[T])(implicit pctx: ParseContext): Validated[T] = v match {
+    case v @ Valid(_) => v
+    case Invalids(errFragments) => Invalids(errFragments.map(_.imbue(pctx)))
+    case Invalid(errFragment) => Invalid(errFragment.imbue(pctx))
+  }
+
   def toTry[T](v: Validated[T]) = v match {
     case Valid(output) => Success(output)
     case Invalids(errs) => Failure(LiquidFailure(errs.toList))

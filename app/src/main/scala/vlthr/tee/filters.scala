@@ -10,10 +10,6 @@ import vlthr.tee.typetraits.TypeTraits._
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import shapeless._
-import shapeless.ops.hlist.HKernelAux
-import shapeless.ops.traversable._
-import shapeless.labelled._
-import shapeless.syntax.typeable._
 
 object Filter {
   def byName(s: String): Option[Filter] = registry.get(s)
@@ -39,14 +35,10 @@ object Filter {
 }
 
 case class UnknownFilter(name: String) extends Filter {
-  def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
-      implicit ctx: Context) =
+  type Args = HNil
+  type OptArgs = HNil
+  def filter(args: Args, optArgs: OptArgs)(implicit ctx: Context) =
     failFragment(UnknownFilterName(name))
-  def checkKwArgs(kwargs: Map[String, Value])(
-      implicit ctx: Context): List[ErrorFragment] = Nil
-  def checkInput(v: Value)(implicit ctx: Context) =
-    UnknownFilterName(name) :: Nil
-  def checkArgs(v: List[Value])(implicit ctx: Context) = Nil
 }
 
 // case class Split()
@@ -461,52 +453,6 @@ case class UnknownFilter(name: String) extends Filter {
 // import shapeless._
 // import shapeless.syntax.std.traversable._
 // object ValueTypeables {
-//   implicit val intTypeable: Typeable[IntValue] =
-//     new Typeable[IntValue] {
-//       def cast(t: Any): Option[IntValue] = t match {
-//         case c: IntValue => Some(c)
-//         case _ => None
-//       }
-
-//       def describe: String = s"IntValue"
-//     }
-
-//   implicit val stringTypeable: Typeable[StringValue] =
-//     new Typeable[StringValue] {
-//       def cast(t: Any): Option[StringValue] = t match {
-//         case v: StringValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"StringValue"
-//     }
-//   implicit val mapTypeable: Typeable[MapValue] =
-//     new Typeable[MapValue] {
-//       def cast(t: Any): Option[MapValue] = t match {
-//         case v: MapValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"MapValue"
-//     }
-//   implicit val listTypeable: Typeable[ListValue] =
-//     new Typeable[ListValue] {
-//       def cast(t: Any): Option[ListValue] = t match {
-//         case v: ListValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"ListValue"
-//     }
-//   implicit val boolTypeable: Typeable[BooleanValue] =
-//     new Typeable[BooleanValue] {
-//       def cast(t: Any): Option[BooleanValue] = t match {
-//         case v: BooleanValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"BooleanValue"
-//     }
 // }
 
 // object FromMap {
@@ -524,18 +470,5 @@ case class UnknownFilter(name: String) extends Filter {
 
 //   trait FromMap[L <: HList] {
 //     def apply(map: Map[String, Value]): L
-//   }
-// }
-
-// abstract trait NFilter() {
-//   type Args <: HList
-//   type OptArgs <: HList
-//   def filter(args: Args, optArgs: OptArgs): Validated[Value]
-//   def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
-//   def apply[L <: HList](allArgs: List[Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], hkArgs: HKernelAux[Args], ftOpt: FromTraversable[OptArgs]): Validated[Value] = {
-//     val (args, optArgs) = allArgs.splitAt(intLen[Args])
-//     val a = ftArgs(args).get
-//     val o = ftOpt(optArgs).get
-//     filter(a, o)
 //   }
 // }

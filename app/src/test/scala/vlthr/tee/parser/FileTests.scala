@@ -49,7 +49,7 @@ class FileTests(file: SourceFile) {
   @Test def testRender() = {
     fileTest(".render") { f =>
       Liquid.render(f.path, environment, includeDir) match {
-        case Result.valid(output) => output
+        case Success(output) => output
         case Failure(f) => f.toString
       }
     }
