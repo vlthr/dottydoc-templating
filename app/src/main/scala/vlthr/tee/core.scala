@@ -162,7 +162,7 @@ case class Context(mappings: MMap[String, Value],
   def withTag(tags: Tag*) = copy(customTags = customTags ++ tags.map(t => (t.name, t)))
   def withIncludeDir(includeDir: String) = copy(includeDir = includeDir)
 
-  def getFilter(name: String): Filter = customFilters.get(name).orElse(Filter.byName(name)).getOrElse(UnknownFilter(name))
+  def getFilter(name: String): Filter = customFilters.get(name).orElse(Filter.byName(name)).getOrElse(unknownFilter(name))
   def getTag(name: String): Tag = customTags.get(name).getOrElse(UnknownTag(name))
 }
 
@@ -170,24 +170,6 @@ object Context {
   type TagConstructor = (ParseContext, List[Expr]) => TagNode
   def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include")
   def createChild(parent: Context): Context = parent.copy(parent=Some(parent))
-}
-
-
-abstract trait Filter extends Extension {
-  type Input
-  type Args <: HList
-  type OptArgs <: HList
-  def name: String
-  def filter(input: Input, args: Args, optArgs: OptArgs)(implicit ctx: Context): ValidatedFragment[Value]
-  def extensionType = "filter"
-  def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
-  def apply[L <: HList](input: Value, allArgs: List[Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], hkArgs: HKernelAux[Args], ftOpt: FromTraversable[OptArgs]): ValidatedFragment[Value] = {
-    val (args, optArgs) = allArgs.splitAt(intLen[Args])
-    val i = input.cast[Input].get
-    val a = ftArgs(args).get
-    val o = ftOpt(optArgs).get
-    filter(i, a, o)
-  }
 }
 
 sealed trait Truthable {

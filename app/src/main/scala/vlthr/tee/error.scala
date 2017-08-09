@@ -3,6 +3,7 @@ import org.antlr.v4.runtime.{Recognizer, RecognitionException}
 import scala.util.{Try, Success, Failure}
 import validation._
 import validation.Result.{Valid, Invalids, Invalid}
+import vlthr.tee.filters.Filter
 
 package object Errors {
   type Validated[A] = Result[Error, A]
