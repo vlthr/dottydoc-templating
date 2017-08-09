@@ -1,4 +1,4 @@
-package vlthr.tee.filters
+package vlthr.tee
 import scala.util.{Try, Success, Failure}
 import scala.util.control.NonFatal
 import vlthr.tee.parser.Liquid
@@ -11,65 +11,93 @@ import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import shapeless._
 import shapeless.ops.hlist.HKernelAux
+import shapeless.ops.traversable._
+import shapeless.syntax.typeable._
 
-object Filter {
-  def byName(s: String): Option[Filter] = registry.get(s)
-  val registry: MMap[String, Filter] = MMap(
-    "split" -> Split(),
-    "json" -> Json(),
-    // "date" -> Date(),
-    // "slice" -> Slice(),
-    // "join" -> Join(),
-    // "size" -> Size(),
-    // "first" -> First(),
-    // "last" -> Last(),
-    // "prepend" -> Prepend(),
-    // "append" -> Append(),
-    // "capitalize" -> Capitalize(),
-    // "downcase" -> Downcase(),
-    // "upcase" -> Upcase(),
-    // "escape" -> Escape(),
-    // "remove" -> Remove(),
-    // "replace" -> Replace(),
-    "reverse" -> Reverse()
-  )
-}
+package object filters {
+  // implicit def hnilFromTraversable[T]: FromTraversable[HNil] = FromTraversable.hnilFromTraversable
 
-case class UnknownFilter(name: String) extends Filter {
-  type Input = StringValue :+: CNil
-  type Args = HNil
-  type OptArgs = HNil
-  def filter(input: Input, args: Args, optArgs: OptArgs)(
-      implicit ctx: Context) =
-    failFragment(UnknownFilterName(name))
-}
+  // implicit def hlistFromTraversable[OutH, OutT <: HList]
+  //   (implicit flt : FromTraversable[OutT], oc : Typeable[OutH]): FromTraversable[OutH :: OutT] = FromTraversable.hlistFromTraversable
 
-case class Split() extends Filter {
-  def name = "split"
-  type Input = StringValue
-  type Args = StringValue :: HNil
-  type OptArgs = HNil
-  def filter(input: Input, args: Args, optArgs: OptArgs)(
-      implicit ctx: Context) = {
-    val pattern = args.head.get
-    val stringToSplit = input.get
-    succeed(Value.create(stringToSplit.split(pattern).toList))
+  def makeFilter[I, A <: HList, O <: HList](name: String)(f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(implicit ftArgs: FromTraversable[A], hkArgs: HKernelAux[A], ftOpt: FromTraversable[O]) = new Filter {
+    type Input = I
+    type Args = A
+    type OptArgs = O
+    def name = name
+    def filter(input: Input, args: Args, optArgs: OptArgs)(implicit ctx: Context): ValidatedFragment[Value] = f(ctx, this, input, args, optArgs)
+    def apply(input: Value, allArgs: List[Value])(implicit ctx: Context): ValidatedFragment[Value] = {
+      val (args, optArgs) = allArgs.splitAt(intLen[Args])
+      val i = input.cast[Input].get
+      val a = ftArgs(args).get
+      val o = ftOpt(optArgs).get
+      filter(i, a, o)
+    }
   }
-}
-
-case class Json() extends Filter {
-  def name = "json"
-  type Input = ListValue
-  type Args = HNil
-  type OptArgs = HNil
-  def filter(input: Input, args: Args, optArgs: OptArgs)(
-      implicit ctx: Context) = {
-    succeed(
-      StringValue(
-        new ObjectMapper()
-          .writeValueAsString(Util.asJava(input.asInstanceOf[ListValue]))))
+  abstract trait Filter extends Extension {
+    type Input
+    type Args <: HList
+    type OptArgs <: HList
+    def name: String
+    def filter(input: Input, args: Args, optArgs: OptArgs)(implicit ctx: Context): ValidatedFragment[Value]
+    def extensionType = "filter"
+    def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
+    def apply(input: Value, allArgs: List[Value])(implicit ctx: Context): ValidatedFragment[Value]
   }
-}
+
+  object Filter {
+    def byName(s: String): Option[Filter] = registry.get(s)
+    val registry: MMap[String, Filter] = MMap(
+      // "split" -> Split(),
+      // "json" -> Json(),
+      // "date" -> Date(),
+      // "slice" -> Slice(),
+      // "join" -> Join(),
+      // "size" -> Size(),
+      // "first" -> First(),
+      // "last" -> Last(),
+      // "prepend" -> Prepend(),
+      // "append" -> Append(),
+      // "capitalize" -> Capitalize(),
+      // "downcase" -> Downcase(),
+      // "upcase" -> Upcase(),
+      // "escape" -> Escape(),
+      // "remove" -> Remove(),
+      // "replace" -> Replace(),
+      // "reverse" -> Reverse()
+    )
+  }
+
+  def unknownFilter(name: String) = makeFilter[HNil, HNil, HNil](name) { (ctx, self, input, args, optArgs) =>
+    failFragment(UnknownFilterName(self.name))
+  }
+
+// case class Split() extends Filter {
+//   def name = "split"
+//   type Input = StringValue
+//   type Args = StringValue :: HNil
+//   type OptArgs = HNil
+//   def filter(input: Input, args: Args, optArgs: OptArgs)(
+//       implicit ctx: Context) = {
+//     val pattern = args.head.get
+//     val stringToSplit = input.get
+//     succeed(Value.create(stringToSplit.split(pattern).toList))
+//   }
+// }
+
+// case class Json() extends Filter {
+//   def name = "json"
+//   type Input = ListValue
+//   type Args = HNil
+//   type OptArgs = HNil
+//   def filter(input: Input, args: Args, optArgs: OptArgs)(
+//       implicit ctx: Context) = {
+//     succeed(
+//       StringValue(
+//         new ObjectMapper()
+//           .writeValueAsString(Util.asJava(input.asInstanceOf[ListValue]))))
+//   }
+// }
 
 // case class Size()
 //     extends Filter
@@ -478,3 +506,4 @@ case class Reverse()
 //     def apply(map: Map[String, Value]): L
 //   }
 // }
+}
