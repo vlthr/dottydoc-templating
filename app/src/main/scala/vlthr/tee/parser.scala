@@ -11,6 +11,7 @@ import vlthr.tee.filters._
 import vlthr.tee.util.Util
 import scala.util.{Success, Failure, Try}
 import validation.Result
+import shapeless._
 
 object Liquid {
   def makeContext(c: ParserRuleContext, template: SourceFile) = {

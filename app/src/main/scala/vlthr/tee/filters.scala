@@ -10,16 +10,17 @@ import vlthr.tee.typetraits.TypeTraits._
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import shapeless._
+import shapeless.ops.hlist.HKernelAux
 
 object Filter {
   def byName(s: String): Option[Filter] = registry.get(s)
   val registry: MMap[String, Filter] = MMap(
-    // "split" -> Split(),
+    "split" -> Split(),
+    "json" -> Json(),
     // "date" -> Date(),
     // "slice" -> Slice(),
     // "join" -> Join(),
     // "size" -> Size(),
-    // "json" -> Json(),
     // "first" -> First(),
     // "last" -> Last(),
     // "prepend" -> Prepend(),
@@ -30,49 +31,45 @@ object Filter {
     // "escape" -> Escape(),
     // "remove" -> Remove(),
     // "replace" -> Replace(),
-    // "reverse" -> Reverse()
+    "reverse" -> Reverse()
   )
 }
 
 case class UnknownFilter(name: String) extends Filter {
+  type Input = StringValue :+: CNil
   type Args = HNil
   type OptArgs = HNil
-  def filter(args: Args, optArgs: OptArgs)(implicit ctx: Context) =
+  def filter(input: Input, args: Args, optArgs: OptArgs)(
+      implicit ctx: Context) =
     failFragment(UnknownFilterName(name))
 }
 
-// case class Split()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with FixedArgs(ValueType.String)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   def name = "split"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     val pattern = args(0).asInstanceOf[StringValue]
-//     input match {
-//       case StringValue(v) => Try(Value.create(v.split(pattern.v).toList))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+case class Split() extends Filter {
+  def name = "split"
+  type Input = StringValue
+  type Args = StringValue :: HNil
+  type OptArgs = HNil
+  def filter(input: Input, args: Args, optArgs: OptArgs)(
+      implicit ctx: Context) = {
+    val pattern = args.head.get
+    val stringToSplit = input.get
+    succeed(Value.create(stringToSplit.split(pattern).toList))
+  }
+}
 
-// case class Json()
-//     extends Filter
-//     with InputType(ValueType.List)
-//     with NoArgs
-//     with NoKwArgs {
-//   def name = "json"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) =
-//     Result.valid(
-//       StringValue(
-//         new ObjectMapper()
-//           .writeValueAsString(Util.asJava(input.asInstanceOf[ListValue]))))
-// }
+case class Json() extends Filter {
+  def name = "json"
+  type Input = ListValue
+  type Args = HNil
+  type OptArgs = HNil
+  def filter(input: Input, args: Args, optArgs: OptArgs)(
+      implicit ctx: Context) = {
+    succeed(
+      StringValue(
+        new ObjectMapper()
+          .writeValueAsString(Util.asJava(input.asInstanceOf[ListValue]))))
+  }
+}
 
 // case class Size()
 //     extends Filter
@@ -122,21 +119,30 @@ case class UnknownFilter(name: String) extends Filter {
 //     }
 // }
 
-// case class Reverse()
-//     extends Filter
-//     with InputType(ValueType.List | ValueType.String)
-//     with NoArgs
-//     with NoKwArgs {
-//   def name = "reverse"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) =
-//     input match {
-//       case StringValue(v) => Try(StringValue(v.reverse))
-//       case ListValue(v) => Try(ListValue(v.reverse))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-// }
+case class Reverse()
+    extends Filter
+    with InputType(ValueType.List | ValueType.String)
+    with NoArgs
+    with NoKwArgs {
+  def name = "reverse"
+  // type Input = StringValue :+: ListValue :+: CNil
+  type Input = StringValue | ListValue
+  type Args = StringValue :: HNil
+  type OptArgs = HNil
+  def filter(input: Input, args: Args, optArgs: OptArgs)(
+      implicit ctx: Context) = {
+    input match {
+      case StringValue(str) => succeed(StringValue(str.reverse))
+      case ListValue(list) => succeed(ListValue(list.reverse))
+    }
+
+    // input match {
+    //   case Inl(str) => succeed(StringValue(str.get.reverse))
+    //   case Inr(Inl(list)) => succeed(ListValue(list.get.reverse))
+    //   case _ => ???
+    // }
+  }
+}
 
 // case class Join()
 //     extends Filter

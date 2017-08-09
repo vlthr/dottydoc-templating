@@ -8,10 +8,10 @@ package object Errors {
   type Validated[A] = Result[Error, A]
   type ValidatedFragment[A] = Result[ErrorFragment, A]
 
-  trait Error(pctx: ParseContext) {
+  trait Error(pctx: ParseContext) extends Throwable {
     def errorType: String
     def description: String
-    def getMessage: String = {
+    override def getMessage: String = {
       s"""$errorType: ${pctx.sourcePosition.template.path}
    |$description
    |
@@ -31,7 +31,26 @@ package object Errors {
     def description = parent.description
   }
 
-  def succeed[T](value: T): Validated[T] = Result.valid(value)
+  /** Returns the value as a Validated, i.e either a valid value or else an
+    * invalid value containing Errors (with associated source info)
+    *
+    * For use in places where a ParseContext is available.
+    */
+  def valid[T](value: T): Validated[T] = Result.valid(value)
+
+  /** Returns the value as a ValidatedFragment, i.e either a valid value or
+    * else an invalid value containing ErrorFragments (with no source info).
+    *
+    * For use in places where no ParseContext is available, such as Filters.
+    */
+  def succeed[T](value: T): ValidatedFragment[T] = Result.valid(value)
+
+  /** Throws an exception, aborting execution of user code.
+    *
+    * For use in extensions when invalid state is detected and the user should
+    * be alerted.
+    */
+  def abort[T](): ValidatedFragment[T] = throw new Exception("Extension execution aborted.")
 
   def imbueFragments[T](v: ValidatedFragment[T])(implicit pctx: ParseContext): Validated[T] = v match {
     case v @ Valid(_) => v
@@ -43,6 +62,12 @@ package object Errors {
     case Valid(output) => Success(output)
     case Invalids(errs) => Failure(LiquidFailure(errs.toList))
     case Invalid(errs) => Failure(LiquidFailure(errs :: Nil))
+  }
+
+  def flatten[T, R <: ValidatedFragment[T]](v: ValidatedFragment[R]): ValidatedFragment[T] = v match {
+    case Valid(output) => output
+    case Invalids(errs) => Invalids(errs)
+    case Invalid(errs) => Invalid(errs)
   }
 
   def fail[T](error: Error): Validated[T] = {
