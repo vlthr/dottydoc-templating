@@ -174,17 +174,19 @@ object Context {
 
 
 abstract trait Filter extends Extension {
+  type Input
   type Args <: HList
   type OptArgs <: HList
   def name: String
-  def filter(args: Args, optArgs: OptArgs)(implicit ctx: Context): ValidatedFragment[Value]
+  def filter(input: Input, args: Args, optArgs: OptArgs)(implicit ctx: Context): ValidatedFragment[Value]
   def extensionType = "filter"
   def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
-  def apply[L <: HList](allArgs: List[Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], hkArgs: HKernelAux[Args], ftOpt: FromTraversable[OptArgs]): ValidatedFragment[Value] = {
+  def apply[L <: HList](input: Value, allArgs: List[Value])(implicit ctx: Context, ftArgs: FromTraversable[Args], hkArgs: HKernelAux[Args], ftOpt: FromTraversable[OptArgs]): ValidatedFragment[Value] = {
     val (args, optArgs) = allArgs.splitAt(intLen[Args])
+    val i = input.cast[Input].get
     val a = ftArgs(args).get
     val o = ftOpt(optArgs).get
-    filter(a, o)
+    filter(i, a, o)
   }
 }
 
@@ -221,6 +223,7 @@ final case class StringValue(v: String) extends Value with Truthy {
   def display: String = s""""$v""""
   def valueType = ValueType.String
   def render()(implicit ctx: Context): ValidatedFragment[String] = Result.valid(v)
+  def get = v
 }
 
 final case class BooleanValue(v: Boolean) extends Value {
@@ -229,6 +232,7 @@ final case class BooleanValue(v: Boolean) extends Value {
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     Result.valid(v.toString)
   def truthy = v
+  def get = v
 }
 
 final case class IntValue(v: Int) extends Value with Truthy {
@@ -236,6 +240,7 @@ final case class IntValue(v: Int) extends Value with Truthy {
   def valueType = ValueType.Integer
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     Result.valid(v.toString)
+  def get = v
 }
 
 final case class MapValue(v: Map[String, Value])
@@ -244,12 +249,14 @@ final case class MapValue(v: Map[String, Value])
   def display: String = ???
   def valueType = ValueType.Map
   def render()(implicit ctx: Context): ValidatedFragment[String] = failFragment(UnrenderableValue(this))
+  def get = v
 }
 
 final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
   def valueType = ValueType.List
   def render()(implicit ctx: Context): ValidatedFragment[String] = failFragment(UnrenderableValue(this))
+  def get = v
 }
 
 case class UnknownTag(n: String) extends Tag(n) {

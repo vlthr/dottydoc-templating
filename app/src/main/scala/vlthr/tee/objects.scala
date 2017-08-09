@@ -100,7 +100,7 @@ final case class IfTag(condition: Expr,
     val elseEval: Validated[Option[String]] = elseBlock
       .map(_.render())
       .map(r => r.map(s => Some(s)))
-      .getOrElse(succeed(None))
+      .getOrElse(valid(None))
     (condEval zip thenEval zip elsifEvals zip elseEval) map {
       case (((c, t), eis), e) =>
         // Join all of the ifs to a (condition, body) form and find the first that matches
@@ -151,7 +151,7 @@ final case class CustomTag(tag: Tag, args: List[Expr])(
     //     }
     //   Result.fromTry(t)
     // }
-    succeed("")
+    valid("")
   }
 }
 
@@ -169,7 +169,7 @@ final case class CaseTag(switchee: Expr,
     val elseEval: Validated[Option[String]] = els
       .map(_.render())
       .map(r => r.map(s => Some(s)))
-      .getOrElse(succeed(None))
+      .getOrElse(valid(None))
     (switcheeEval zip whenEvals zip elseEval) map {
       case ((s, ws), e) =>
         // Add else clause to the end of the when cases, guaranteed to match the switchee

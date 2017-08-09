@@ -4,6 +4,9 @@ import scala.collection.mutable.{Map => MMap}
 import vlthr.tee.core.Errors._
 import validation.Result
 import vlthr.tee.filters._
+import shapeless._
+import shapeless.ops.traversable._
+import shapeless.ops.hlist.HKernelAux
 
 abstract trait BooleanExpr extends Expr {
   override def eval()(implicit ctx: Context): Validated[Value] =
@@ -129,35 +132,27 @@ final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
   }
 }
 
-final case class FilterExpr(
-    expr: Expr,
-    filter: Filter,
-    args: List[Expr],
-    kwargs: Map[String, Expr])(implicit val pctx: ParseContext)
+final case class FilterExpr(expr: Expr,
+                            filter: Filter,
+                            args: List[Expr],
+                            kwargs: Map[String, Expr])(
+    implicit val pctx: ParseContext,
+    hkArgs: HKernelAux[filter.Args],
+    ftArgs: FromTraversable[filter.Args],
+    ftOpt: FromTraversable[filter.OptArgs])
     extends Expr {
   override def eval()(implicit ctx: Context) = {
-    // val exprVal = expr.eval()
-    // val argsVal = args.map(_.eval())
-    // val kwArgsVal = kwargs.map { case (k, v) => (k, v.eval()) }
-    // val kwEvals = kwArgsVal.values
-    // val possibleErrors = argsVal ++ kwEvals :+ exprVal
-    // Error.all(possibleErrors) {
-    //   val expr = exprVal.get
-    //   val args = argsVal.map(_.get)
-    //   val kwargs = kwArgsVal.map { case (k, v) => (k, v.get) }
-    //   Try {
-    //     filter
-    //       .typeCheck(expr, args)
-    //       .flatMap(_ => filter.filter(expr, args, kwargs))
-    //       .recoverWith {
-    //         case LiquidFailure(errors) =>
-    //           fail(Error.imbueFragments(errors): _*)
-    //         case NonFatal(e) => fail(UncaughtExceptionError(e))
-    //         case e => fail(UncaughtExceptionError(e))
-    //       }
-    //   }.flatten
-    // }
-    succeed(StringValue(""))
+    val exprVal = expr.eval()
+    val argsVal = Result.sequence(args.map(_.eval()))
+
+    try {
+      (exprVal zip argsVal) flatMap {
+        case (e, as) =>
+          imbueFragments(filter.apply(e, as))
+      }
+    } catch {
+      case NonFatal(err) => Result.invalid(UncaughtExceptionError(err))
+    }
   }
 }
 
@@ -190,7 +185,7 @@ final case class DotExpr(indexable: Expr, key: String)(
     }
     (source) flatMap { source =>
       source.get(key) match {
-        case Some(s) => succeed(s)
+        case Some(s) => valid(s)
         case None => fail(UndefinedField(this, indexable, key))
       }
     }
