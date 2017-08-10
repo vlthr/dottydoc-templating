@@ -1,6 +1,7 @@
 package vlthr.tee.core
 import org.antlr.v4.runtime.{Recognizer, RecognitionException}
 import scala.util.{Try, Success, Failure}
+import vlthr.tee.util.Util
 import validation._
 import validation.Result.{Valid, Invalids, Invalid}
 import vlthr.tee.filters.Filter
@@ -95,7 +96,7 @@ package object Errors {
 
   case class UncaughtExceptionError(e: Throwable)(implicit pctx: ParseContext) extends Error(pctx) {
     def errorType = "Uncaught Exception"
-    def description = e.getMessage
+    def description = e.getMessage + "\n" + Util.getStackTrace(e)
   }
 
   case class InvalidKwArg(ext: Extension, key: String) extends ExtensionError {
