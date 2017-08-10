@@ -43,7 +43,6 @@ package object filters {
         f(ctx, this, input, args, optArgs)
       def apply(input: Value, allArgs: List[Value])(
           implicit ctx: Context): ValidatedFragment[Value] = {
-        println(s"${this.name} => $input (${input.cast[Input]}), $allArgs")
         val (args, optArgs) = allArgs.splitAt(intLen[Args])
         val i = Result.fromOption(input.cast[Input], InvalidInput(this, input))
         val a = Result.fromOption(ftArgs(args), InvalidArgs(this, args))
@@ -68,14 +67,12 @@ package object filters {
         f(ctx, this, input, args, optArgs)
       def apply(input: Value, allArgs: List[Value])(
           implicit ctx: Context): ValidatedFragment[Value] = {
-        println(s"${this.name} => $input (${input.cast[Input]}), $allArgs")
         val (args, optArgs) = allArgs.splitAt(intLen[Args])
         val i = Result.fromOption(input.cast[Input], InvalidInput(this, input))
         val a = Result.fromOption(ftArgs(args), InvalidArgs(this, args))
         val maxNrOpts = intLen[OptArgs]
         val fixedOptArgs = optArgs.map(v => Some(v)) ++ List.fill(
           maxNrOpts - optArgs.size)(None)
-        println(fixedOptArgs)
         val o = ftOpt(fixedOptArgs).get
 
         (i zip a).flatMap { (i, a) =>
