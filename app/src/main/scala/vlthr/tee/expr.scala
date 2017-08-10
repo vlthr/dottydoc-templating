@@ -145,7 +145,6 @@ final case class FilterExpr(
     try {
       (exprVal zip argsVal) flatMap {
         case (e, as) =>
-          println(s"Trying to call filter ${filter} with ($e, $as)")
           imbueFragments(filter.apply(e, as))
       }
     } catch {
