@@ -38,6 +38,7 @@ object Util {
       case BooleanValue(b) => b.asInstanceOf[Object]
       case IntValue(i) => i.asInstanceOf[Object]
       case StringValue(s) => s.asInstanceOf[Object]
+      case NullValue() => null
     }
   }
 

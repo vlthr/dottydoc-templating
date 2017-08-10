@@ -132,11 +132,11 @@ final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
   }
 }
 
-final case class FilterExpr(expr: Expr,
-                            filter: Filter,
-                            args: List[Expr],
-                            kwargs: Map[String, Expr])(
-    implicit val pctx: ParseContext)
+final case class FilterExpr(
+    expr: Expr,
+    filter: Filter,
+    args: List[Expr],
+    kwargs: Map[String, Expr])(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
     val exprVal = expr.eval()

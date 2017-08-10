@@ -6,7 +6,6 @@ import shapeless.ops.hlist.HKernelAux
 import shapeless.ops.traversable._
 import shapeless.syntax.typeable._
 import validation.Result
-import vlthr.tee.core._
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 
 enum class ValueType {
@@ -44,6 +43,12 @@ object ValueType {
   case Map {
     def matches(v: Value) = v match {
       case v: MapValue => true
+      case _ => false
+    }
+  }
+  case Null {
+    def matches(v: Value) = v match {
+      case v: NullValue => true
       case _ => false
     }
   }
@@ -241,6 +246,14 @@ final case class ListValue(v: List[Value]) extends IndexedValue with Truthy {
   def get = v
 }
 
+final case class NullValue() extends Value {
+  def display: String = "null"
+  def valueType = ValueType.Null
+  def render()(implicit ctx: Context): ValidatedFragment[String] = succeed("null")
+  def get = null
+  def truthy = false
+}
+
 case class UnknownTag(n: String) extends Tag(n) {
   def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment] = List(UnknownTagId(name))
   def render(args: List[Value])(
@@ -274,12 +287,12 @@ object Value {
       case _ => throw new Exception(s"Invalid value: $value")
     }
   }
+
   def makeValueTypeable[V](name: String)(f: PartialFunction[Any, Option[V]]) =
     new Typeable[V] {
       def cast(t: Any): Option[V] = f(t)
       def describe = name
     }
-
   implicit val intTypeable: Typeable[IntValue] = makeValueTypeable("IntValue") {
     case c: IntValue => Some(c)
     case _ => None
@@ -300,50 +313,8 @@ object Value {
     case c: StringValue => Some(c)
     case _ => None
   }
-//   implicit val intTypeable: Typeable[IntValue] =
-//     new Typeable[IntValue] {
-//       def cast(t: Any): Option[IntValue] = t match {
-//         case c: IntValue => Some(c)
-//         case _ => None
-//       }
-
-//       def describe: String = s"IntValue"
-//     }
-
-//   implicit val stringTypeable: Typeable[StringValue] =
-//     new Typeable[StringValue] {
-//       def cast(t: Any): Option[StringValue] = t match {
-//         case v: StringValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"StringValue"
-//     }
-//   implicit val mapTypeable: Typeable[MapValue] =
-//     new Typeable[MapValue] {
-//       def cast(t: Any): Option[MapValue] = t match {
-//         case v: MapValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"MapValue"
-//     }
-//   implicit val listTypeable: Typeable[ListValue] =
-//     new Typeable[ListValue] {
-//       def cast(t: Any): Option[ListValue] = t match {
-//         case v: ListValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"ListValue"
-//     }
-//   implicit val boolTypeable: Typeable[BooleanValue] =
-//     new Typeable[BooleanValue] {
-//       def cast(t: Any): Option[BooleanValue] = t match {
-//         case v: BooleanValue => Some(v)
-//         case _ => None
-//       }
-
-//       def describe: String = s"BooleanValue"
-//     }
+  implicit val nullTypeable: Typeable[NullValue] = makeValueTypeable("NullValue") {
+    case c: NullValue => Some(c)
+    case _ => None
+  }
 }
