@@ -101,8 +101,8 @@ final case class IfTag(condition: Expr,
       .map(_.render())
       .map(r => r.map(s => Some(s)))
       .getOrElse(valid(None))
-    (condEval zip thenEval zip elsifEvals zip elseEval) map {
-      case (((c, t), eis), e) =>
+    (condEval and thenEval and elsifEvals and elseEval) {
+      case (c, t, eis, e) =>
         // Join all of the ifs to a (condition, body) form and find the first that matches
         (((c, t) +: eis) ++ e.map(r => (BooleanValue(true), r)).toList)
           .find { case (cond, body) => cond.truthy }
@@ -170,8 +170,8 @@ final case class CaseTag(switchee: Expr,
       .map(_.render())
       .map(r => r.map(s => Some(s)))
       .getOrElse(valid(None))
-    (switcheeEval zip whenEvals zip elseEval) map {
-      case ((s, ws), e) =>
+    (switcheeEval and whenEvals and elseEval) {
+      case (s, ws, e) =>
         // Add else clause to the end of the when cases, guaranteed to match the switchee
         (ws ++ e.map(r => (s, r)).toList)
           .find { case (comparison, body) => comparison == s }
