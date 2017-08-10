@@ -93,7 +93,7 @@ final case class IfTag(condition: Expr,
     extends TagNode {
   override def render()(implicit ctx: Context): Validated[String] = {
     val condEval = condition.eval()
-    val thenEval = condition.render()
+    val thenEval = thenBlock.render()
     val elsifEvals = Result.sequence(elsifs.map {
       case (cond, body) => cond.eval() zip body.render()
     })
