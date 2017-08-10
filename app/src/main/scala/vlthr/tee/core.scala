@@ -288,11 +288,6 @@ object Value {
     }
   }
 
-  def makeValueTypeable[V](name: String)(f: PartialFunction[Any, Option[V]]) =
-    new Typeable[V] {
-      def cast(t: Any): Option[V] = f(t)
-      def describe = name
-    }
   implicit val intTypeable: Typeable[IntValue] =
     new Typeable[IntValue] {
       def cast(t: Any): Option[IntValue] = t match {
@@ -339,26 +334,47 @@ object Value {
 
       def describe: String = s"BooleanValue"
     }
-  // implicit val intTypeable: Typeable[IntValue] = makeValueTypeable("IntValue") {
-  // }
-  // implicit val mapTypeable: Typeable[MapValue] = makeValueTypeable("MapValue") {
-  //   case c: MapValue => Some(c)
-  //   case _ => None
-  // }
-  // implicit val listTypeable: Typeable[ListValue] = makeValueTypeable("ListValue") {
-  //   case c: ListValue => Some(c)
-  //   case _ => None
-  // }
-  // implicit val booleanTypeable: Typeable[BooleanValue] = makeValueTypeable("BooleanValue") {
-  //   case c: BooleanValue => Some(c)
-  //   case _ => None
-  // }
-  // implicit val stringTypeable: Typeable[StringValue] = makeValueTypeable("StringValue") {
-  //   case c: StringValue => Some(c)
-  //   case _ => None
-  // }
-  // implicit val nullTypeable: Typeable[NullValue] = makeValueTypeable("NullValue") {
-  //   case c: NullValue => Some(c)
-  //   case _ => None
-  // }
+  implicit val nullTypeable: Typeable[NullValue] =
+    new Typeable[NullValue] {
+      def cast(t: Any): Option[NullValue] = t match {
+        case v: NullValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"BooleanValue"
+    }
+
+  /** Temporary fix for implicits not being created for union types
+    */
+  implicit val listStrTypeable: Typeable[ListValue | StringValue] =
+    new Typeable[ListValue | StringValue] {
+      def cast(t: Any): Option[ListValue | StringValue] = t match {
+        case v: ListValue => Some(v)
+        case v: StringValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"BooleanValue"
+    }
+
+  /** Temporary fix for implicits not being created for union types
+    */
+  implicit val intStrTypeable: Typeable[IntValue | StringValue] =
+    new Typeable[IntValue | StringValue] {
+      def cast(t: Any): Option[IntValue | StringValue] = t match {
+        case v: IntValue => Some(v)
+        case v: StringValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"BooleanValue"
+    }
+
+  /** Not working
+    */
+  implicit def unionTypeable[A, B](implicit aType: Typeable[A], bType: Typeable[B]): Typeable[A | B] = new Typeable[A | B] {
+      def cast(t: Any): Option[A | B] = aType.cast(t).orElse(bType.cast(t))
+
+      def describe: String = s"${aType.describe} | ${bType.describe}"
+    }
 }

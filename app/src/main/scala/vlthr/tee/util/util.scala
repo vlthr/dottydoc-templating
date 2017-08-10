@@ -63,4 +63,11 @@ object Util {
       .asJava
       .asInstanceOf[java.util.Map[String, Object]]
   }
+  def getStackTrace(e: Throwable) = {
+    import java.io.{StringWriter, PrintWriter}
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+    e.printStackTrace(pw)
+    sw.toString()
+  }
 }
