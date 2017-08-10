@@ -31,7 +31,8 @@ package object filters {
   object Filter {
     def apply[I, A <: HList, O <: HList](name: String)(
         f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
-        implicit ftArgs: FromTraversable[A],
+        implicit ftArgs: Lazy[FromTraversable[A]],
+        itype: Typeable[I],
         hkArgs: HKernelAux[A],
         ftOpt: FromTraversable[O]): Filter = new Filter {
       type Input = I
@@ -45,7 +46,7 @@ package object filters {
           implicit ctx: Context): ValidatedFragment[Value] = {
         val (args, optArgs) = allArgs.splitAt(intLen[Args])
         val i = input.cast[Input].get
-        val a = ftArgs(args).get
+        val a = ftArgs.value(args).get
         val o = ftOpt(optArgs).get
         filter(i, a, o)
       }
@@ -55,27 +56,27 @@ package object filters {
     val registry: MMap[String, Filter] = MMap(
       "split" -> split,
       "json" -> json,
-      // "date" -> Date(),
-      // "slice" -> Slice(),
-      // "join" -> Join(),
-      // "size" -> Size(),
-      // "first" -> First(),
-      // "last" -> Last(),
-      // "prepend" -> Prepend(),
-      // "append" -> Append(),
-      // "capitalize" -> Capitalize(),
-      // "downcase" -> Downcase(),
-      // "upcase" -> Upcase(),
-      // "escape" -> Escape(),
-      // "remove" -> Remove(),
-      // "replace" -> Replace(),
+      "date" -> Date(),
+      "slice" -> slice,
+      "join" -> join,
+      "size" -> size,
+      "first" -> first,
+      "last" -> last,
+      "prepend" -> prepend,
+      "append" -> append,
+      "capitalize" -> capitalize,
+      "downcase" -> downcase,
+      "upcase" -> upcase,
+      "escape" -> escape,
+      "remove" -> remove,
+      "replace" -> replace,
       "reverse" -> reverse
     )
   }
 
   /** Represents an empty set of arguments or optarguments.
     */
-  type Empty = StringValue :: HNil
+  type Empty = HNil
 
   object Empty {
     import scala.collection.GenTraversable
@@ -90,13 +91,14 @@ package object filters {
     }
   }
 
-  def unknownFilter(name: String) = new Filter {
-    def name: String = name
+  def unknownFilter(n: String) = new Filter {
+    def name: String = n
     def filter(input: Input, args: Args, optArgs: OptArgs)(
         implicit ctx: Context): ValidatedFragment[Value] = ???
     override def apply(input: Value, allArgs: List[Value])(
-        implicit ctx: Context): ValidatedFragment[Value] =
+        implicit ctx: Context): ValidatedFragment[Value] = {
       failFragment(UnknownFilterName(name))
+    }
   }
 
   val split = Filter[StringValue, StringValue :: HNil, Empty]("split") {
@@ -145,322 +147,204 @@ package object filters {
       }
   }
 
-// case class Join()
-//     extends Filter
-//     with InputType(ValueType.List)
-//     with FixedArgs(ValueType.String)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   def name = "join"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     val delim = args(0).asInstanceOf[StringValue]
-//     input match {
-//       case ListValue(v) =>
-//         Try(StringValue(v.map(_.render().get).mkString(delim.v)))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val join = Filter[ListValue, StringValue :: HNil, Empty]("join") {
+    (ctx, filter, input, args, optArgs) =>
+      val delim = args.head.get
+      val elems = Result.sequence(input.get.map(_.render()(ctx)))
+      elems.map(es => StringValue(es.mkString(delim)))
+  }
 
-// case class Capitalize()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with NoArgs
-//     with NoKwArgs {
-//   def name = "capitalize"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     input match {
-//       case StringValue(v) =>
-//         Try(StringValue(Character.toUpperCase(v(0)) + v.substring(1)))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val capitalize = Filter[StringValue, Empty, Empty]("capitalize") {
+    (ctx, filter, input, args, optArgs) =>
+      val i = input.get
+      succeed(StringValue(Character.toUpperCase(i(0)) + i.substring(1)))
+  }
 
-// case class Downcase()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with NoArgs
-//     with NoKwArgs {
-//   def name = "downcase"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     input match {
-//       case StringValue(v) =>
-//         Try(StringValue(v.map(c => Character.toLowerCase(c)).mkString))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val downcase = Filter[StringValue, Empty, Empty]("downcase") {
+    (ctx, filter, input, args, optArgs) =>
+      succeed(
+        StringValue(input.get.map(c => Character.toLowerCase(c)).mkString))
+  }
 
-// case class Upcase()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with NoArgs
-//     with NoKwArgs {
-//   def name = "upcase"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     input match {
-//       case StringValue(v) =>
-//         Try(StringValue(v.map(c => Character.toUpperCase(c)).mkString))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val upcase = Filter[StringValue, Empty, Empty]("upcase") {
+    (ctx, filter, input, args, optArgs) =>
+      succeed(
+        StringValue(input.get.map(c => Character.toUpperCase(c)).mkString))
+  }
 
-// case class Append()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with FixedArgs(ValueType.String)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   def name = "append"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     val end = args(0).asInstanceOf[StringValue]
-//     input match {
-//       case StringValue(v) => Try(StringValue(v + end.v))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val prepend = Filter[StringValue, StringValue :: HNil, Empty]("prepend") {
+    (ctx, filter, input, args, optArgs) =>
+      val start = args.head.get
+      succeed(StringValue(start + input.get))
+  }
 
-// case class Prepend()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with FixedArgs(ValueType.String)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   def name = "prepend"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     val start = args(0).asInstanceOf[StringValue]
-//     input match {
-//       case StringValue(v) => Try(StringValue(start.v + v))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val append = Filter[StringValue, StringValue :: HNil, Empty]("append") {
+    (ctx, filter, input, args, optArgs) =>
+      val start = args.head.get
+      succeed(StringValue(input.get + start))
+  }
 
-// case class Escape()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with NoArgs
-//     with NoKwArgs {
-//   def name = "escape"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     input match {
-//       case StringValue(v) =>
-//         Try(
-//           StringValue(
-//             v.replace("<", "&lt;")
-//               .replace(">", "&gt;")
-//               .replace("\"", "&quot;")
-//               .replace("&", "&amp;")))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val escape = Filter[StringValue, Empty, Empty]("escape") {
+    (ctx, filter, input, args, optArgs) =>
+      succeed(
+        StringValue(
+          input.get
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("&", "&amp;")))
+  }
 
-// case class Remove()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with FixedArgs(ValueType.String)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   def name = "remove"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     val pattern = args(0).asInstanceOf[StringValue]
-//     input match {
-//       case StringValue(v) => Try(StringValue(v.replace(pattern.v, "")))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val remove = Filter[StringValue, StringValue :: HNil, Empty]("remove") {
+    (ctx, filter, input, args, optArgs) =>
+      val pattern = args.head.get
+      succeed(StringValue(input.get.replace(pattern, "")))
+  }
 
-// case class Replace()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with FixedArgs(ValueType.String, ValueType.String)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   def name = "replace"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(implicit ctx: Context) = {
-//     val pattern = args(0).asInstanceOf[StringValue]
-//     val replacement = args(1).asInstanceOf[StringValue]
-//     input match {
-//       case StringValue(v) =>
-//         Try(StringValue(v.replace(pattern.v, replacement.v)))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+  val replace =
+    Filter[StringValue, StringValue :: StringValue :: HNil, Empty]("replace") {
+      (ctx, filter, input, args, optArgs) =>
+        val pattern = args.head.get
+        val replacement = args.tail.head.get
+        succeed(StringValue(input.get.replace(pattern, replacement)))
+    }
 
-// case class Date()
-//     extends Filter
-//     with InputType(ValueType.String | ValueType.Integer)
-//     with FixedArgs(ValueType.String)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   import java.text.SimpleDateFormat
-//   import java.util.Locale
+  object Date {
+    import java.text.SimpleDateFormat
+    import java.util.Locale
 
-//   def name = "date"
-//   val locale = Locale.ENGLISH
-//   val datePatterns: List[String] =
-//     List("yyyy-MM-dd HH:mm:ss", "EEE MMM dd hh:mm:ss yyyy")
+    case class InvalidDate(filter: Filter, date: String)
+        extends ExtensionError {
+      def description = s"`$date` is not a valid date."
+    }
 
-//   def liquidToJavaFormat =
-//     Map(
-//       // %% - Literal ``%'' character
-//       '%' -> new SimpleDateFormat("%", locale),
-//       // %a - The abbreviated weekday name (``Sun'')
-//       'a' -> new SimpleDateFormat("EEE", locale),
-//       // %A - The  full  weekday  name (``Sunday'')
-//       'A' -> new SimpleDateFormat("EEEE", locale),
-//       // %b - The abbreviated month name (``Jan'')
-//       'b' -> new SimpleDateFormat("MMM", locale),
-//       'h' -> new SimpleDateFormat("MMM", locale),
-//       // %B - The  full  month  name (``January'')
-//       'B' -> new SimpleDateFormat("MMMM", locale),
-//       // %c - The preferred local date and time representation
-//       'c' -> new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy", locale),
-//       // %d - Day of the month (01..31)
-//       'd' -> new SimpleDateFormat("dd", locale),
-//       // %H - Hour of the day, 24-hour clock (00..23)
-//       'H' -> new SimpleDateFormat("HH", locale),
-//       // %I - Hour of the day, 12-hour clock (01..12)
-//       'I' -> new SimpleDateFormat("hh", locale),
-//       // %j - Day of the year (001..366)
-//       'j' -> new SimpleDateFormat("DDD", locale),
-//       // %m - Month of the year (01..12)
-//       'm' -> new SimpleDateFormat("MM", locale),
-//       // %M - Minute of the hour (00..59)
-//       'M' -> new SimpleDateFormat("mm", locale),
-//       // %p - Meridian indicator (``AM''  or  ``PM'')
-//       'p' -> new SimpleDateFormat("a", locale),
-//       // %S - Second of the minute (00..60)
-//       'S' -> new SimpleDateFormat("ss", locale),
-//       // %U - Week  number  of the current year,
-//       //      starting with the first Sunday as the first
-//       //      day of the first week (00..53)
-//       'U' -> new SimpleDateFormat("ww", locale),
-//       // %W - Week  number  of the current year,
-//       //      starting with the first Monday as the first
-//       //      day of the first week (00..53)
-//       'W' -> new SimpleDateFormat("ww", locale),
-//       // %w - Day of the week (Sunday is 0, 0..6)
-//       'w' -> new SimpleDateFormat("F", locale),
-//       // %x - Preferred representation for the date alone, no time
-//       'x' -> new SimpleDateFormat("MM/dd/yy", locale),
-//       // %X - Preferred representation for the time alone, no date
-//       'X' -> new SimpleDateFormat("HH:mm:ss", locale),
-//       // %y - Year without a century (00..99)
-//       'y' -> new SimpleDateFormat("yy", locale),
-//       // %Y - Year with century
-//       'Y' -> new SimpleDateFormat("yyyy", locale),
-//       // %Z - Time zone name
-//       'Z' -> new SimpleDateFormat("z", locale)
-//     )
+    def toSeconds(date: String): Option[Long] = {
+      datePatterns
+        .map(pattern =>
+          Try(
+            new SimpleDateFormat(pattern, locale).parse(date).getTime / 1000L))
+        .map(_.toOption)
+        .flatten
+        .headOption
+    }
 
-//   def toSeconds(date: String): Option[Long] = {
-//     datePatterns
-//       .map(pattern =>
-//         Try(new SimpleDateFormat(pattern, locale).parse(date).getTime / 1000L))
-//       .map(_.toOption)
-//       .flatten
-//       .headOption
-//   }
+    val locale = Locale.ENGLISH
+    val datePatterns: List[String] =
+      List("yyyy-MM-dd HH:mm:ss", "EEE MMM dd hh:mm:ss yyyy")
 
-//   case class InvalidDate(filter: Filter, date: String) extends ExtensionError {
-//     def description = s"`$date` is not a valid date."
-//   }
-//   override def filter(
-//       input: Value,
-//       args: List[Value],
-//       kwargs: Map[String, Value])(implicit ctx: Context): Validated[Value] = {
-//     val seconds: Long = input match {
-//       case StringValue(v) if v == "now" => System.currentTimeMillis / 1000L
-//       case StringValue(v) =>
-//         toSeconds(v).getOrElse(return failFragment(InvalidDate(this, v)))
-//       case IntValue(v) => v
-//       case v => return failFragment(UnexpectedValueType(v)); 1L
-//     }
-//     val date = new java.util.Date(seconds * 1000L)
+    def liquidToJavaFormat =
+      Map(
+        // %% - Literal ``%'' character
+        '%' -> new SimpleDateFormat("%", locale),
+        // %a - The abbreviated weekday name (``Sun'')
+        'a' -> new SimpleDateFormat("EEE", locale),
+        // %A - The  full  weekday  name (``Sunday'')
+        'A' -> new SimpleDateFormat("EEEE", locale),
+        // %b - The abbreviated month name (``Jan'')
+        'b' -> new SimpleDateFormat("MMM", locale),
+        'h' -> new SimpleDateFormat("MMM", locale),
+        // %B - The  full  month  name (``January'')
+        'B' -> new SimpleDateFormat("MMMM", locale),
+        // %c - The preferred local date and time representation
+        'c' -> new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy", locale),
+        // %d - Day of the month (01..31)
+        'd' -> new SimpleDateFormat("dd", locale),
+        // %H - Hour of the day, 24-hour clock (00..23)
+        'H' -> new SimpleDateFormat("HH", locale),
+        // %I - Hour of the day, 12-hour clock (01..12)
+        'I' -> new SimpleDateFormat("hh", locale),
+        // %j - Day of the year (001..366)
+        'j' -> new SimpleDateFormat("DDD", locale),
+        // %m - Month of the year (01..12)
+        'm' -> new SimpleDateFormat("MM", locale),
+        // %M - Minute of the hour (00..59)
+        'M' -> new SimpleDateFormat("mm", locale),
+        // %p - Meridian indicator (``AM''  or  ``PM'')
+        'p' -> new SimpleDateFormat("a", locale),
+        // %S - Second of the minute (00..60)
+        'S' -> new SimpleDateFormat("ss", locale),
+        // %U - Week  number  of the current year,
+        //      starting with the first Sunday as the first
+        //      day of the first week (00..53)
+        'U' -> new SimpleDateFormat("ww", locale),
+        // %W - Week  number  of the current year,
+        //      starting with the first Monday as the first
+        //      day of the first week (00..53)
+        'W' -> new SimpleDateFormat("ww", locale),
+        // %w - Day of the week (Sunday is 0, 0..6)
+        'w' -> new SimpleDateFormat("F", locale),
+        // %x - Preferred representation for the date alone, no time
+        'x' -> new SimpleDateFormat("MM/dd/yy", locale),
+        // %X - Preferred representation for the time alone, no date
+        'X' -> new SimpleDateFormat("HH:mm:ss", locale),
+        // %y - Year without a century (00..99)
+        'y' -> new SimpleDateFormat("yy", locale),
+        // %Y - Year with century
+        'Y' -> new SimpleDateFormat("yyyy", locale),
+        // %Z - Time zone name
+        'Z' -> new SimpleDateFormat("z", locale)
+      )
 
-//     val format = args(0).asInstanceOf[StringValue].v
-//     val calendar = java.util.Calendar.getInstance()
-//     calendar.setTime(date)
+    val date =
+      Filter[StringValue | IntValue, StringValue :: HNil, Empty]("date") {
+        (ctx, filter, input, args, optArgs) =>
+          val seconds: ValidatedFragment[Long] = input match {
+            case StringValue(v) if v == "now" =>
+              succeed(System.currentTimeMillis / 1000L)
+            case StringValue(v) =>
+              toSeconds(v)
+                .map(succeed)
+                .getOrElse(failFragment(InvalidDate(filter, v)))
+            case IntValue(v) => succeed(v)
+            case v => failFragment(UnexpectedValueType(v))
+          }
+          val date = seconds.map(s => new java.util.Date(s * 1000L))
 
-//     val builder = new StringBuilder();
+          val format = args.head.get
 
-//     var i = 0
-//     while (i < format.length) {
-//       val ch = format.charAt(i);
-//       if (ch == '%') {
-//         i += 1
+          date.map { date =>
+            val calendar = java.util.Calendar.getInstance()
+            calendar.setTime(date)
 
-//         if (i == format.length()) {
-//           builder.append("%")
-//         } else {
-//           val next = format.charAt(i);
+            val builder = new StringBuilder();
 
-//           val javaFormat = liquidToJavaFormat.get(next);
+            var i = 0
+            while (i < format.length) {
+              val ch = format.charAt(i);
+              if (ch == '%') {
+                i += 1
 
-//           javaFormat match {
-//             case Some(f) => builder.append(f.format(date))
-//             case _ => builder.append("%").append(next);
-//           }
-//         }
-//       } else {
-//         builder.append(ch);
-//       }
-//       i += 1
-//     }
-//     Result.valid(StringValue(builder.toString))
-//   }
-// }
+                if (i == format.length()) {
+                  builder.append("%")
+                } else {
+                  val next = format.charAt(i);
 
-// case class Slice()
-//     extends Filter
-//     with InputType(ValueType.String)
-//     with FixedArgs(ValueType.Integer)
-//     with NoOptArgs
-//     with NoKwArgs {
-//   def name = "slice"
-//   override def filter(input: Value,
-//                       args: List[Value],
-//                       kwargs: Map[String, Value])(
-//       // TODO: Support negative indexes
-//       implicit ctx: Context): Validated[Value] = {
-//     val start = args(0).asInstanceOf[IntValue].v
-//     val stop = args.lift(1).map(_.asInstanceOf[IntValue].v).getOrElse(start)
-//     input match {
-//       case StringValue(v) => Result.valid(StringValue(v.substring(start, stop + 1)))
-//       case v => failFragment(UnexpectedValueType(v))
-//     }
-//   }
-// }
+                  val javaFormat = liquidToJavaFormat.get(next);
 
-// import shapeless._
-// import shapeless.syntax.std.traversable._
-// object ValueTypeables {
-// }
+                  javaFormat match {
+                    case Some(f) => builder.append(f.format(date))
+                    case _ => builder.append("%").append(next);
+                  }
+                }
+              } else {
+                builder.append(ch);
+              }
+              i += 1
+            }
+            StringValue(builder.toString)
+          }
+      }
+    def apply() = date
+  }
+
+  val slice = Filter[StringValue, IntValue :: HNil, HNil]("slice") {
+    (ctx, filter, input, args, optArgs) =>
+      // TODO: Support negative indexes
+      val start = args.head.get
+      // val stop = optArgs.head.getOrElse(start)
+      val stop = start
+      succeed(StringValue(input.get.substring(start, stop + 1)))
+  }
 
 // object FromMap {
 //   implicit def caseClassFromMap[T <: HList, C](map: Map[String, Value])(implicit kw: Lazy[FromMap[T]],

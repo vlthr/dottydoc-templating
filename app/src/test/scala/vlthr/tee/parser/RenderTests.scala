@@ -39,45 +39,21 @@ class RenderTests {
     })
     .withIncludeDir(includeDir)
 
-  // @Test def testCustomFilter() = {
-  //   case class CustomFilter()
-  //       extends Filter
-  //       with InputType(ValueType.Integer)
-  //       with FixedArgs(ValueType.Integer)
-  //       with FixedOptArgs(ValueType.Integer)
-  //       with OptKwArgs("limit" -> ValueType.Integer) {
-  //     def name = "customFilter"
-  //     def filter(input: Value, args: List[Value], kwargs: Map[String, Value])(
-  //         implicit ctx: Context): Validated[Value] = {
-  //       val a = args(0).asInstanceOf[IntValue].v
-  //       val b = args(1).asInstanceOf[IntValue].v
-  //       val c = kwargs("c").asInstanceOf[IntValue].v
-  //       Valid(IntValue(a + b + c))
-  //     }
-  //   }
-  //   val body = """{{ 1 | customFilter: 1, 1 c: 1 }}"""
-  //   implicit val newCtx: Context = ctx.withFilter(CustomFilter())
-  //   Liquid.renderString(body, environment, includeDir, ctx = Some(newCtx)) match {
-  //     case Result.valid(output) => assertEquals("3", output)
-  //     case Failure(f) => fail("Custom filter could not render.")
-  //   }
-  //   ()
-  // }
-
   @Test def testHListFilter() = {
-    import vlthr.tee.filters._
     import shapeless._
-    // case class F1KwArgs(x: Option[IntValue])
-    // val f1 = Filter[StringValue, StringValue :: HNil, Empty]("f1") { (ctx, filter, input, args, optArgs) =>
-    //   val pattern = args.head.get
-    //   val stringToSplit = input.get
-    //   Result.valid(Value.create(stringToSplit.split(pattern).toList))
-    // }
-    // f1(IntValue(1), IntValue(1) :: StringValue("a") :: Nil) match {
-    //   case Valid(output) => assertEquals(IntValue(1), output)
-    //   case Invalid(f) => fail("Filter could not render.")
-    //   case Invalids(f) => fail("Filter could not render.")
-    // }
+    import vlthr.tee.filters._
+    import vlthr.tee.core.Value._
+    val f1 = Filter[IntValue, StringValue :: HNil, Empty]("f1") {
+      (ctx, filter, input, args, optArgs) =>
+        val pattern = args.head.get
+        val n = input.get
+        Result.valid(StringValue(s"$n, $pattern"))
+    }
+    f1(IntValue(1), StringValue("a") :: Nil) match {
+      case Valid(output) => assertEquals(StringValue("1, a"), output)
+      case Invalid(f) => fail("Filter could not render.")
+      case Invalids(f) => fail("Filter could not render.")
+    }
     ()
   }
 }

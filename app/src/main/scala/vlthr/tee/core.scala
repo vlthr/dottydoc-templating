@@ -293,28 +293,72 @@ object Value {
       def cast(t: Any): Option[V] = f(t)
       def describe = name
     }
-  implicit val intTypeable: Typeable[IntValue] = makeValueTypeable("IntValue") {
-    case c: IntValue => Some(c)
-    case _ => None
-  }
-  implicit val mapTypeable: Typeable[MapValue] = makeValueTypeable("MapValue") {
-    case c: MapValue => Some(c)
-    case _ => None
-  }
-  implicit val listTypeable: Typeable[ListValue] = makeValueTypeable("ListValue") {
-    case c: ListValue => Some(c)
-    case _ => None
-  }
-  implicit val booleanTypeable: Typeable[BooleanValue] = makeValueTypeable("BooleanValue") {
-    case c: BooleanValue => Some(c)
-    case _ => None
-  }
-  implicit val stringTypeable: Typeable[StringValue] = makeValueTypeable("StringValue") {
-    case c: StringValue => Some(c)
-    case _ => None
-  }
-  implicit val nullTypeable: Typeable[NullValue] = makeValueTypeable("NullValue") {
-    case c: NullValue => Some(c)
-    case _ => None
-  }
+  implicit val intTypeable: Typeable[IntValue] =
+    new Typeable[IntValue] {
+      def cast(t: Any): Option[IntValue] = t match {
+        case c: IntValue => Some(c)
+        case _ => None
+      }
+
+      def describe: String = s"IntValue"
+    }
+
+  implicit val stringTypeable: Typeable[StringValue] =
+    new Typeable[StringValue] {
+      def cast(t: Any): Option[StringValue] = t match {
+        case v: StringValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"StringValue"
+    }
+  implicit val mapTypeable: Typeable[MapValue] =
+    new Typeable[MapValue] {
+      def cast(t: Any): Option[MapValue] = t match {
+        case v: MapValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"MapValue"
+    }
+  implicit val listTypeable: Typeable[ListValue] =
+    new Typeable[ListValue] {
+      def cast(t: Any): Option[ListValue] = t match {
+        case v: ListValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"ListValue"
+    }
+  implicit val boolTypeable: Typeable[BooleanValue] =
+    new Typeable[BooleanValue] {
+      def cast(t: Any): Option[BooleanValue] = t match {
+        case v: BooleanValue => Some(v)
+        case _ => None
+      }
+
+      def describe: String = s"BooleanValue"
+    }
+  // implicit val intTypeable: Typeable[IntValue] = makeValueTypeable("IntValue") {
+  // }
+  // implicit val mapTypeable: Typeable[MapValue] = makeValueTypeable("MapValue") {
+  //   case c: MapValue => Some(c)
+  //   case _ => None
+  // }
+  // implicit val listTypeable: Typeable[ListValue] = makeValueTypeable("ListValue") {
+  //   case c: ListValue => Some(c)
+  //   case _ => None
+  // }
+  // implicit val booleanTypeable: Typeable[BooleanValue] = makeValueTypeable("BooleanValue") {
+  //   case c: BooleanValue => Some(c)
+  //   case _ => None
+  // }
+  // implicit val stringTypeable: Typeable[StringValue] = makeValueTypeable("StringValue") {
+  //   case c: StringValue => Some(c)
+  //   case _ => None
+  // }
+  // implicit val nullTypeable: Typeable[NullValue] = makeValueTypeable("NullValue") {
+  //   case c: NullValue => Some(c)
+  //   case _ => None
+  // }
 }
