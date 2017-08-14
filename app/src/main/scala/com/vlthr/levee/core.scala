@@ -1,6 +1,6 @@
-package vlthr.tee.core
-import vlthr.tee.filters._
-import vlthr.tee.core.Errors._
+package com.vlthr.levee.core
+import com.vlthr.levee.filters._
+import com.vlthr.levee.core.Errors._
 import shapeless._
 import shapeless.ops.hlist.HKernelAux
 import shapeless.ops.traversable._

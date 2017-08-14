@@ -1,10 +1,10 @@
-package vlthr.tee.core
+package com.vlthr.levee.core
 import org.antlr.v4.runtime.{Recognizer, RecognitionException}
 import scala.util.{Try, Success, Failure}
-import vlthr.tee.util.Util
+import com.vlthr.levee.util.Util
 import validation._
 import validation.Result.{Valid, Invalids, Invalid}
-import vlthr.tee.filters.Filter
+import com.vlthr.levee.filters.Filter
 
 package object Errors {
   type Validated[A] = Result[Error, A]

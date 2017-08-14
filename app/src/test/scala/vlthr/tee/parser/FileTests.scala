@@ -1,4 +1,4 @@
-package vlthr.tee.parser
+package com.vlthr.levee.parser
 
 import scala.io.Source
 import scala.util.{Success, Failure, Try}
@@ -7,8 +7,8 @@ import org.junit.Assert._
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-import vlthr.tee.core._
-import vlthr.tee.util._
+import com.vlthr.levee.core._
+import com.vlthr.levee.util._
 import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets

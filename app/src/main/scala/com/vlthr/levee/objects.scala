@@ -1,9 +1,9 @@
-package vlthr.tee.core
+package com.vlthr.levee.core
 import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
-import vlthr.tee.parser.Liquid
+import com.vlthr.levee.parser.Liquid
 import scala.util.control.NonFatal
-import vlthr.tee.core.Errors._
+import com.vlthr.levee.core.Errors._
 import java.nio.file.Paths
 import validation.Result
 

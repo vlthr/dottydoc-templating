@@ -1,7 +1,7 @@
-package vlthr.tee.typetraits
-import vlthr.tee.core.Errors._
+package com.vlthr.levee.typetraits
+import com.vlthr.levee.core.Errors._
 import validation.Result
-import vlthr.tee.core._
+import com.vlthr.levee.core._
 
 package object TypeTraits {
   abstract trait ArgSpec { self: Extension with OptArgSpec =>

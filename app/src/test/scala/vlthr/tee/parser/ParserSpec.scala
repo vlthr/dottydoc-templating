@@ -1,10 +1,10 @@
-package vlthr.tee.parser
+package com.vlthr.levee.parser
 
 import scala.io.Source
 import scala.util.Try
 import org.junit._
 import org.junit.Assert._
-import vlthr.tee.core._
+import com.vlthr.levee.core._
 
 class ParserTests {
   def assertParsed(str: String)(isMatch: PartialFunction[Obj, Boolean]): Unit = {

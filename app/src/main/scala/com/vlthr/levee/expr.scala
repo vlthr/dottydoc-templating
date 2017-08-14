@@ -1,9 +1,9 @@
-package vlthr.tee.core
+package com.vlthr.levee.core
 import scala.util.control.NonFatal
 import scala.collection.mutable.{Map => MMap}
-import vlthr.tee.core.Errors._
+import com.vlthr.levee.core.Errors._
 import validation.Result
-import vlthr.tee.filters._
+import com.vlthr.levee.filters._
 import shapeless._
 import shapeless.ops.traversable._
 import shapeless.ops.hlist.HKernelAux

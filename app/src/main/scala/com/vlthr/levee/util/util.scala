@@ -1,6 +1,6 @@
-package vlthr.tee.util
+package com.vlthr.levee.util
 
-import vlthr.tee.core._
+import com.vlthr.levee.core._
 import scala.io.Source
 import scala.util.{Success, Failure, Try}
 import scala.collection.JavaConverters._

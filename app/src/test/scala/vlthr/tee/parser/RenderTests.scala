@@ -1,4 +1,4 @@
-package vlthr.tee.parser
+package com.vlthr.levee.parser
 
 import scala.io.Source
 import scala.util.{Success, Failure, Try}
@@ -7,9 +7,9 @@ import org.junit.Assert._
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-import vlthr.tee.core._
-import vlthr.tee.util._
-import vlthr.tee.typetraits.TypeTraits._
+import com.vlthr.levee.core._
+import com.vlthr.levee.util._
+import com.vlthr.levee.typetraits.TypeTraits._
 import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets
@@ -41,8 +41,8 @@ class RenderTests {
 
   @Test def testHListFilter() = {
     import shapeless._
-    import vlthr.tee.filters._
-    import vlthr.tee.core.Value._
+    import com.vlthr.levee.filters._
+    import com.vlthr.levee.core.Value._
     val f1 = Filter[IntValue, StringValue :: HNil, Empty]("f1") {
       (ctx, filter, input, args, optArgs) =>
         val pattern = args.head.get

@@ -1,12 +1,12 @@
-package vlthr.tee
+package com.vlthr.levee
 import scala.util.{Try, Success, Failure}
 import scala.util.control.NonFatal
-import vlthr.tee.parser.Liquid
-import vlthr.tee.core._
-import vlthr.tee.util._
-import vlthr.tee.core.Errors._
+import com.vlthr.levee.parser.Liquid
+import com.vlthr.levee.core._
+import com.vlthr.levee.util._
+import com.vlthr.levee.core.Errors._
 import validation.Result
-import vlthr.tee.typetraits.TypeTraits._
+import com.vlthr.levee.typetraits.TypeTraits._
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import shapeless._
