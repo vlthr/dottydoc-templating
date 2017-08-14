@@ -10,9 +10,13 @@ import shapeless.ops.hlist.HKernelAux
 
 abstract trait BooleanExpr extends Expr {
   override def eval()(implicit ctx: Context): Validated[Value] =
-    (left.eval() and right.eval()) { (l, r) =>
-      BooleanValue(op(l, r))
-    // fail(IncomparableValues(this, l, r)))
+    (left.eval() zip right.eval()) flatMap { (l, r) =>
+      try {
+        Result.valid(BooleanValue(op(l, r)))
+      }
+      catch {
+        case NonFatal(e) => fail(UncaughtExceptionError(e))
+      }
     }
   def left: Expr
   def right: Expr
