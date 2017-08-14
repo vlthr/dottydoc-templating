@@ -1,6 +1,6 @@
 package com.vlthr.levee.core
 import com.vlthr.levee.filters._
-import com.vlthr.levee.core.Errors._
+import com.vlthr.levee.core.error._
 import shapeless._
 import shapeless.ops.hlist.HKernelAux
 import shapeless.ops.traversable._

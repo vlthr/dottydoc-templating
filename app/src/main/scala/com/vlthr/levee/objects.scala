@@ -3,7 +3,7 @@ import scala.collection.mutable.{Map => MMap}
 import scala.util.{Try, Success, Failure}
 import com.vlthr.levee.parser.Liquid
 import scala.util.control.NonFatal
-import com.vlthr.levee.core.Errors._
+import com.vlthr.levee.core.error._
 import java.nio.file.Paths
 import validation.Result
 

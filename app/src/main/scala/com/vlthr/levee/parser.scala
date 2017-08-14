@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.tree._
 import org.antlr.v4.runtime.misc.Interval
 import scala.collection.mutable.{Buffer, Map => MMap}
 import com.vlthr.levee.core._
-import com.vlthr.levee.core.Errors._
+import com.vlthr.levee.core.error._
 import com.vlthr.levee.filters._
 import com.vlthr.levee.util.Util
 import scala.util.{Success, Failure, Try}

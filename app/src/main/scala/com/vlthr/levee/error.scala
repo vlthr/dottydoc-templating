@@ -6,7 +6,7 @@ import validation._
 import validation.Result.{Valid, Invalids, Invalid}
 import com.vlthr.levee.filters.Filter
 
-package object Errors {
+package object error {
   type Validated[A] = Result[Error, A]
   type ValidatedFragment[A] = Result[ErrorFragment, A]
 

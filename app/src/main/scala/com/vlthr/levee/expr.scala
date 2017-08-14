@@ -1,7 +1,7 @@
 package com.vlthr.levee.core
 import scala.util.control.NonFatal
 import scala.collection.mutable.{Map => MMap}
-import com.vlthr.levee.core.Errors._
+import com.vlthr.levee.core.error._
 import validation.Result
 import com.vlthr.levee.filters._
 import shapeless._

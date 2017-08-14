@@ -4,7 +4,7 @@ import scala.util.control.NonFatal
 import com.vlthr.levee.parser.Liquid
 import com.vlthr.levee.core._
 import com.vlthr.levee.util._
-import com.vlthr.levee.core.Errors._
+import com.vlthr.levee.core.error._
 import validation.Result
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
