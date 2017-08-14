@@ -6,7 +6,6 @@ import com.vlthr.levee.core._
 import com.vlthr.levee.util._
 import com.vlthr.levee.core.Errors._
 import validation.Result
-import com.vlthr.levee.typetraits.TypeTraits._
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import shapeless._

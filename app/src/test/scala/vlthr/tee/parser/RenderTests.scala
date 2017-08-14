@@ -9,7 +9,6 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import com.vlthr.levee.core._
 import com.vlthr.levee.util._
-import com.vlthr.levee.typetraits.TypeTraits._
 import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
 import java.nio.charset.StandardCharsets
