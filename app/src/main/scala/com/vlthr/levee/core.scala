@@ -154,11 +154,14 @@ abstract trait Extension {
   def extensionType: String
 }
 
+case class ExecutionState(breakWasHit: Boolean, continueWasHit: Boolean)
+
 case class Context(mappings: MMap[String, Value],
                    customFilters: Map[String, Filter],
                    customTags: Map[String, Tag],
                    parent: Option[Context],
-                   includeDir: String) {
+                   includeDir: String,
+                   var executionState: ExecutionState) {
   def lookup(s: String): Option[Value] =
     mappings.get(s).orElse(parent.flatMap(_.lookup(s)))
   def withParams(params: Map[String, Any]) = copy(mappings = mappings ++ Value.createMap(params))
@@ -173,7 +176,7 @@ case class Context(mappings: MMap[String, Value],
 
 object Context {
   type TagConstructor = (ParseContext, List[Expr]) => TagNode
-  def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include")
+  def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include", ExecutionState(false, false))
   def createChild(parent: Context): Context = parent.copy(parent=Some(parent))
 }
 
