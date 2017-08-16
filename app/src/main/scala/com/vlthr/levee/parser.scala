@@ -21,51 +21,14 @@ object Liquid {
     ParseContext(sourcePosition)
   }
 
-  def parseExpr(node: String): Expr = {
-    val parser = makeParser(node, lexerMode = Object())
-    val tree = parser.expr()
-    implicit val ctx = Context.createNew()
-    val visitor = new LiquidExprVisitor(SourceFile(node, "./"))
-    tree.accept(visitor)
-  }
-
-  def parseNode(node: String): Obj = {
-    val parser = makeParser(node)
-    val tree = parser.node()
-    implicit val ctx = Context.createNew()
-    val visitor = new LiquidNodeVisitor(SourceFile(node, "./"))
-    tree.accept(visitor)
-  }
-
-  def parseTemplate(node: String): Obj = {
-    val parser = makeParser(node)
-    val tree = parser.template()
-    implicit val ctx = Context.createNew()
-    val visitor = new LiquidNodeVisitor(SourceFile(node, "./"))
-    tree.accept(visitor)
-  }
-
   def getParseTree(node: String): String = {
-    val input = new ANTLRInputStream(node)
-    val lexer = new LiquidLexer(input)
-    val tokens = new CommonTokenStream(lexer)
-    val parser = new LiquidParser(tokens)
-    lexer.removeErrorListeners();
-    parser.removeErrorListeners();
+    val (parser, errors) = makeParser(SourceFile(node, "in-memory"))
     val tree = parser.template()
     tree.toStringTree(parser)
   }
 
   def parse(file: SourceFile)(implicit ctx: Context): Validated[Obj] = {
-    val input = new ANTLRInputStream(file.body)
-    val lexer = new LiquidLexer(input)
-    val tokens = new CommonTokenStream(lexer)
-    val parser = new LiquidParser(tokens)
-    val errors = new GatherErrors(file)
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(errors);
-    parser.removeErrorListeners();
-    parser.addErrorListener(errors);
+    val (parser, errors) = makeParser(file)
     val tree = parser.template()
     val result = tree.accept(new LiquidNodeVisitor(file))
     if (errors.errors.size != 0) {
@@ -81,49 +44,22 @@ object Liquid {
   def render(path: String,
              params: Map[String, Any],
              includeDir: String): Try[String] = {
-    implicit val c: Context =
+    val c =
       Context.createNew().withParams(params).withIncludeDir(includeDir)
-    toTry(parse(path).flatMap(_.render()))
+    c.renderFile(path)
   }
 
-  def renderString(body: String,
-                   params: Map[String, Any],
-                   includeDir: String,
-                   ctx: Option[Context] = None): Try[String] = {
-    implicit val c = ctx.getOrElse(
-      Context.createNew().withParams(params).withIncludeDir(includeDir))
-    toTry(parse(SourceFile(body, "In-memory file")).flatMap(_.render()))
-  }
-
-  sealed trait LexerMode
-  final case class Default() extends LexerMode
-  final case class Object() extends LexerMode
-
-  def makeParser(text: String,
-                 lexerMode: LexerMode = Default()): LiquidParser = {
-    val input = new ANTLRInputStream(text)
-
+  def makeParser(file: SourceFile): (LiquidParser, GatherErrors) = {
+    val input = new ANTLRInputStream(file.body)
     val lexer = new LiquidLexer(input)
-    lexerMode match {
-      case Object() => lexer.pushMode(LiquidLexer.Object)
-      case Default() =>
-    }
     val tokens = new CommonTokenStream(lexer)
     val parser = new LiquidParser(tokens)
-    parser.setErrorHandler(new BailErrorStrategy());
-    parser
-  }
-}
-
-class ErrorStrategy extends DefaultErrorStrategy {
-  override def reportNoViableAlternative(parser: Parser,
-                                         e: NoViableAltException) = {
-    val msg = s"No viable alternative found"
-    parser.notifyErrorListeners(e.getOffendingToken(), msg, e)
-  }
-  override def reportUnwantedToken(parser: Parser) = {
-    val msg = s"Unwanted token"
-    parser.notifyErrorListeners(msg)
+    val errors = new GatherErrors(file)
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(errors);
+    parser.removeErrorListeners();
+    parser.addErrorListener(errors);
+    (parser, errors)
   }
 }
 
