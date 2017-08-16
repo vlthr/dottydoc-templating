@@ -157,7 +157,7 @@ abstract trait Extension {
   def extensionType: String
 }
 
-case class ExecutionState(breakWasHit: Boolean = false, continueWasHit: Boolean = false)
+case class ExecutionState(var breakWasHit: Boolean = false, var continueWasHit: Boolean = false)
 
 case class Context(mappings: MMap[String, Value],
                    customFilters: Map[String, Filter],

@@ -1,19 +1,25 @@
 package com.vlthr.levee.core
-import scala.collection.mutable.{Map => MMap}
+import scala.collection.mutable.{Buffer, Map => MMap}
 import scala.util.{Try, Success, Failure}
 import com.vlthr.levee.parser.Liquid
 import scala.util.control.NonFatal
 import com.vlthr.levee.core.error._
 import java.nio.file.Paths
 import validation.Result
+import scala.util.control.Breaks._
 
-final case class BlockNode(node: List[Obj])(implicit val pctx: ParseContext)
+final case class BlockNode(nodes: List[Obj])(implicit val pctx: ParseContext)
     extends Obj {
   def render()(implicit ctx: Context) = {
     implicit val newScope = Context.createChild(ctx)
-    val renders: Validated[List[String]] =
-      Result.sequence(node.map(_.render()))
-    renders.map(_.mkString)
+    val renders: Buffer[Validated[String]] = scala.collection.mutable.Buffer()
+    breakable {
+      for (n <- nodes) {
+        if (ctx.executionState.breakWasHit || ctx.executionState.continueWasHit) break
+        renders.append(n.render())
+      }
+    }
+    Result.sequence(renders).map(_.mkString)
   }
 }
 
@@ -71,10 +77,14 @@ final case class ForTag(id: String, expr: Expr, block: Obj)(
     }
     iterable.flatMap { iterable =>
       // For each iteration of the loop, render the body
-      val renders = iterable.map { v =>
-        implicit val forCtx = Context.createChild(ctx)
-        forCtx.mappings.put(id, Value.create(v))
-        block.render()
+      val renders: Buffer[Validated[String]] = Buffer()
+      breakable {
+        for (i <- iterable) {
+          implicit val forCtx = Context.createChild(ctx)
+          forCtx.mappings.put(id, Value.create(i))
+          renders.append(block.render())
+          if (forCtx.executionState.breakWasHit) break
+        }
       }
       // If successful, combine the bodies to a single string
       Result.sequence(renders.toList).map(_.mkString)
@@ -82,9 +92,19 @@ final case class ForTag(id: String, expr: Expr, block: Obj)(
   }
 }
 
-final case class BreakTag()(implicit val pctx: ParseContext) extends TagNode
+final case class BreakTag()(implicit val pctx: ParseContext) extends TagNode {
+  override def render()(implicit ctx: Context): Validated[String] = {
+    ctx.executionState.breakWasHit = true
+    Result.valid("")
+  }
+}
 
-final case class ContinueTag()(implicit val pctx: ParseContext) extends TagNode
+final case class ContinueTag()(implicit val pctx: ParseContext) extends TagNode {
+  override def render()(implicit ctx: Context): Validated[String] = {
+    ctx.executionState.continueWasHit = true
+    Result.valid("")
+  }
+}
 
 final case class IfTag(condition: Expr,
                        thenBlock: Obj,
@@ -103,11 +123,13 @@ final case class IfTag(condition: Expr,
       .getOrElse(valid(None))
     (condEval and thenEval and elsifEvals and elseEval) {
       case (c, t, eis, e) =>
-        // Join all of the ifs to a (condition, body) form and find the first that matches
-        (((c, t) +: eis) ++ e.map(r => (BooleanValue(true), r)).toList)
-          .find { case (cond, body) => cond.truthy }
-          .get
-          ._2
+          // Join all of the ifs to a (condition, body) form and find the first that matches
+          val fixedElse = e.map(r => (BooleanValue(true), r)).getOrElse((BooleanValue(true), ""))
+
+          ((c, t) +: eis :+ fixedElse)
+            .find { case (cond, body) => cond.truthy }
+            .get
+            ._2
     }
   }
 }
