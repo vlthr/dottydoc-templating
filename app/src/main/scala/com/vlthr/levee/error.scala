@@ -10,7 +10,7 @@ package object error {
   type Validated[A] = Result[Error, A]
   type ValidatedFragment[A] = Result[ErrorFragment, A]
 
-  trait Error(pctx: ParseContext) extends Throwable {
+  abstract class Error(pctx: ParseContext) extends Throwable {
     def errorType: String
     def description: String
     override def getMessage: String = {

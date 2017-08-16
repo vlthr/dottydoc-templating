@@ -45,7 +45,7 @@ package object filters {
         val (args, optArgs) = allArgs.splitAt(intLen[Args])
         val i = Result.fromOption(input.cast[Input], InvalidInput(this, input))
         val a = Result.fromOption(ftArgs(args), InvalidArgs(this, args))
-        (i zip a).flatMap { (i, a) =>
+        (i zip a).flatMap { case (i: I, a: A) =>
           filter(i, a, HNil)
         }
       }
@@ -74,7 +74,7 @@ package object filters {
           maxNrOpts - optArgs.size)(None)
         val o = ftOpt(fixedOptArgs).get
 
-        (i zip a).flatMap { (i, a) =>
+        (i zip a).flatMap { case (i: I, a: A) =>
           filter(i, a, o)
         }
       }
@@ -143,36 +143,36 @@ package object filters {
           .writeValueAsString(Util.asJava(input))))
   }
 
-  val size = Filter.noOptArgs[ListValue | StringValue, Empty]("size") {
+  val size = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("size") {
+    (ctx, filter, input, args, optArgs) =>
+    input match {
+      case Inl(list) => succeed(IntValue(list.get.size))
+      case Inr(Inl(string)) => succeed(IntValue(string.get.size))
+    }
+  }
+
+  val first = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("first") {
     (ctx, filter, input, args, optArgs) =>
       input match {
-        case StringValue(v) => succeed(IntValue(v.size))
-        case ListValue(v) => succeed(IntValue(v.size))
+        case Inl(l) => succeed(l.get.head)
+        case Inr(Inl(s)) => succeed(StringValue("" + s.get.head))
       }
   }
 
-  val first = Filter.noOptArgs[ListValue | StringValue, Empty]("first") {
+  val last = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("last") {
     (ctx, filter, input, args, optArgs) =>
-      input match {
-        case StringValue(v) => succeed(StringValue("" + v.head))
-        case ListValue(v) => succeed(v.head)
-      }
+    input match {
+      case Inl(list) => succeed(list.get.last)
+      case Inr(Inl(string)) => succeed(StringValue(""+string.get.last))
+    }
   }
 
-  val last = Filter.noOptArgs[ListValue | StringValue, Empty]("last") {
+  val reverse = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("reverse") {
     (ctx, filter, input, args, optArgs) =>
-      input match {
-        case StringValue(v) => succeed(StringValue("" + v.last))
-        case ListValue(v) => succeed(v.last)
-      }
-  }
-
-  val reverse = Filter.noOptArgs[StringValue | ListValue, Empty]("reverse") {
-    (ctx, filter, input, args, optArgs) =>
-      input match {
-        case StringValue(str) => succeed(StringValue(str.reverse))
-        case ListValue(list) => succeed(ListValue(list.reverse))
-      }
+    input match {
+      case Inl(list) => succeed(ListValue(list.get.reverse))
+      case Inr(Inl(string)) => succeed(StringValue("" + string.get.last))
+    }
   }
 
   val join = Filter[ListValue, StringValue :: HNil, Empty]("join") {
@@ -314,52 +314,53 @@ package object filters {
       )
 
     val date =
-      Filter[IntValue | StringValue, StringValue :: HNil, Empty]("date") {
+      Filter[IntValue :+: StringValue :+: CNil, StringValue :: HNil, Empty]("date") {
         (ctx, filter, input, args, optArgs) =>
-          val seconds: ValidatedFragment[Long] = input match {
-            case StringValue(v) if v == "now" =>
-              succeed(System.currentTimeMillis / 1000L)
-            case StringValue(v) =>
-              toSeconds(v)
-                .map(succeed)
-                .getOrElse(failFragment(InvalidDate(filter, v)))
-            case IntValue(v) => succeed(v)
-          }
-          val date = seconds.map(s => new java.util.Date(s * 1000L))
+        val seconds: ValidatedFragment[Long] = input match {
+          case Inl(int) =>
+            succeed(int.get)
+          case Inr(Inl(string)) if string.get == "now" =>
+            succeed(System.currentTimeMillis / 1000L)
+          case Inr(Inl(string)) =>
+            toSeconds(string.get)
+              .map(succeed)
+              .getOrElse(failFragment(InvalidDate(filter, string.get)))
+        }
+        val date = seconds.map(s => new java.util.Date(s * 1000L))
 
-          val format = args.head.get
+        val format = args.head.get
 
-          date.map { date =>
-            val calendar = java.util.Calendar.getInstance()
-            calendar.setTime(date)
+        date.map { date =>
+          val calendar = java.util.Calendar.getInstance()
+          calendar.setTime(date)
 
-            val builder = new StringBuilder();
+          val builder = new StringBuilder();
 
-            var i = 0
-            while (i < format.length) {
-              val ch = format.charAt(i);
-              if (ch == '%') {
-                i += 1
-
-                if (i == format.length()) {
-                  builder.append("%")
-                } else {
-                  val next = format.charAt(i);
-
-                  val javaFormat = liquidToJavaFormat.get(next);
-
-                  javaFormat match {
-                    case Some(f) => builder.append(f.format(date))
-                    case _ => builder.append("%").append(next);
-                  }
-                }
-              } else {
-                builder.append(ch);
-              }
+          var i = 0
+          while (i < format.length) {
+            val ch = format.charAt(i);
+            if (ch == '%') {
               i += 1
+
+              if (i == format.length()) {
+                builder.append("%")
+              } else {
+                val next = format.charAt(i);
+
+                val javaFormat = liquidToJavaFormat.get(next);
+
+                javaFormat match {
+                  case Some(f) => builder.append(f.format(date))
+                  case _ => builder.append("%").append(next);
+                }
+              }
+            } else {
+              builder.append(ch);
             }
-            StringValue(builder.toString)
+            i += 1
           }
+          StringValue(builder.toString)
+        }
       }
     def apply() = date
   }

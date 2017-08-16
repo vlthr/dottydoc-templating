@@ -1,4 +1,4 @@
-package com.vlthr.levee.core
+ package com.vlthr.levee.core
 import com.vlthr.levee.filters._
 import com.vlthr.levee.util._
 import com.vlthr.levee.parser.Liquid
@@ -10,56 +10,6 @@ import shapeless.syntax.typeable._
 import validation.Result
 import scala.util.{Success, Failure, Try}
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
-
-enum class ValueType {
-  def matches(v: Value): Boolean
-  def |(other: ValueType): ValueType = other match {
-    case u @ ValueType.UnionType(_) => u | this
-    case _ => ValueType.UnionType(Set(this, other))
-  }
-}
-object ValueType {
-  case Integer {
-    def matches(v: Value) = v match {
-      case v: IntValue => true
-      case _ => false
-    }
-  }
-  case String {
-    def matches(v: Value) = v match {
-      case StringValue(_) => true
-      case _ => false
-    }
-  }
-  case Boolean {
-    def matches(v: Value) = v match {
-      case v: BooleanValue => true
-      case _ => false
-    }
-  }
-  case List {
-    def matches(v: Value) = v match {
-      case v: ListValue => true
-      case _ => false
-    }
-  }
-  case Map {
-    def matches(v: Value) = v match {
-      case v: MapValue => true
-      case _ => false
-    }
-  }
-  case Null {
-    def matches(v: Value) = v match {
-      case v: NullValue => true
-      case _ => false
-    }
-  }
-  case UnionType(types: Set[ValueType]) {
-    def matches(v: Value) = types.exists(_.matches(v))
-    override def |(other: ValueType): ValueType = ValueType.UnionType(types + other)
-  }
-}
 
 case class SourceFile(body: String, path: String) {
   final val LF = '\u000A'
@@ -190,6 +140,16 @@ object Context {
   def createChild(parent: Context): Context = parent.copy(parent=Some(parent), executionState=ExecutionState())
 }
 
+ class ValueType(name: String)
+ object ValueType {
+  case object String extends ValueType("String")
+  case object Integer extends ValueType("Integer")
+  case object Boolean extends ValueType("Boolean")
+  case object Map extends ValueType("Map")
+  case object List extends ValueType("List")
+  case object Null extends ValueType("Null")
+}
+
 sealed trait Truthable {
   def truthy: Boolean
 }
@@ -273,7 +233,7 @@ case class UnknownTag(n: String) extends Tag(n) {
     implicit ctx: Context): String = ???
 }
 
-abstract trait Tag(val name: String) extends Extension {
+abstract class Tag(val name: String) extends Extension {
   def extensionType = "tag"
   def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
   def typeCheck(args: List[Value])(implicit ctx: Context): Validated[Unit] = {
@@ -355,39 +315,5 @@ object Value {
       }
 
       def describe: String = s"BooleanValue"
-    }
-
-  /** Temporary fix for implicits not being created for union types
-    */
-  implicit val listStrTypeable: Typeable[ListValue | StringValue] =
-    new Typeable[ListValue | StringValue] {
-      def cast(t: Any): Option[ListValue | StringValue] = t match {
-        case v: ListValue => Some(v)
-        case v: StringValue => Some(v)
-        case _ => None
-      }
-
-      def describe: String = s"BooleanValue"
-    }
-
-  /** Temporary fix for implicits not being created for union types
-    */
-  implicit val intStrTypeable: Typeable[IntValue | StringValue] =
-    new Typeable[IntValue | StringValue] {
-      def cast(t: Any): Option[IntValue | StringValue] = t match {
-        case v: IntValue => Some(v)
-        case v: StringValue => Some(v)
-        case _ => None
-      }
-
-      def describe: String = s"BooleanValue"
-    }
-
-  /** Not working
-    */
-  implicit def unionTypeable[A, B](implicit aType: Typeable[A], bType: Typeable[B]): Typeable[A | B] = new Typeable[A | B] {
-      def cast(t: Any): Option[A | B] = aType.cast(t).orElse(bType.cast(t))
-
-      def describe: String = s"${aType.describe} | ${bType.describe}"
     }
 }

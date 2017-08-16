@@ -124,7 +124,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
       val kwargs =
         if (c.COLON() != null)
           new LiquidKwArgsVisitor(template).visitKwargs(c.kwargs())
-        else Map()
+        else Map[String, Expr]()
       val filter = ctx.getFilter(c.id.getText)
       FilterExpr(visitOutputExpr(c.output_expr()), filter, args, kwargs)
     } else {
@@ -241,7 +241,7 @@ class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
 class LiquidKwArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Map[String, Expr]] {
   override def visitKwargs(c: LiquidParser.KwargsContext): Map[String, Expr] = {
-    if (c == null) Map()
+    val map: Map[String, Expr] = if (c == null) Map()
     else
       Map(
         c.kwarg.asScala
@@ -251,6 +251,7 @@ class LiquidKwArgsVisitor(template: SourceFile)(implicit val ctx: Context)
             val expr = new LiquidExprVisitor(template).visitExpr(ec.expr)
             (id, expr)
           }): _*)
+    map
   }
 }
 

@@ -15,7 +15,7 @@ final case class BlockNode(nodes: List[Obj])(implicit val pctx: ParseContext)
     val renders: Buffer[Validated[String]] = scala.collection.mutable.Buffer()
     breakable {
       for (n <- nodes) {
-        renders.append(n.render())
+        renders.append(n.render()(newScope))
         if (newScope.executionState.breakWasHit || newScope.executionState.continueWasHit) {
           // Block contains a break/continue tag. Propagate it upwards.
           ctx.executionState.breakWasHit = newScope.executionState.breakWasHit
@@ -87,7 +87,7 @@ final case class ForTag(id: String, expr: Expr, block: Obj)(
         for (i <- iterable) {
           implicit val forCtx = Context.createChild(ctx)
           forCtx.mappings.put(id, Value.create(i))
-          renders.append(block.render())
+          renders.append(block.render()(forCtx))
           if (forCtx.executionState.breakWasHit) {
             forCtx.executionState.breakWasHit = false
             break
@@ -125,7 +125,7 @@ final case class IfTag(condition: Expr,
     val elsifEvals = Result.sequence(elsifs.map {
                                        case (cond, body) => cond.eval()
                                      }.toList)
-    (condEval zip elsifEvals) flatMap { (c, eis) =>
+    (condEval zip elsifEvals) flatMap { case (c: Value, eis: List[Value]) =>
         // Join all of the ifs to a (condition, body) form and find the first that matches
       val elseBranch = (BooleanValue(true), TextNode(""))
       val elseifBranches = eis.zip(elsifs.map(_._2))

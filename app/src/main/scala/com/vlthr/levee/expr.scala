@@ -10,9 +10,9 @@ import shapeless.ops.hlist.HKernelAux
 
 abstract trait BooleanExpr extends Expr {
   override def eval()(implicit ctx: Context): Validated[Value] =
-    (left.eval() zip right.eval()) flatMap { (l, r) =>
+    (left.eval() zip right.eval()) flatMap { case (l: Value, r: Value) =>
       try {
-        Result.valid(BooleanValue(op(l, r)))
+        Result.valid(BooleanValue(op(l, r)).asInstanceOf[Value])
       }
       catch {
         case NonFatal(e) => fail(UncaughtExceptionError(e))
