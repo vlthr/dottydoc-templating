@@ -88,12 +88,12 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Obj] {
 
   override def visitNode(c: LiquidParser.NodeContext): Obj = {
-    if (c.tag() != null) {
-      visitTag(c.tag())
-    } else if (c.output() != null) {
-      visitOutput(c.output())
-    } else if (c.TEXT() != null) {
-      visitText(c.TEXT())
+    if (c.tag != null) {
+      visitTag(c.tag)
+    } else if (c.output != null) {
+      visitOutput(c.output)
+    } else if (c.TEXT != null) {
+      visitText(c.TEXT)
     } else {
       throw new Exception("Missing node definition");
     }
@@ -171,7 +171,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
     } else if (c.forTag() != null) {
       val id = c.forTag().forStart().id().getText()
       val expr = visitOutputExpr(c.forTag().forStart().output_expr())
-      val block = visitBlock(c.forTag().block())
+      val block = visitBlock(c.forTag.block)
       ForTag(id, expr, block)
     } else if (c.assignTag() != null) {
       val id = c.assignTag().id().getText()
@@ -197,6 +197,10 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
           .getInputStream()
           .getText(new Interval(c.rawTag.any.start.getStartIndex,
                                 c.rawTag.any.stop.getStopIndex)))
+    } else if (c.breakTag != null) {
+      BreakTag()
+    } else if (c.continueTag != null) {
+      ContinueTag()
     } else if (c.customTag != null) {
       val id = c.customTag.id.getText
       val args =

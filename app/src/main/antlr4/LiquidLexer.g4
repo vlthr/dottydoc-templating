@@ -29,6 +29,8 @@ ELSE       : 'else';
 ELSIF      : 'elsif';
 FOREND     : 'endfor';
 FORSTART   : 'for';
+BREAK      : 'break';
+CONTINUE   : 'continue';
 IFEND      : 'endif';
 IFSTART    : 'if';
 TRUE       : 'true';

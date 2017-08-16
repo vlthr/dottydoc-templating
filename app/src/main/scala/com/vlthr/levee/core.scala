@@ -187,7 +187,7 @@ case class Context(mappings: MMap[String, Value],
 object Context {
   type TagConstructor = (ParseContext, List[Expr]) => TagNode
   def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include", ExecutionState())
-  def createChild(parent: Context): Context = parent.copy(parent=Some(parent))
+  def createChild(parent: Context): Context = parent.copy(parent=Some(parent), executionState=ExecutionState())
 }
 
 sealed trait Truthable {

@@ -15,8 +15,13 @@ final case class BlockNode(nodes: List[Obj])(implicit val pctx: ParseContext)
     val renders: Buffer[Validated[String]] = scala.collection.mutable.Buffer()
     breakable {
       for (n <- nodes) {
-        if (ctx.executionState.breakWasHit || ctx.executionState.continueWasHit) break
         renders.append(n.render())
+        if (newScope.executionState.breakWasHit || newScope.executionState.continueWasHit) {
+          // Block contains a break/continue tag. Propagate it upwards.
+          ctx.executionState.breakWasHit = newScope.executionState.breakWasHit
+          ctx.executionState.continueWasHit = newScope.executionState.continueWasHit
+          break
+        }
       }
     }
     Result.sequence(renders).map(_.mkString)
@@ -83,11 +88,15 @@ final case class ForTag(id: String, expr: Expr, block: Obj)(
           implicit val forCtx = Context.createChild(ctx)
           forCtx.mappings.put(id, Value.create(i))
           renders.append(block.render())
-          if (forCtx.executionState.breakWasHit) break
+          if (forCtx.executionState.breakWasHit) {
+            forCtx.executionState.breakWasHit = false
+            break
+          }
+          forCtx.executionState.continueWasHit = false
         }
       }
       // If successful, combine the bodies to a single string
-      Result.sequence(renders.toList).map(_.mkString)
+      Result.sequence(renders).map(_.mkString)
     }
   }
 }
@@ -113,23 +122,19 @@ final case class IfTag(condition: Expr,
     extends TagNode {
   override def render()(implicit ctx: Context): Validated[String] = {
     val condEval = condition.eval()
-    val thenEval = thenBlock.render()
     val elsifEvals = Result.sequence(elsifs.map {
-      case (cond, body) => cond.eval() zip body.render()
-    })
-    val elseEval: Validated[Option[String]] = elseBlock
-      .map(_.render())
-      .map(r => r.map(s => Some(s)))
-      .getOrElse(valid(None))
-    (condEval and thenEval and elsifEvals and elseEval) {
-      case (c, t, eis, e) =>
-          // Join all of the ifs to a (condition, body) form and find the first that matches
-          val fixedElse = e.map(r => (BooleanValue(true), r)).getOrElse((BooleanValue(true), ""))
-
-          ((c, t) +: eis :+ fixedElse)
-            .find { case (cond, body) => cond.truthy }
-            .get
-            ._2
+                                       case (cond, body) => cond.eval()
+                                     }.toList)
+    (condEval zip elsifEvals) flatMap { (c, eis) =>
+        // Join all of the ifs to a (condition, body) form and find the first that matches
+      val elseBranch = (BooleanValue(true), TextNode(""))
+      val elseifBranches = eis.zip(elsifs.map(_._2))
+      val allBranches: Seq[(Value, Obj)]= ((c, thenBlock) +: elseifBranches :+ elseBranch)
+      allBranches
+        .find { case (cond, body) => cond.truthy }
+        .get
+        ._2
+        .render()
     }
   }
 }
@@ -184,21 +189,18 @@ final case class CaseTag(switchee: Expr,
   override def render()(implicit ctx: Context): Validated[String] = {
     val switcheeEval = switchee.eval()
     val whenEvals = Result.sequence(whens.map {
-      case (comparison, body) => comparison.eval() zip body.render()
+      case (comparison, body) => comparison.eval()
     })
-    // If there is an else, invert it so that it is a Validated[Option[String]]
-    // That way it can be used with the Result combinators
-    val elseEval: Validated[Option[String]] = els
-      .map(_.render())
-      .map(r => r.map(s => Some(s)))
-      .getOrElse(valid(None))
-    (switcheeEval and whenEvals and elseEval) {
-      case (s, ws, e) =>
+    (switcheeEval zip whenEvals) flatMap {
+      case (s, ws) =>
         // Add else clause to the end of the when cases, guaranteed to match the switchee
-        (ws ++ e.map(r => (s, r)).toList)
+        val elseBranch: (Value, Obj) = (s, els.getOrElse(TextNode("")))
+        val allBranches = (ws.zip(whens.map(_._2)) :+ elseBranch)
+        allBranches
           .find { case (comparison, body) => comparison == s }
           .get
           ._2
+          .render()
     }
   }
 }

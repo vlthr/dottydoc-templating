@@ -18,6 +18,8 @@ tag : ifTag
     | captureTag
     | commentTag
     | rawTag
+    | breakTag
+    | continueTag
     | customTag;
 
 customTag : TAGSTART id arglist? TAGEND;
@@ -48,6 +50,9 @@ includeTag : TAGSTART INCLUDE expr TAGEND;
 forStart : TAGSTART FORSTART id IN output_expr TAGEND;
 forTag : forStart block forEnd;
 forEnd : TAGSTART FOREND TAGEND;
+
+breakTag : TAGSTART BREAK TAGEND;
+continueTag : TAGSTART CONTINUE TAGEND;
 
 output : OUTPUTSTART output_expr OUTPUTEND;
 
