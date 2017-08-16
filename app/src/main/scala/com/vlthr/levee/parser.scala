@@ -85,6 +85,7 @@ object Liquid {
       Context.createNew().withParams(params).withIncludeDir(includeDir)
     toTry(parse(path).flatMap(_.render()))
   }
+
   def renderString(body: String,
                    params: Map[String, Any],
                    includeDir: String,

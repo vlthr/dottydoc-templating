@@ -1,11 +1,14 @@
 package com.vlthr.levee.core
 import com.vlthr.levee.filters._
+import com.vlthr.levee.util._
+import com.vlthr.levee.parser.Liquid
 import com.vlthr.levee.core.error._
 import shapeless._
 import shapeless.ops.hlist.HKernelAux
 import shapeless.ops.traversable._
 import shapeless.syntax.typeable._
 import validation.Result
+import scala.util.{Success, Failure, Try}
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 
 enum class ValueType {
@@ -154,7 +157,7 @@ abstract trait Extension {
   def extensionType: String
 }
 
-case class ExecutionState(breakWasHit: Boolean, continueWasHit: Boolean)
+case class ExecutionState(breakWasHit: Boolean = false, continueWasHit: Boolean = false)
 
 case class Context(mappings: MMap[String, Value],
                    customFilters: Map[String, Filter],
@@ -172,11 +175,18 @@ case class Context(mappings: MMap[String, Value],
 
   def getFilter(name: String): Filter = customFilters.get(name).orElse(Filter.byName(name)).getOrElse(unknownFilter(name))
   def getTag(name: String): Tag = customTags.get(name).getOrElse(UnknownTag(name))
+  def renderFile(file: SourceFile): Try[String] = {
+    implicit val c = this
+    this.executionState = ExecutionState()
+    toTry(Liquid.parse(file).flatMap(_.render()))
+  }
+  def renderFile(path: String): Try[String] = renderFile(SourceFile(Util.readWholeFile(path), path))
+  def renderString(body: String): Try[String] = renderFile(SourceFile(body, "In-memory file"))
 }
 
 object Context {
   type TagConstructor = (ParseContext, List[Expr]) => TagNode
-  def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include", ExecutionState(false, false))
+  def createNew(): Context = Context(MMap(), Map(), Map(), None, "_include", ExecutionState())
   def createChild(parent: Context): Context = parent.copy(parent=Some(parent))
 }
 
