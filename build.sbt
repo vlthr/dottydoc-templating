@@ -1,5 +1,6 @@
 // scalaVersion in ThisBuild := dottyLatestNightlyBuild.get
-scalaVersion in ThisBuild := "0.2.0-RC1"
+scalaVersion in ThisBuild := "2.12.3"
+// scalacOptions in ThisBuild ++= Seq("-Xlog-implicits")
 
 lazy val leveeSettings = antlr4Settings ++ Seq(
   name := "levee",
@@ -17,8 +18,8 @@ lazy val leveeSettings = antlr4Settings ++ Seq(
     "com.vladsch.flexmark" % "flexmark-ext-gfm-strikethrough" % "0.11.1",
     "com.vladsch.flexmark" % "flexmark-ext-yaml-front-matter" % "0.11.1",
     "nl.big-o" % "liqp" % "0.6.7",
-    ("com.chuusai" %% "shapeless" % "2.3.3-SNAPSHOT").withDottyCompat,
-    ("de.knutwalker" %% "validation" % "0.2.0").withDottyCompat
+    "com.chuusai" %% "shapeless" % "2.3.3-SNAPSHOT",
+    "de.knutwalker" %% "validation" % "0.3.0-SNAPSHOT"
   ),
   antlr4GenListener in Antlr4 := true,
   antlr4GenVisitor in Antlr4 := true,

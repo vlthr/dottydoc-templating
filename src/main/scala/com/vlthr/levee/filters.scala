@@ -142,9 +142,10 @@ package object filters {
             implicit ctx: Context): ValidatedFragment[Value] = {
           val i = matchInput(this, input)
           val as = matchArgs(this, allArgs)
-          (i zip as).flatMap { (i, allArgs) =>
-            val (args, optArgs) = allArgs
-            filter(i, args, optArgs)
+          (i zip as).flatMap {
+            case (i, allArgs) =>
+              val (args, optArgs) = allArgs
+              filter(i, args, optArgs)
           }
         }
       }
