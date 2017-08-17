@@ -55,4 +55,14 @@ class RenderTests {
     }
     ()
   }
+
+  @Test def testRuntimeInject() = {
+    import shapeless._
+    def makeFilter[I <: Coproduct](l: Any) = {
+      Coproduct.runtimeInject[I](l: Any)
+    }
+    import shapeless.ops.coproduct._
+    makeFilter[Int :+: String :+: CNil](1)
+    Coproduct.runtimeInject[Int :+: String :+: CNil](1)
+  }
 }

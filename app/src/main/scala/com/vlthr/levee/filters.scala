@@ -12,10 +12,13 @@ import shapeless._
 import shapeless.ops.hlist.HKernelAux
 import shapeless.ops.traversable._
 import shapeless.syntax.typeable._
+import shapeless.ops.coproduct._
+import shapeless.syntax.inject._
+import shapeless.Typeable._
 
 package object filters {
   abstract trait Filter extends Extension {
-    type Input
+    type Input 
     type Args <: HList
     type OptArgs <: HList
     def name: String
@@ -28,7 +31,7 @@ package object filters {
   }
 
   object Filter {
-    def noOptArgs[I, A <: HList](s: String)(
+    def noOptArgs[I <: Coproduct, A <: HList](s: String)(
         f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
         implicit ftArgs: FromTraversable[A],
         itype: Typeable[I],
@@ -43,7 +46,10 @@ package object filters {
       def apply(input: Value, allArgs: List[Value])(
           implicit ctx: Context): ValidatedFragment[Value] = {
         val (args, optArgs) = allArgs.splitAt(intLen[Args])
-        val i = Result.fromOption(input.cast[Input], InvalidInput(this, input))
+        // val i = Result.fromOption(RuntimeInject.runtimeInject[I](input: Any), InvalidInput(this, input))
+        // val i = Result.fromOption(input.runtimeInject[StringValue:+: IntValue :+: CNil], InvalidInput(this, input))
+        val i = Result.fromOption(input.cast[I], InvalidInput(this, input))
+        println(s"input=$input, i=$i, cast=${input.cast[Input]}")
         val a = Result.fromOption(ftArgs(args), InvalidArgs(this, args))
         (i zip a).flatMap { case (i: I, a: A) =>
           filter(i, a, HNil)
@@ -82,8 +88,8 @@ package object filters {
 
     def byName(s: String): Option[Filter] = registry.get(s)
     val registry: MMap[String, Filter] = MMap(
-      "split" -> split,
-      "json" -> json,
+      // "split" -> split,
+      // "json" -> json,
       "date" -> Date(),
       "slice" -> slice,
       "join" -> join,
@@ -92,10 +98,10 @@ package object filters {
       "last" -> last,
       "prepend" -> prepend,
       "append" -> append,
-      "capitalize" -> capitalize,
-      "downcase" -> downcase,
-      "upcase" -> upcase,
-      "escape" -> escape,
+      // "capitalize" -> capitalize,
+      // "downcase" -> downcase,
+      // "upcase" -> upcase,
+      // "escape" -> escape,
       "remove" -> remove,
       "replace" -> replace,
       "reverse" -> reverse
@@ -129,25 +135,26 @@ package object filters {
     }
   }
 
-  val split = Filter.noOptArgs[StringValue, StringValue :: HNil]("split") {
-    (ctx, filter, input, args, optArgs) =>
-      val pattern = args.head.get
-      val stringToSplit = input.get
-      succeed(Value.create(stringToSplit.split(pattern).toList))
-  }
+  // val split = Filter.noOptArgs[StringValue :+: CNil, StringValue :: HNil]("split") {
+  //   (ctx, filter, input, args, optArgs) =>
+  //     val pattern = args.head.get
+  //     val stringToSplit = input.get
+  //     succeed(Value.create(stringToSplit.split(pattern).toList))
+  // }
 
-  val json = Filter.noOptArgs[ListValue, Empty]("json") {
-    (ctx, filter, input, args, optArgs) =>
-      succeed(
-        StringValue(new ObjectMapper()
-          .writeValueAsString(Util.asJava(input))))
-  }
+  // val json = Filter.noOptArgs[ListValue :+: CNil, Empty]("json") {
+  //   (ctx, filter, input, args, optArgs) =>
+  //     succeed(
+  //       StringValue(new ObjectMapper()
+  //         .writeValueAsString(Util.asJava(input))))
+  // }
 
   val size = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("size") {
     (ctx, filter, input, args, optArgs) =>
     input match {
       case Inl(list) => succeed(IntValue(list.get.size))
       case Inr(Inl(string)) => succeed(IntValue(string.get.size))
+      case Inr(Inl(_)) => abort()
     }
   }
 
@@ -182,23 +189,23 @@ package object filters {
       elems.map(es => StringValue(es.mkString(delim)))
   }
 
-  val capitalize = Filter.noOptArgs[StringValue, Empty]("capitalize") {
-    (ctx, filter, input, args, optArgs) =>
-      val i = input.get
-      succeed(StringValue(Character.toUpperCase(i(0)) + i.substring(1)))
-  }
+  // val capitalize = Filter.noOptArgs[StringValue :+: CNil, Empty]("capitalize") {
+  //   (ctx, filter, input, args, optArgs) =>
+  //     val i = input.get
+  //     succeed(StringValue(Character.toUpperCase(i(0)) + i.substring(1)))
+  // }
 
-  val downcase = Filter.noOptArgs[StringValue, Empty]("downcase") {
-    (ctx, filter, input, args, optArgs) =>
-      succeed(
-        StringValue(input.get.map(c => Character.toLowerCase(c)).mkString))
-  }
+  // val downcase = Filter.noOptArgs[StringValue :+: CNil, Empty]("downcase") {
+  //   (ctx, filter, input, args, optArgs) =>
+  //     succeed(
+  //       StringValue(input.get.map(c => Character.toLowerCase(c)).mkString))
+  // }
 
-  val upcase = Filter.noOptArgs[StringValue, Empty]("upcase") {
-    (ctx, filter, input, args, optArgs) =>
-      succeed(
-        StringValue(input.get.map(c => Character.toUpperCase(c)).mkString))
-  }
+  // val upcase = Filter.noOptArgs[StringValue, Empty]("upcase") {
+  //   (ctx, filter, input, args, optArgs) =>
+  //     succeed(
+  //       StringValue(input.get.map(c => Character.toUpperCase(c)).mkString))
+  // }
 
   val prepend = Filter[StringValue, StringValue :: HNil, Empty]("prepend") {
     (ctx, filter, input, args, optArgs) =>
@@ -212,16 +219,16 @@ package object filters {
       succeed(StringValue(input.get + start))
   }
 
-  val escape = Filter.noOptArgs[StringValue, Empty]("escape") {
-    (ctx, filter, input, args, optArgs) =>
-      succeed(
-        StringValue(
-          input.get
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("&", "&amp;")))
-  }
+  // val escape = Filter.noOptArgs[StringValue :+: CNil, Empty]("escape") {
+  //   (ctx, filter, input, args, optArgs) =>
+  //     succeed(
+  //       StringValue(
+  //         input.get
+  //           .replace("<", "&lt;")
+  //           .replace(">", "&gt;")
+  //           .replace("\"", "&quot;")
+  //           .replace("&", "&amp;")))
+  // }
 
   val remove = Filter[StringValue, StringValue :: HNil, Empty]("remove") {
     (ctx, filter, input, args, optArgs) =>
