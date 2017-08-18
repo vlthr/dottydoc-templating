@@ -1,4 +1,6 @@
 # Levee
+[![Build Status](https://travis-ci.org/vlthr/levee.svg?branch=master)](https://travis-ci.org/vlthr/levee)
+
 Levee is a rendering engine for the Liquid templating engine with a focus on providing type safety and strict error detection wherever possible.
 
 ## Using Levee
@@ -6,6 +8,11 @@ Currently, levee is available for dotty 0.2.0-RC1 and scalac 2.11. The library i
 
 Add the following dependency to your `build.sbt`:
 ```scala
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.sonatypeRepo("releases")
+}
+
 libraryDependencies += "com.vlthr" %% "levee" % "0.1.0"
 ```
 
