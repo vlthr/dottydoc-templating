@@ -18,7 +18,7 @@ import shapeless.Typeable._
 
 package object filters {
   abstract trait Filter extends Extension {
-    type Input 
+    type Input
     type Args <: HList
     type OptArgs <: HList
     def name: String
@@ -31,32 +31,29 @@ package object filters {
   }
 
   object Filter {
-    def noOptArgs[I <: Coproduct, A <: HList](s: String)(
-        f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
-        implicit ftArgs: FromTraversable[A],
-        itype: Typeable[I],
-        hkArgs: HKernelAux[A]): Filter = new Filter {
-      type Input = I
-      type Args = A
-      type OptArgs = HNil
-      def name = s
-      def filter(input: Input, args: Args, optArgs: OptArgs)(
-          implicit ctx: Context): ValidatedFragment[Value] =
-        f(ctx, this, input, args, optArgs)
-      def apply(input: Value, allArgs: List[Value])(
-          implicit ctx: Context): ValidatedFragment[Value] = {
-        val (args, optArgs) = allArgs.splitAt(intLen[Args])
-        // val i = Result.fromOption(RuntimeInject.runtimeInject[I](input: Any), InvalidInput(this, input))
-        // val i = Result.fromOption(input.runtimeInject[StringValue:+: IntValue :+: CNil], InvalidInput(this, input))
-        val i = Result.fromOption(input.cast[I], InvalidInput(this, input))
-        println(s"input=$input, i=$i, cast=${input.cast[Input]}")
-        val a = Result.fromOption(ftArgs(args), InvalidArgs(this, args))
-        (i zip a).flatMap { case (i: I, a: A) =>
-          filter(i, a, HNil)
-        }
-      }
-    }
     def apply[I, A <: HList, O <: HList](s: String)(
+      f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
+      implicit ftArgs: FromTraversable[A],
+      ftOpt: FromTraversable[O],
+      itype: Typeable[I],
+      hkArgs: HKernelAux[A],
+      hkOpt: HKernelAux[O]) = {
+      def matchInput(input: Value): Option[I] = input.cast[I]
+
+      Filter.base[I, A, O](s, matchInput)(f)
+    }
+    def multi[I <: Coproduct, A <: HList, O <: HList](s: String)(
+      f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
+      implicit ftArgs: FromTraversable[A],
+      ftOpt: FromTraversable[O],
+      itype: Typeable[I],
+      rinj: RuntimeInject[I],
+      hkArgs: HKernelAux[A],
+      hkOpt: HKernelAux[O]) = {
+      def matchInput(input: Value): Option[I] = RuntimeInject.runtimeInject[I](input)
+      base[I, A, O](s, matchInput)(f)
+    }
+    def base[I, A <: HList, O <: HList](s: String, matchInput: Value => Option[I])(
         f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
         implicit ftArgs: FromTraversable[A],
         ftOpt: FromTraversable[O],
@@ -73,7 +70,7 @@ package object filters {
       def apply(input: Value, allArgs: List[Value])(
           implicit ctx: Context): ValidatedFragment[Value] = {
         val (args, optArgs) = allArgs.splitAt(intLen[Args])
-        val i = Result.fromOption(input.cast[Input], InvalidInput(this, input))
+        val i = Result.fromOption(matchInput(input), InvalidInput(this, input))
         val a = Result.fromOption(ftArgs(args), InvalidArgs(this, args))
         val maxNrOpts = intLen[OptArgs]
         val fixedOptArgs = optArgs.map(v => Some(v)) ++ List.fill(
@@ -88,8 +85,8 @@ package object filters {
 
     def byName(s: String): Option[Filter] = registry.get(s)
     val registry: MMap[String, Filter] = MMap(
-      // "split" -> split,
-      // "json" -> json,
+      "split" -> split,
+      "json" -> json,
       "date" -> Date(),
       "slice" -> slice,
       "join" -> join,
@@ -98,10 +95,10 @@ package object filters {
       "last" -> last,
       "prepend" -> prepend,
       "append" -> append,
-      // "capitalize" -> capitalize,
-      // "downcase" -> downcase,
-      // "upcase" -> upcase,
-      // "escape" -> escape,
+      "capitalize" -> capitalize,
+      "downcase" -> downcase,
+      "upcase" -> upcase,
+      "escape" -> escape,
       "remove" -> remove,
       "replace" -> replace,
       "reverse" -> reverse
@@ -135,21 +132,21 @@ package object filters {
     }
   }
 
-  // val split = Filter.noOptArgs[StringValue :+: CNil, StringValue :: HNil]("split") {
-  //   (ctx, filter, input, args, optArgs) =>
-  //     val pattern = args.head.get
-  //     val stringToSplit = input.get
-  //     succeed(Value.create(stringToSplit.split(pattern).toList))
-  // }
+  val split = Filter[StringValue, StringValue :: HNil, Empty]("split") {
+    (ctx, filter, input, args, optArgs) =>
+      val pattern = args.head.get
+      val stringToSplit = input.get
+      succeed(Value.create(stringToSplit.split(pattern).toList))
+  }
 
-  // val json = Filter.noOptArgs[ListValue :+: CNil, Empty]("json") {
-  //   (ctx, filter, input, args, optArgs) =>
-  //     succeed(
-  //       StringValue(new ObjectMapper()
-  //         .writeValueAsString(Util.asJava(input))))
-  // }
+  val json = Filter[ListValue, Empty, Empty]("json") {
+    (ctx, filter, input, args, optArgs) =>
+      succeed(
+        StringValue(new ObjectMapper()
+          .writeValueAsString(Util.asJava(input))))
+  }
 
-  val size = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("size") {
+  val size = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("size") {
     (ctx, filter, input, args, optArgs) =>
     input match {
       case Inl(list) => succeed(IntValue(list.get.size))
@@ -158,7 +155,7 @@ package object filters {
     }
   }
 
-  val first = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("first") {
+  val first = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("first") {
     (ctx, filter, input, args, optArgs) =>
       input match {
         case Inl(l) => succeed(l.get.head)
@@ -166,7 +163,7 @@ package object filters {
       }
   }
 
-  val last = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("last") {
+  val last = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("last") {
     (ctx, filter, input, args, optArgs) =>
     input match {
       case Inl(list) => succeed(list.get.last)
@@ -174,11 +171,11 @@ package object filters {
     }
   }
 
-  val reverse = Filter.noOptArgs[ListValue :+: StringValue :+: CNil, Empty]("reverse") {
+  val reverse = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("reverse") {
     (ctx, filter, input, args, optArgs) =>
     input match {
       case Inl(list) => succeed(ListValue(list.get.reverse))
-      case Inr(Inl(string)) => succeed(StringValue("" + string.get.last))
+      case Inr(Inl(string)) => succeed(StringValue(string.get.reverse))
     }
   }
 
@@ -189,23 +186,23 @@ package object filters {
       elems.map(es => StringValue(es.mkString(delim)))
   }
 
-  // val capitalize = Filter.noOptArgs[StringValue :+: CNil, Empty]("capitalize") {
-  //   (ctx, filter, input, args, optArgs) =>
-  //     val i = input.get
-  //     succeed(StringValue(Character.toUpperCase(i(0)) + i.substring(1)))
-  // }
+  val capitalize = Filter[StringValue, Empty, Empty]("capitalize") {
+    (ctx, filter, input, args, optArgs) =>
+      val i = input.get
+      succeed(StringValue(Character.toUpperCase(i(0)) + i.substring(1)))
+  }
 
-  // val downcase = Filter.noOptArgs[StringValue :+: CNil, Empty]("downcase") {
-  //   (ctx, filter, input, args, optArgs) =>
-  //     succeed(
-  //       StringValue(input.get.map(c => Character.toLowerCase(c)).mkString))
-  // }
+  val downcase = Filter[StringValue, Empty, Empty]("downcase") {
+    (ctx, filter, input, args, optArgs) =>
+      succeed(
+        StringValue(input.get.map(c => Character.toLowerCase(c)).mkString))
+  }
 
-  // val upcase = Filter.noOptArgs[StringValue, Empty]("upcase") {
-  //   (ctx, filter, input, args, optArgs) =>
-  //     succeed(
-  //       StringValue(input.get.map(c => Character.toUpperCase(c)).mkString))
-  // }
+  val upcase = Filter[StringValue, Empty, Empty]("upcase") {
+    (ctx, filter, input, args, optArgs) =>
+      succeed(
+        StringValue(input.get.map(c => Character.toUpperCase(c)).mkString))
+  }
 
   val prepend = Filter[StringValue, StringValue :: HNil, Empty]("prepend") {
     (ctx, filter, input, args, optArgs) =>
@@ -219,16 +216,16 @@ package object filters {
       succeed(StringValue(input.get + start))
   }
 
-  // val escape = Filter.noOptArgs[StringValue :+: CNil, Empty]("escape") {
-  //   (ctx, filter, input, args, optArgs) =>
-  //     succeed(
-  //       StringValue(
-  //         input.get
-  //           .replace("<", "&lt;")
-  //           .replace(">", "&gt;")
-  //           .replace("\"", "&quot;")
-  //           .replace("&", "&amp;")))
-  // }
+  val escape = Filter[StringValue, Empty, Empty]("escape") {
+    (ctx, filter, input, args, optArgs) =>
+      succeed(
+        StringValue(
+          input.get
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("&", "&amp;")))
+  }
 
   val remove = Filter[StringValue, StringValue :: HNil, Empty]("remove") {
     (ctx, filter, input, args, optArgs) =>
@@ -321,7 +318,7 @@ package object filters {
       )
 
     val date =
-      Filter[IntValue :+: StringValue :+: CNil, StringValue :: HNil, Empty]("date") {
+      Filter.multi[IntValue :+: StringValue :+: CNil, StringValue :: HNil, Empty]("date") {
         (ctx, filter, input, args, optArgs) =>
         val seconds: ValidatedFragment[Long] = input match {
           case Inl(int) =>
@@ -381,21 +378,21 @@ package object filters {
         succeed(StringValue(input.get.substring(start, stop + 1)))
     }
 
-// object FromMap {
-//   implicit def caseClassFromMap[T <: HList, C](map: Map[String, Value])(implicit kw: Lazy[FromMap[T]],
-//                                                                         gen: LabelledGeneric.Aux[C, T]): C = gen.from(kw.value(map))
+// // object FromMap {
+// //   implicit def caseClassFromMap[T <: HList, C](map: Map[String, Value])(implicit kw: Lazy[FromMap[T]],
+// //                                                                         gen: LabelledGeneric.Aux[C, T]): C = gen.from(kw.value(map))
 
-//   implicit def kwsFromMap[K <: Symbol, H <: Value, T <: HList](implicit w: Witness.Aux[K],
-//                                                                tailToKw: Lazy[FromMap[T]]
-//   ): FromMap[FieldType[K, Option[H]] :: T] = (map) => {
-//       val key = w.value.name
-//       // TODO: Add error checking
-//       val value = map.get(key).flatMap(v => v.cast[H])
-//       field[K](value) :: tailToKw.value(map)
-//     }
+// //   implicit def kwsFromMap[K <: Symbol, H <: Value, T <: HList](implicit w: Witness.Aux[K],
+// //                                                                tailToKw: Lazy[FromMap[T]]
+// //   ): FromMap[FieldType[K, Option[H]] :: T] = (map) => {
+// //       val key = w.value.name
+// //       // TODO: Add error checking
+// //       val value = map.get(key).flatMap(v => v.cast[H])
+// //       field[K](value) :: tailToKw.value(map)
+// //     }
 
-//   trait FromMap[L <: HList] {
-//     def apply(map: Map[String, Value]): L
-//   }
-// }
+// //   trait FromMap[L <: HList] {
+// //     def apply(map: Map[String, Value]): L
+// //   }
+// // }
 }

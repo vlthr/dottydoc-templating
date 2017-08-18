@@ -1,6 +1,7 @@
 // scalaVersion in ThisBuild := dottyLatestNightlyBuild.get
-scalaVersion in ThisBuild := "2.12.3"
-scalacOptions in ThisBuild ++= Seq("-Xlog-implicits")
+// scalaVersion in ThisBuild := "2.12.3"
+scalaVersion in ThisBuild := "2.11.11"
+// scalacOptions in ThisBuild ++= Seq("-Xlog-implicits")
 
 lazy val root = Project(id = "levee", base = file("."))
   .aggregate(macros, app)
@@ -19,7 +20,7 @@ lazy val macrosSetting = Seq(
 lazy val templatingSettings = antlr4Settings ++ Seq(
   name := "levee",
   version := "0.1.0",
-  organization := "vlthr",
+  organization := "com.vlthr",
   libraryDependencies ++= Seq(
     "junit" % "junit" % "4.12" % "test",
     "com.novocode" % "junit-interface" % "0.11" % "test",

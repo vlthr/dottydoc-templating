@@ -10,6 +10,7 @@ import shapeless.syntax.typeable._
 import validation.Result
 import scala.util.{Success, Failure, Try}
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
+import scala.collection.JavaConverters._
 
 case class SourceFile(body: String, path: String) {
   final val LF = '\u000A'
@@ -244,6 +245,9 @@ abstract class Tag(val name: String) extends Extension {
 }
 
 object Value {
+  def createMap(value: java.util.Map[String, Any]): Map[String, Value] = value.asScala.toMap.map {
+    case (k: String, v: Any) => (k, Value.create(v))
+  }
   def createMap(value: Map[String, Any]): Map[String, Value] = value.map {
     case (k: String, v: Any) => (k, Value.create(v))
   }
@@ -252,12 +256,15 @@ object Value {
       case v: Value => v
       case v: Int => IntValue(v)
       case v: String => StringValue(v)
+      case v: java.lang.String => StringValue(v)
       case v: Boolean => BooleanValue(v)
       case v: Char => StringValue(""+v)
+      case v: java.util.Map[String, _] =>
+        MapValue(v.asScala.toMap.map { case (key, value) => (key, Value.create(value)) })
       case v: Map[String, _] =>
         MapValue(v.map { case (key, value) => (key, Value.create(value)) })
       case v: Seq[_] => ListValue(v.map(value => Value.create(value)).toList)
-      case _ => throw new Exception(s"Invalid value: $value")
+      case _ => throw new Exception(s"Invalid value: $value, ${value.toString}")
     }
   }
 
