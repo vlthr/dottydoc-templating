@@ -77,7 +77,7 @@ package object filters {
           maxNrOpts - optArgs.size)(None)
         val o = ftOpt(fixedOptArgs).get
 
-        (i zip a).flatMap { case (i: I, a: A) =>
+        (i zip a).flatMap { case (i, a) =>
           filter(i, a, o)
         }
       }
@@ -151,7 +151,7 @@ package object filters {
     input match {
       case Inl(list) => succeed(IntValue(list.get.size))
       case Inr(Inl(string)) => succeed(IntValue(string.get.size))
-      case Inr(Inl(_)) => abort()
+      case Inr(Inr(_)) => abort()
     }
   }
 
@@ -160,6 +160,7 @@ package object filters {
       input match {
         case Inl(l) => succeed(l.get.head)
         case Inr(Inl(s)) => succeed(StringValue("" + s.get.head))
+        case Inr(Inr(_)) => abort()
       }
   }
 
@@ -168,6 +169,7 @@ package object filters {
     input match {
       case Inl(list) => succeed(list.get.last)
       case Inr(Inl(string)) => succeed(StringValue(""+string.get.last))
+      case Inr(Inr(_)) => abort()
     }
   }
 
@@ -176,6 +178,7 @@ package object filters {
     input match {
       case Inl(list) => succeed(ListValue(list.get.reverse))
       case Inr(Inl(string)) => succeed(StringValue(string.get.reverse))
+      case Inr(Inr(_)) => abort()
     }
   }
 
