@@ -16,16 +16,17 @@ resolvers ++= Seq(
 libraryDependencies += "com.vlthr" %% "levee" % "0.1.0"
 ```
 
+Then use as follows:
 ```scala
 import com.vlthr.levee.core._
 
-val result = Context.createNew()
+val render = Context.createNew()
   .withIncludeDir("./_includes")
   .withFilter(myCustomFilter)
   .withParams(Map("author" -> Map("name" -> "vlthr"), "title" -> "Levee README"))
   .renderFile("./index.md")
 
-result match {
+render match {
     case Success(renderedString) => println(renderedString)
     case Failure(errors) => println(errors)
 }
@@ -54,6 +55,8 @@ Filter takes three type parameters:
 - The types of any optional positional parameters that may appear after the main argument list, also in the form of a shapeless HList. (e.g `Option[FirstOptArgType] :: Option[SecondOptArgType] :: HNil]`)
 
 To extract values from the argument list, use a combination of `args.head` and `args.tail`. Then, to extract the native type from within the `Value`, use the `get` method present on each of the `Value` subtypes.
+
+The filter must return either a successful result (`succeed(value)`) or a failure (`failFragment(errorFragment)`).
 
 Some filters may require inputs of varying types. To do this, use the `Filter.multi` factory method:
 ```scala
