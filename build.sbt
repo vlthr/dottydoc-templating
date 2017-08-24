@@ -30,7 +30,7 @@ lazy val templatingSettings = antlr4Settings ++ Seq(
     "com.vladsch.flexmark" % "flexmark-ext-gfm-strikethrough" % "0.11.1",
     "com.vladsch.flexmark" % "flexmark-ext-yaml-front-matter" % "0.11.1",
     "nl.big-o" % "liqp" % "0.6.7",
-    ("com.chuusai" %% "shapeless" % "2.3.2").withDottyCompat,
+    ("com.chuusai" %% "shapeless" % "2.3.3-SNAPSHOT").withDottyCompat,
     ("de.knutwalker" %% "validation" % "0.2.0").withDottyCompat
   ),
   antlr4GenListener in Antlr4 := true,
