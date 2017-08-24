@@ -3,9 +3,10 @@ lazy val metaVersion = "1.6.0"
 scalaVersion in ThisBuild := "0.2.0-RC1"
 
 lazy val root = Project(id = "levee", base = file("."))
-  .aggregate(macros, app)
+  .aggregate(app)
 
 lazy val common = Seq(
+  publishArtifact := false,
   resolvers ++= Seq(
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("releases"),
@@ -13,13 +14,10 @@ lazy val common = Seq(
   )
 )
 
-lazy val macrosSetting = Seq(
-  ) ++ common
-
 lazy val templatingSettings = antlr4Settings ++ Seq(
   name := "levee",
   version := "0.1.0",
-  organization := "vlthr",
+  organization := "com.vlthr",
   libraryDependencies ++= Seq(
     "junit" % "junit" % "4.12" % "test",
     "com.novocode" % "junit-interface" % "0.11" % "test",
@@ -39,11 +37,32 @@ lazy val templatingSettings = antlr4Settings ++ Seq(
   antlr4GenVisitor in Antlr4 := true,
   antlr4Dependency in Antlr4 := "org.antlr" % "antlr4" % "4.5",
   antlr4PackageName in Antlr4 := Some("com.vlthr.levee.parser")
-) ++ common ++ macrosSetting
-
-lazy val macros = (project in file("macros"))
-  .settings(macrosSetting: _*)
+) ++ common
 
 lazy val app = (project in file("app"))
   .settings(templatingSettings)
-  .dependsOn(macros)
+
+homepage := Some(url("https://github.com/vlthr/levee"))
+
+scmInfo := Some(ScmInfo(url("https://github.com/vlthr/levee"),
+                        "git@github.com:vlthr/levee.git"))
+developers += Developer("vlthr",
+                        "Valthor Halldorsson",
+                        "vlthrh@gmail.com",
+                        url("https://github.com/vlthr"))
+
+licenses += ("MIT License", url("http://www.opensource.org/licenses/mit-license.php"))
+
+pomIncludeRepository := (_ => false)
+
+publishMavenStyle := true
+
+publishArtifact in Test := false
+
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
