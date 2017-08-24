@@ -44,9 +44,9 @@ class RenderTests {
     import com.vlthr.levee.core.Value._
     val f1 = Filter[IntValue, StringValue :: HNil, Empty]("f1") {
       (ctx, filter, input, args, optArgs) =>
-        val pattern = args.head.get
-        val n = input.get
-        Result.valid(StringValue(s"$n, $pattern"))
+      val pattern = args.head.get
+      val n = input.get
+      Result.valid(StringValue(s"$n, $pattern"))
     }
     f1(IntValue(1), StringValue("a") :: Nil) match {
       case Valid(output) => assertEquals(StringValue("1, a"), output)
@@ -54,5 +54,16 @@ class RenderTests {
       case Invalids(f) => fail("Filter could not render.")
     }
     ()
+  }
+
+  @Test def testRuntimeInject(): Unit = {
+    import shapeless._
+    import shapeless.ops.coproduct._
+    def makeFilter[I <: Coproduct](l: Any)(implicit rinj: RuntimeInject[I]) = {
+      Coproduct.runtimeInject[I](l: Any)
+    }
+    import shapeless.ops.coproduct._
+    makeFilter[Int :+: String :+: CNil](1)
+    Coproduct.runtimeInject[Int :+: String :+: CNil](1)
   }
 }
