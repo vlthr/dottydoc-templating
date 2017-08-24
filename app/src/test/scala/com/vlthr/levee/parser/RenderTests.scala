@@ -44,9 +44,9 @@ class RenderTests {
     import com.vlthr.levee.core.Value._
     val f1 = Filter[IntValue, StringValue :: HNil, Empty]("f1") {
       (ctx, filter, input, args, optArgs) =>
-      val pattern = args.head.get
-      val n = input.get
-      Result.valid(StringValue(s"$n, $pattern"))
+        val pattern = args.head.get
+        val n = input.get
+        Result.valid(StringValue(s"$n, $pattern"))
     }
     f1(IntValue(1), StringValue("a") :: Nil) match {
       case Valid(output) => assertEquals(StringValue("1, a"), output)

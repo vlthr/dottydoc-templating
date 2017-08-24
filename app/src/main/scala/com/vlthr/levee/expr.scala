@@ -13,8 +13,7 @@ abstract trait BooleanExpr extends Expr {
     (left.eval() zip right.eval()) flatMap { (l, r) =>
       try {
         Result.valid(BooleanValue(op(l, r)))
-      }
-      catch {
+      } catch {
         case NonFatal(e) => fail(UncaughtExceptionError(e))
       }
     }
@@ -23,6 +22,10 @@ abstract trait BooleanExpr extends Expr {
   def op(left: Value, right: Value): Boolean
 }
 
+/** Generates a range of numbers
+  *
+  * example: (1..5)
+  */
 final case class RangeExpr(left: Expr, right: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
@@ -48,6 +51,9 @@ final case class RangeExpr(left: Expr, right: Expr)(
   }
 }
 
+/** Checks if the value on the left contains the value on the right.
+  *
+  * example: myMap contains "x" */
 final case class ContainsExpr(left: Expr, right: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
@@ -121,11 +127,13 @@ final case class GtExpr(left: Expr, right: Expr)(
   override def op(left: Value, right: Value): Boolean = left > right
 }
 
+/** A value literal of any type */
 final case class LiteralExpr(value: Value)(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = Result.valid(value)
 }
 
+/** Use of a single variable name */
 final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
@@ -136,6 +144,9 @@ final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
   }
 }
 
+/** Filter application
+  *
+  * example: {{ "hello" | append: " world" }} */
 final case class FilterExpr(
     expr: Expr,
     filter: Filter,
@@ -157,6 +168,9 @@ final case class FilterExpr(
   }
 }
 
+/** List indexing
+  *
+  * example: list[3] */
 final case class IndexExpr(indexable: Expr, key: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
@@ -176,6 +190,9 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
   }
 }
 
+/** Accessing the contents of a map
+  *
+  * example: a.b.c */
 final case class DotExpr(indexable: Expr, key: String)(
     implicit val pctx: ParseContext)
     extends Expr {

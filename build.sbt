@@ -44,14 +44,16 @@ lazy val app = (project in file("app"))
 
 homepage := Some(url("https://github.com/vlthr/levee"))
 
-scmInfo := Some(ScmInfo(url("https://github.com/vlthr/levee"),
-                        "git@github.com:vlthr/levee.git"))
+scmInfo := Some(
+  ScmInfo(url("https://github.com/vlthr/levee"),
+          "git@github.com:vlthr/levee.git"))
 developers += Developer("vlthr",
                         "Valthor Halldorsson",
                         "vlthrh@gmail.com",
                         url("https://github.com/vlthr"))
 
-licenses += ("MIT License", url("http://www.opensource.org/licenses/mit-license.php"))
+licenses += ("MIT License", url(
+  "http://www.opensource.org/licenses/mit-license.php"))
 
 pomIncludeRepository := (_ => false)
 
@@ -64,5 +66,5 @@ publishTo := {
   if (isSnapshot.value)
     Some("snapshots" at nexus + "content/repositories/snapshots")
   else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }

@@ -14,6 +14,8 @@ import validation.Result
 import shapeless._
 
 object Liquid {
+
+  /** Creates a ParseContext from the given ANTLR context */
   def makeContext(c: ParserRuleContext, template: SourceFile) = {
     val stop = if (c.stop != null) c.stop else c.start
     val sourcePosition =
@@ -27,6 +29,7 @@ object Liquid {
     tree.toStringTree(parser)
   }
 
+  /** Parse a given template to an AST */
   def parse(file: SourceFile)(implicit ctx: Context): Validated[Obj] = {
     val (parser, errors) = makeParser(file)
     val tree = parser.template()
@@ -38,9 +41,11 @@ object Liquid {
     } else Result.valid(result)
   }
 
+  /** Parse a given template path to an AST */
   def parse(path: String)(implicit ctx: Context): Validated[Obj] =
     parse(SourceFile(Util.readWholeFile(path), path))
 
+  /** Convenience method for rendering a template file */
   def render(path: String,
              params: Map[String, Any],
              includeDir: String): Try[String] = {
@@ -63,6 +68,7 @@ object Liquid {
   }
 }
 
+/** Error listener that gathers all ANTLR errors and wraps them in Levee Errors. */
 class GatherErrors(template: SourceFile) extends BaseErrorListener {
   val errors = Buffer[Error]()
 
@@ -84,6 +90,8 @@ class GatherErrors(template: SourceFile) extends BaseErrorListener {
   }
 }
 
+/** To convert the ANTLR parse tree to an AST, we create visitors for the parse tree that
+  * extract the relevant information and construct the AST nodes. */
 class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Obj] {
 
@@ -224,6 +232,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
   }
 }
 
+/** Visitor for constructing argument lists */
 class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[List[Expr]] {
   override def visitArglist(c: LiquidParser.ArglistContext): List[Expr] = {
@@ -238,6 +247,7 @@ class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
   }
 }
 
+/** Visitor for constructing keyword arguments into a map */
 class LiquidKwArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Map[String, Expr]] {
   override def visitKwargs(c: LiquidParser.KwargsContext): Map[String, Expr] = {

@@ -32,28 +32,30 @@ package object filters {
 
   object Filter {
     def apply[I, A <: HList, O <: HList](s: String)(
-      f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
-      implicit ftArgs: FromTraversable[A],
-      ftOpt: FromTraversable[O],
-      itype: Typeable[I],
-      hkArgs: HKernelAux[A],
-      hkOpt: HKernelAux[O]) = {
+        f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
+        implicit ftArgs: FromTraversable[A],
+        ftOpt: FromTraversable[O],
+        itype: Typeable[I],
+        hkArgs: HKernelAux[A],
+        hkOpt: HKernelAux[O]) = {
       def matchInput(input: Value): Option[I] = input.cast[I]
 
       Filter.base[I, A, O](s, matchInput)(f)
     }
     def multi[I <: Coproduct, A <: HList, O <: HList](s: String)(
-      f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
-      implicit ftArgs: FromTraversable[A],
-      ftOpt: FromTraversable[O],
-      itype: Typeable[I],
-      rinj: RuntimeInject[I],
-      hkArgs: HKernelAux[A],
-      hkOpt: HKernelAux[O]) = {
-      def matchInput(input: Value): Option[I] = RuntimeInject.runtimeInject[I](input)
+        f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
+        implicit ftArgs: FromTraversable[A],
+        ftOpt: FromTraversable[O],
+        itype: Typeable[I],
+        rinj: RuntimeInject[I],
+        hkArgs: HKernelAux[A],
+        hkOpt: HKernelAux[O]) = {
+      def matchInput(input: Value): Option[I] =
+        RuntimeInject.runtimeInject[I](input)
       base[I, A, O](s, matchInput)(f)
     }
-    def base[I, A <: HList, O <: HList](s: String, matchInput: Value => Option[I])(
+    def base[I, A <: HList, O <: HList](s: String,
+                                        matchInput: Value => Option[I])(
         f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
         implicit ftArgs: FromTraversable[A],
         ftOpt: FromTraversable[O],
@@ -77,8 +79,9 @@ package object filters {
           maxNrOpts - optArgs.size)(None)
         val o = ftOpt(fixedOptArgs).get
 
-        (i zip a).flatMap { case (i, a) =>
-          filter(i, a, o)
+        (i zip a).flatMap {
+          case (i, a) =>
+            filter(i, a, o)
         }
       }
     }
@@ -146,41 +149,45 @@ package object filters {
           .writeValueAsString(Util.asJava(input))))
   }
 
-  val size = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("size") {
-    (ctx, filter, input, args, optArgs) =>
-    input match {
-      case Inl(list) => succeed(IntValue(list.get.size))
-      case Inr(Inl(string)) => succeed(IntValue(string.get.size))
-      case Inr(Inr(_)) => abort()
+  val size =
+    Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("size") {
+      (ctx, filter, input, args, optArgs) =>
+        input match {
+          case Inl(list) => succeed(IntValue(list.get.size))
+          case Inr(Inl(string)) => succeed(IntValue(string.get.size))
+          case Inr(Inr(_)) => abort()
+        }
     }
-  }
 
-  val first = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("first") {
-    (ctx, filter, input, args, optArgs) =>
-      input match {
-        case Inl(l) => succeed(l.get.head)
-        case Inr(Inl(s)) => succeed(StringValue("" + s.get.head))
-        case Inr(Inr(_)) => abort()
-      }
-  }
-
-  val last = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("last") {
-    (ctx, filter, input, args, optArgs) =>
-    input match {
-      case Inl(list) => succeed(list.get.last)
-      case Inr(Inl(string)) => succeed(StringValue(""+string.get.last))
-      case Inr(Inr(_)) => abort()
+  val first =
+    Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("first") {
+      (ctx, filter, input, args, optArgs) =>
+        input match {
+          case Inl(l) => succeed(l.get.head)
+          case Inr(Inl(s)) => succeed(StringValue("" + s.get.head))
+          case Inr(Inr(_)) => abort()
+        }
     }
-  }
 
-  val reverse = Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("reverse") {
-    (ctx, filter, input, args, optArgs) =>
-    input match {
-      case Inl(list) => succeed(ListValue(list.get.reverse))
-      case Inr(Inl(string)) => succeed(StringValue(string.get.reverse))
-      case Inr(Inr(_)) => abort()
+  val last =
+    Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("last") {
+      (ctx, filter, input, args, optArgs) =>
+        input match {
+          case Inl(list) => succeed(list.get.last)
+          case Inr(Inl(string)) => succeed(StringValue("" + string.get.last))
+          case Inr(Inr(_)) => abort()
+        }
     }
-  }
+
+  val reverse =
+    Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("reverse") {
+      (ctx, filter, input, args, optArgs) =>
+        input match {
+          case Inl(list) => succeed(ListValue(list.get.reverse))
+          case Inr(Inl(string)) => succeed(StringValue(string.get.reverse))
+          case Inr(Inr(_)) => abort()
+        }
+    }
 
   val join = Filter[ListValue, StringValue :: HNil, Empty]("join") {
     (ctx, filter, input, args, optArgs) =>
@@ -244,6 +251,10 @@ package object filters {
         succeed(StringValue(input.get.replace(pattern, replacement)))
     }
 
+  /** Collects logic relating to the date filter
+    *
+    * Adapted from Bart Kiers's date implementation in Liqp
+    */
   object Date {
     import java.text.SimpleDateFormat
     import java.util.Locale
@@ -321,54 +332,55 @@ package object filters {
       )
 
     val date =
-      Filter.multi[IntValue :+: StringValue :+: CNil, StringValue :: HNil, Empty]("date") {
-        (ctx, filter, input, args, optArgs) =>
-        val seconds: ValidatedFragment[Long] = input match {
-          case Inl(int) =>
-            succeed(int.get)
-          case Inr(Inl(string)) if string.get == "now" =>
-            succeed(System.currentTimeMillis / 1000L)
-          case Inr(Inl(string)) =>
-            toSeconds(string.get)
-              .map(succeed)
-              .getOrElse(failFragment(InvalidDate(filter, string.get)))
-        }
-        val date = seconds.map(s => new java.util.Date(s * 1000L))
-
-        val format = args.head.get
-
-        date.map { date =>
-          val calendar = java.util.Calendar.getInstance()
-          calendar.setTime(date)
-
-          val builder = new StringBuilder();
-
-          var i = 0
-          while (i < format.length) {
-            val ch = format.charAt(i);
-            if (ch == '%') {
-              i += 1
-
-              if (i == format.length()) {
-                builder.append("%")
-              } else {
-                val next = format.charAt(i);
-
-                val javaFormat = liquidToJavaFormat.get(next);
-
-                javaFormat match {
-                  case Some(f) => builder.append(f.format(date))
-                  case _ => builder.append("%").append(next);
-                }
-              }
-            } else {
-              builder.append(ch);
-            }
-            i += 1
+      Filter
+        .multi[IntValue :+: StringValue :+: CNil, StringValue :: HNil, Empty](
+          "date") { (ctx, filter, input, args, optArgs) =>
+          val seconds: ValidatedFragment[Long] = input match {
+            case Inl(int) =>
+              succeed(int.get)
+            case Inr(Inl(string)) if string.get == "now" =>
+              succeed(System.currentTimeMillis / 1000L)
+            case Inr(Inl(string)) =>
+              toSeconds(string.get)
+                .map(succeed)
+                .getOrElse(failFragment(InvalidDate(filter, string.get)))
           }
-          StringValue(builder.toString)
+          val date = seconds.map(s => new java.util.Date(s * 1000L))
+
+          val format = args.head.get
+
+          date.map { date =>
+            val calendar = java.util.Calendar.getInstance()
+            calendar.setTime(date)
+
+            val builder = new StringBuilder();
+
+            var i = 0
+            while (i < format.length) {
+              val ch = format.charAt(i);
+              if (ch == '%') {
+                i += 1
+
+                if (i == format.length()) {
+                  builder.append("%")
+                } else {
+                  val next = format.charAt(i);
+
+                  val javaFormat = liquidToJavaFormat.get(next);
+
+                  javaFormat match {
+                    case Some(f) => builder.append(f.format(date))
+                    case _ => builder.append("%").append(next);
+                  }
+                }
+              } else {
+                builder.append(ch);
+              }
+              i += 1
+            }
+            StringValue(builder.toString)
+          }
         }
-      }
     def apply() = date
   }
 
@@ -380,22 +392,4 @@ package object filters {
         val stop = optArgs.head.map(_.get).getOrElse(start)
         succeed(StringValue(input.get.substring(start, stop + 1)))
     }
-
-// // object FromMap {
-// //   implicit def caseClassFromMap[T <: HList, C](map: Map[String, Value])(implicit kw: Lazy[FromMap[T]],
-// //                                                                         gen: LabelledGeneric.Aux[C, T]): C = gen.from(kw.value(map))
-
-// //   implicit def kwsFromMap[K <: Symbol, H <: Value, T <: HList](implicit w: Witness.Aux[K],
-// //                                                                tailToKw: Lazy[FromMap[T]]
-// //   ): FromMap[FieldType[K, Option[H]] :: T] = (map) => {
-// //       val key = w.value.name
-// //       // TODO: Add error checking
-// //       val value = map.get(key).flatMap(v => v.cast[H])
-// //       field[K](value) :: tailToKw.value(map)
-// //     }
-
-// //   trait FromMap[L <: HList] {
-// //     def apply(map: Map[String, Value]): L
-// //   }
-// // }
 }

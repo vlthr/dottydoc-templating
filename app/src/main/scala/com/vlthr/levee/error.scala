@@ -10,26 +10,36 @@ package object error {
   type Validated[A] = Result[Error, A]
   type ValidatedFragment[A] = Result[ErrorFragment, A]
 
+  /** Base type for errors with an associated location in the source template */
   trait Error(pctx: ParseContext) extends Throwable {
     def errorType: String
+
     def description: String
+
     override def getMessage: String = {
       s"""$errorType: ${pctx.sourcePosition.template.path}
    |$description
    |
    |    ${pctx.sourcePosition.report}""".stripMargin
     }
+
     override def toString: String = getMessage
   }
 
+  /** An error which has no associated source location */
   trait ErrorFragment {
     def errorType: String
+
     def description: String
+
+    /** Add a parse context to this fragment, forming an Error */
     def imbue(pctx: ParseContext): Error = ImbuedContext(this)(pctx)
   }
 
+  /** A wrapper around an ErrorFragment that provides it with a parse context */
   case class ImbuedContext(parent: ErrorFragment)(pctx: ParseContext) extends Error(pctx) {
     def errorType = parent.errorType
+
     def description = parent.description
   }
 
@@ -54,18 +64,21 @@ package object error {
     */
   def abort[T](): ValidatedFragment[T] = throw new Exception("Extension execution aborted.")
 
+  /** Converts ValidatedFragment[T] to a Validated[T] */
   def imbueFragments[T](v: ValidatedFragment[T])(implicit pctx: ParseContext): Validated[T] = v match {
     case v @ Valid(_) => v
     case Invalids(errFragments) => Invalids(errFragments.map(_.imbue(pctx)))
     case Invalid(errFragment) => Invalid(errFragment.imbue(pctx))
   }
 
+  /** Converts Validated[T] to a Try[T] */
   def toTry[T](v: Validated[T]) = v match {
     case Valid(output) => Success(output)
     case Invalids(errs) => Failure(LiquidFailure(errs.toList))
     case Invalid(errs) => Failure(LiquidFailure(errs :: Nil))
   }
 
+  /** Flattens nested ValidatedFragment successes */
   def flatten[T, R <: ValidatedFragment[T]](v: ValidatedFragment[R]): ValidatedFragment[T] = v match {
     case Valid(output) => output
     case Invalids(errs) => Invalids(errs)

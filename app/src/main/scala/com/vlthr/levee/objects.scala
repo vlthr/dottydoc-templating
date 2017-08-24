@@ -8,6 +8,7 @@ import java.nio.file.Paths
 import validation.Result
 import scala.util.control.Breaks._
 
+/** Represents a list of nodes */
 final case class BlockNode(nodes: List[Obj])(implicit val pctx: ParseContext)
     extends Obj {
   def render()(implicit ctx: Context) = {
@@ -19,7 +20,8 @@ final case class BlockNode(nodes: List[Obj])(implicit val pctx: ParseContext)
         if (newScope.executionState.breakWasHit || newScope.executionState.continueWasHit) {
           // Block contains a break/continue tag. Propagate it upwards.
           ctx.executionState.breakWasHit = newScope.executionState.breakWasHit
-          ctx.executionState.continueWasHit = newScope.executionState.continueWasHit
+          ctx.executionState.continueWasHit =
+            newScope.executionState.continueWasHit
           break
         }
       }
@@ -28,16 +30,19 @@ final case class BlockNode(nodes: List[Obj])(implicit val pctx: ParseContext)
   }
 }
 
+/** Any node that uses {{ double curly braces }} */
 final case class OutputNode(expr: Expr)(implicit val pctx: ParseContext)
     extends Obj {
   def render()(implicit ctx: Context) = expr.render()
 }
 
+/** A node consisting of only raw text */
 final case class TextNode(text: String)(implicit val pctx: ParseContext)
     extends Obj {
   def render()(implicit ctx: Context): Validated[String] = Result.valid(text)
 }
 
+/** Any node that uses {% percent curly braces %} */
 trait TagNode extends Obj with ASTNode {
   def render()(implicit ctx: Context): Validated[String] = ???
 }
@@ -108,7 +113,8 @@ final case class BreakTag()(implicit val pctx: ParseContext) extends TagNode {
   }
 }
 
-final case class ContinueTag()(implicit val pctx: ParseContext) extends TagNode {
+final case class ContinueTag()(implicit val pctx: ParseContext)
+    extends TagNode {
   override def render()(implicit ctx: Context): Validated[String] = {
     ctx.executionState.continueWasHit = true
     Result.valid("")
@@ -123,13 +129,14 @@ final case class IfTag(condition: Expr,
   override def render()(implicit ctx: Context): Validated[String] = {
     val condEval = condition.eval()
     val elsifEvals = Result.sequence(elsifs.map {
-                                       case (cond, body) => cond.eval()
-                                     }.toList)
+      case (cond, body) => cond.eval()
+    }.toList)
     (condEval zip elsifEvals) flatMap { (c, eis) =>
-        // Join all of the ifs to a (condition, body) form and find the first that matches
+      // Join all of the ifs to a (condition, body) form and find the first that matches
       val elseBranch = (BooleanValue(true), TextNode(""))
       val elseifBranches = eis.zip(elsifs.map(_._2))
-      val allBranches: Seq[(Value, Obj)]= ((c, thenBlock) +: elseifBranches :+ elseBranch)
+      val allBranches
+        : Seq[(Value, Obj)] = ((c, thenBlock) +: elseifBranches :+ elseBranch)
       allBranches
         .find { case (cond, body) => cond.truthy }
         .get
