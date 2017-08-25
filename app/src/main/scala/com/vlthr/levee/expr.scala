@@ -14,7 +14,7 @@ abstract trait BooleanExpr extends Expr {
       try {
         Result.valid(BooleanValue(op(l, r)))
       } catch {
-        case NonFatal(e) => fail(UncaughtExceptionError(e))
+        case NonFatal(e) => invalid(UncaughtExceptionError(e))
       }
     }
   def left: Expr
@@ -33,14 +33,14 @@ final case class RangeExpr(left: Expr, right: Expr)(
     val l = left.eval().flatMap {
       case v: IntValue => Result.valid(v)
       case v =>
-        fail(
+        invalid(
           UnexpectedValueType(v, expected = Some(ValueType.Integer))
             .imbue(pctx))
     }
     val r = right.eval().flatMap {
       case v: IntValue => Result.valid(v)
       case v =>
-        fail(
+        invalid(
           UnexpectedValueType(v, expected = Some(ValueType.Integer))
             .imbue(pctx))
     }
@@ -61,13 +61,13 @@ final case class ContainsExpr(left: Expr, right: Expr)(
     val l = left.eval().flatMap {
       case MapValue(m) => Result.valid(m)
       case v =>
-        fail(
+        invalid(
           UnexpectedValueType(v, expected = Some(ValueType.Map)).imbue(pctx))
     }
     val r = right.eval().flatMap {
       case StringValue(s) => Result.valid(s)
       case v =>
-        fail(
+        invalid(
           UnexpectedValueType(v, expected = Some(ValueType.String))
             .imbue(pctx))
     }
@@ -139,7 +139,7 @@ final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
   override def eval()(implicit ctx: Context) = {
     ctx.lookup(name) match {
       case Some(value) => Result.valid(value)
-      case None => fail(UndefinedVariable(this))
+      case None => invalid(UndefinedVariable(this))
     }
   }
 }
@@ -177,11 +177,11 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
   override def eval()(implicit ctx: Context) = {
     val i: Validated[List[Value]] = indexable.eval().flatMap {
       case ListValue(s) => Result.valid(s)
-      case x => fail(InvalidIndexable(this, indexable, x))
+      case x => invalid(InvalidIndexable(this, indexable, x))
     }
     val k: Validated[Int] = key.eval().flatMap {
       case IntValue(i) => Result.valid(i)
-      case x => fail(InvalidIndex(this, key, x))
+      case x => invalid(InvalidIndex(this, key, x))
     }
     (i and k) { (i, k) =>
       i(k)
@@ -199,12 +199,12 @@ final case class DotExpr(indexable: Expr, key: String)(
   override def eval()(implicit ctx: Context) = {
     val source: Validated[Map[String, Value]] = indexable.eval().flatMap {
       case MapValue(m) => Result.valid(m)
-      case x => fail(InvalidMap(this, indexable, x))
+      case x => invalid(InvalidMap(this, indexable, x))
     }
     (source) flatMap { source =>
       source.get(key) match {
         case Some(s) => valid(s)
-        case None => fail(UndefinedField(this, indexable, key))
+        case None => invalid(UndefinedField(this, indexable, key))
       }
     }
   }

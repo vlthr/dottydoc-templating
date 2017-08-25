@@ -50,8 +50,8 @@ class RenderTests {
     }
     f1(IntValue(1), StringValue("a") :: Nil) match {
       case Valid(output) => assertEquals(StringValue("1, a"), output)
-      case Invalid(f) => fail("Filter could not render.")
-      case Invalids(f) => fail("Filter could not render.")
+      case Invalid(f) => invalid("Filter could not render.")
+      case Invalids(f) => invalid("Filter could not render.")
     }
     ()
   }

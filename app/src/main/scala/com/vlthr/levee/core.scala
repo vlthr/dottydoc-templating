@@ -236,7 +236,7 @@ object ValueType {
 }
 
 /** Represents the allowed types of values in the language */
-sealed trait Value with Ordered[Value] {
+sealed trait Value extends Ordered[Value] {
   /** Display a value literal for use in debugging. */
   def display: String
 
@@ -294,7 +294,7 @@ final case class MapValue(v: Map[String, Value])
   def display: String = ???
   def valueType = ValueType.Map
   def render()(implicit ctx: Context): ValidatedFragment[String] =
-    failFragment(UnrenderableValue(this))
+    failure(UnrenderableValue(this))
   def truthy = true
   def get = v
 }
@@ -303,7 +303,7 @@ final case class ListValue(v: List[Value]) extends IndexedValue {
   def display: String = s"""[${v.map(_.display).mkString(", ")}]"""
   def valueType = ValueType.List
   def render()(implicit ctx: Context): ValidatedFragment[String] =
-    failFragment(UnrenderableValue(this))
+    failure(UnrenderableValue(this))
   def truthy = true
   def get = v
 }
@@ -312,7 +312,7 @@ final case class NullValue() extends Value {
   def display: String = "null"
   def valueType = ValueType.Null
   def render()(implicit ctx: Context): ValidatedFragment[String] =
-    succeed("null")
+    success("null")
   def truthy = false
   def get = null
 }

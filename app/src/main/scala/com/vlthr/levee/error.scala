@@ -50,12 +50,21 @@ package object error {
     */
   def valid[T](value: T): Validated[T] = Result.valid(value)
 
+  def invalid[T](error: Error): Validated[T] = {
+    Result.invalid(error)
+  }
+
   /** Returns the value as a ValidatedFragment, i.e either a valid value or
     * else an invalid value containing ErrorFragments (with no source info).
     *
     * For use in places where no ParseContext is available, such as Filters.
     */
-  def succeed[T](value: T): ValidatedFragment[T] = Result.valid(value)
+  def success[T](value: T): ValidatedFragment[T] = Result.valid(value)
+
+  def failure[T](error: ErrorFragment): ValidatedFragment[T] = {
+    Result.invalid(error)
+  }
+
 
   /** Throws an exception, aborting execution of user code.
     *
@@ -64,7 +73,7 @@ package object error {
     */
   def abort[T](): ValidatedFragment[T] = throw new Exception("Extension execution aborted.")
 
-  /** Converts ValidatedFragment[T] to a Validated[T] */
+  /** Converts ValidatedFragment[T] to a Validated[T] by imbuing it with source metadata */
   def imbueFragments[T](v: ValidatedFragment[T])(implicit pctx: ParseContext): Validated[T] = v match {
     case v @ Valid(_) => v
     case Invalids(errFragments) => Invalids(errFragments.map(_.imbue(pctx)))
@@ -83,14 +92,6 @@ package object error {
     case Valid(output) => output
     case Invalids(errs) => Invalids(errs)
     case Invalid(errs) => Invalid(errs)
-  }
-
-  def fail[T](error: Error): Validated[T] = {
-    Result.invalid(error)
-  }
-
-  def failFragment[T](error: ErrorFragment): ValidatedFragment[T] = {
-    Result.invalid(error)
   }
 
   abstract class TypeError(pctx: ParseContext) extends Error(pctx) {

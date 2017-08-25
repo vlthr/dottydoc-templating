@@ -45,7 +45,7 @@ import com.vlthr.levee.core._
 val prepend = Filter[StringValue, StringValue :: HNil, HNil]("prepend") {
   (ctx, filter, input, args, optArgs) =>
     val start = args.head.get
-    succeed(StringValue(start + input.get))
+    success(StringValue(start + input.get))
 }
 ```
 
@@ -56,7 +56,7 @@ Filter takes three type parameters:
 
 To extract values from the argument list, use a combination of `args.head` and `args.tail`. Then, to extract the native type from within the `Value`, use the `get` method present on each of the `Value` subtypes.
 
-The filter must return either a successful result (`succeed(value)`) or a failure (`failFragment(errorFragment)`).
+The filter must return either a successful result (`success(value)`) or a failure (`failure(errorFragment)`).
 
 Some filters may require inputs of varying types. To do this, use the `Filter.multi` factory method:
 ```scala
@@ -68,10 +68,10 @@ val reverse = Filter.multi[ListValue :+: StringValue :+: CNil, HNil, HNil]("reve
   (ctx, filter, input, args, optArgs) =>
   input match {
     // Inl(_) represents the head of the type list, i.e. ListValue
-    case Inl(list) => succeed(ListValue(list.get.reverse))
+    case Inl(list) => success(ListValue(list.get.reverse))
     // Inr(Inl(_)) means first taking the tail of the list,
     // then taking the head, i.e. StringValue, the second type
-    case Inr(Inl(string)) => succeed(StringValue(string.get.reverse))
+    case Inr(Inl(string)) => success(StringValue(string.get.reverse))
     // To prevent a compiler warning about non-exhaustive pattern matching,
     // Add an (unreachable) final case.
     case Inr(Inr(_)) => abort()

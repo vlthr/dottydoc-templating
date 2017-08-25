@@ -131,7 +131,7 @@ package object filters {
         implicit ctx: Context): ValidatedFragment[Value] = ???
     override def apply(input: Value, allArgs: List[Value])(
         implicit ctx: Context): ValidatedFragment[Value] = {
-      failFragment(UnknownFilterName(name))
+      failure(UnknownFilterName(name))
     }
   }
 
@@ -139,12 +139,12 @@ package object filters {
     (ctx, filter, input, args, optArgs) =>
       val pattern = args.head.get
       val stringToSplit = input.get
-      succeed(Value.create(stringToSplit.split(pattern).toList))
+      success(Value.create(stringToSplit.split(pattern).toList))
   }
 
   val json = Filter[ListValue, Empty, Empty]("json") {
     (ctx, filter, input, args, optArgs) =>
-      succeed(
+      success(
         StringValue(new ObjectMapper()
           .writeValueAsString(Util.asJava(input))))
   }
@@ -153,8 +153,8 @@ package object filters {
     Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("size") {
       (ctx, filter, input, args, optArgs) =>
         input match {
-          case Inl(list) => succeed(IntValue(list.get.size))
-          case Inr(Inl(string)) => succeed(IntValue(string.get.size))
+          case Inl(list) => success(IntValue(list.get.size))
+          case Inr(Inl(string)) => success(IntValue(string.get.size))
           case Inr(Inr(_)) => abort()
         }
     }
@@ -163,8 +163,8 @@ package object filters {
     Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("first") {
       (ctx, filter, input, args, optArgs) =>
         input match {
-          case Inl(l) => succeed(l.get.head)
-          case Inr(Inl(s)) => succeed(StringValue("" + s.get.head))
+          case Inl(l) => success(l.get.head)
+          case Inr(Inl(s)) => success(StringValue("" + s.get.head))
           case Inr(Inr(_)) => abort()
         }
     }
@@ -173,8 +173,8 @@ package object filters {
     Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("last") {
       (ctx, filter, input, args, optArgs) =>
         input match {
-          case Inl(list) => succeed(list.get.last)
-          case Inr(Inl(string)) => succeed(StringValue("" + string.get.last))
+          case Inl(list) => success(list.get.last)
+          case Inr(Inl(string)) => success(StringValue("" + string.get.last))
           case Inr(Inr(_)) => abort()
         }
     }
@@ -183,8 +183,8 @@ package object filters {
     Filter.multi[ListValue :+: StringValue :+: CNil, Empty, Empty]("reverse") {
       (ctx, filter, input, args, optArgs) =>
         input match {
-          case Inl(list) => succeed(ListValue(list.get.reverse))
-          case Inr(Inl(string)) => succeed(StringValue(string.get.reverse))
+          case Inl(list) => success(ListValue(list.get.reverse))
+          case Inr(Inl(string)) => success(StringValue(string.get.reverse))
           case Inr(Inr(_)) => abort()
         }
     }
@@ -199,36 +199,36 @@ package object filters {
   val capitalize = Filter[StringValue, Empty, Empty]("capitalize") {
     (ctx, filter, input, args, optArgs) =>
       val i = input.get
-      succeed(StringValue(Character.toUpperCase(i(0)) + i.substring(1)))
+      success(StringValue(Character.toUpperCase(i(0)) + i.substring(1)))
   }
 
   val downcase = Filter[StringValue, Empty, Empty]("downcase") {
     (ctx, filter, input, args, optArgs) =>
-      succeed(
+      success(
         StringValue(input.get.map(c => Character.toLowerCase(c)).mkString))
   }
 
   val upcase = Filter[StringValue, Empty, Empty]("upcase") {
     (ctx, filter, input, args, optArgs) =>
-      succeed(
+      success(
         StringValue(input.get.map(c => Character.toUpperCase(c)).mkString))
   }
 
   val prepend = Filter[StringValue, StringValue :: HNil, Empty]("prepend") {
     (ctx, filter, input, args, optArgs) =>
       val start = args.head.get
-      succeed(StringValue(start + input.get))
+      success(StringValue(start + input.get))
   }
 
   val append = Filter[StringValue, StringValue :: HNil, Empty]("append") {
     (ctx, filter, input, args, optArgs) =>
       val start = args.head.get
-      succeed(StringValue(input.get + start))
+      success(StringValue(input.get + start))
   }
 
   val escape = Filter[StringValue, Empty, Empty]("escape") {
     (ctx, filter, input, args, optArgs) =>
-      succeed(
+      success(
         StringValue(
           input.get
             .replace("<", "&lt;")
@@ -240,7 +240,7 @@ package object filters {
   val remove = Filter[StringValue, StringValue :: HNil, Empty]("remove") {
     (ctx, filter, input, args, optArgs) =>
       val pattern = args.head.get
-      succeed(StringValue(input.get.replace(pattern, "")))
+      success(StringValue(input.get.replace(pattern, "")))
   }
 
   val replace =
@@ -248,7 +248,7 @@ package object filters {
       (ctx, filter, input, args, optArgs) =>
         val pattern = args.head.get
         val replacement = args.tail.head.get
-        succeed(StringValue(input.get.replace(pattern, replacement)))
+        success(StringValue(input.get.replace(pattern, replacement)))
     }
 
   /** Collects logic relating to the date filter
@@ -337,13 +337,13 @@ package object filters {
           "date") { (ctx, filter, input, args, optArgs) =>
           val seconds: ValidatedFragment[Long] = input match {
             case Inl(int) =>
-              succeed(int.get)
+              success(int.get)
             case Inr(Inl(string)) if string.get == "now" =>
-              succeed(System.currentTimeMillis / 1000L)
+              success(System.currentTimeMillis / 1000L)
             case Inr(Inl(string)) =>
               toSeconds(string.get)
-                .map(succeed)
-                .getOrElse(failFragment(InvalidDate(filter, string.get)))
+                .map(success)
+                .getOrElse(failure(InvalidDate(filter, string.get)))
           }
           val date = seconds.map(s => new java.util.Date(s * 1000L))
 
@@ -390,6 +390,6 @@ package object filters {
         // TODO: Support negative indexes
         val start = args.head.get
         val stop = optArgs.head.map(_.get).getOrElse(start)
-        succeed(StringValue(input.get.substring(start, stop + 1)))
+        success(StringValue(input.get.substring(start, stop + 1)))
     }
 }

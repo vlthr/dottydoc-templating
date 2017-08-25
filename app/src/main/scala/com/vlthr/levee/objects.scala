@@ -83,7 +83,7 @@ final case class ForTag(id: String, expr: Expr, block: Obj)(
   override def render()(implicit ctx: Context): Validated[String] = {
     val iterable: Validated[List[_]] = expr.eval().flatMap {
       case ListValue(l) => Result.valid(l)
-      case _ => fail(InvalidIterable(expr))
+      case _ => invalid(InvalidIterable(expr))
     }
     iterable.flatMap { iterable =>
       // For each iteration of the loop, render the body
@@ -154,7 +154,7 @@ final case class IncludeTag(filename: Expr)(implicit val pctx: ParseContext)
         val path = Paths.get(ctx.includeDir, f)
         Liquid.parse(path.toString).flatMap(_.render())
       }
-      case e => fail(InvalidInclude(this, e))
+      case e => invalid(InvalidInclude(this, e))
     }
   }
 }
@@ -179,9 +179,9 @@ final case class CustomTag(tag: Tag, args: List[Expr])(
     //     tag.render(args)
     //     .recoverWith {
     //       case LiquidFailure(errors) =>
-    //         fail(imbueFragments(errors))
-    //       case NonFatal(e) => fail(UncaughtExceptionError(e))
-    //       case e => fail(UncaughtExceptionError(e))
+    //         invalid(imbueFragments(errors))
+    //       case NonFatal(e) => invalid(UncaughtExceptionError(e))
+    //       case e => invalid(UncaughtExceptionError(e))
     //     }
     //   Result.fromTry(t)
     // }
