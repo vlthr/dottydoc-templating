@@ -1,7 +1,7 @@
 package com.vlthr.levee
 import scala.util.{Try, Success, Failure}
 import scala.util.control.NonFatal
-import com.vlthr.levee.parser.Liquid
+import com.vlthr.levee.parser.Parser
 import com.vlthr.levee.core._
 import com.vlthr.levee.util._
 import com.vlthr.levee.core.error._

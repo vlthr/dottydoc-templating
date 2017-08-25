@@ -42,13 +42,13 @@ class FileTests(file: SourceFile) {
 
   @Test def testParseTree(): Unit = {
     fileContentTest(".parseTree") { templateBody =>
-      Liquid.getParseTree(templateBody)
+      Parser.getParseTree(templateBody)
     }
   }
 
   @Test def testRender() = {
     fileTest(".render") { f =>
-      Liquid.render(f.path, environment, includeDir) match {
+      Parser.render(f.path, environment, includeDir) match {
         case Success(output) => output
         case Failure(f) => f.toString
       }

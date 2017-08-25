@@ -1,7 +1,7 @@
 package com.vlthr.levee.core
 import com.vlthr.levee.filters._
 import com.vlthr.levee.util._
-import com.vlthr.levee.parser.Liquid
+import com.vlthr.levee.parser.Parser
 import com.vlthr.levee.core.error._
 import shapeless._
 import shapeless.ops.hlist.HKernelAux
@@ -199,7 +199,7 @@ case class Context(mappings: MMap[String, Value],
   def renderFile(file: SourceFile): Try[String] = {
     implicit val c = this
     this.executionState = ExecutionState()
-    toTry(Liquid.parse(file).flatMap(_.render()))
+    toTry(Parser.parse(file).flatMap(_.render()))
   }
 
   /** Renders a file using this context. */

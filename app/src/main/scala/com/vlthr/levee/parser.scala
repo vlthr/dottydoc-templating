@@ -13,7 +13,7 @@ import scala.util.{Success, Failure, Try}
 import validation.Result
 import shapeless._
 
-object Liquid {
+object Parser {
 
   /** Creates a ParseContext from the given ANTLR context */
   def makeContext(c: ParserRuleContext, template: SourceFile) = {
@@ -44,15 +44,6 @@ object Liquid {
   /** Parse a given template path to an AST */
   def parse(path: String)(implicit ctx: Context): Validated[Obj] =
     parse(SourceFile(Util.readWholeFile(path), path))
-
-  /** Convenience method for rendering a template file */
-  def render(path: String,
-             params: Map[String, Any],
-             includeDir: String): Try[String] = {
-    val c =
-      Context.createNew().withParams(params).withIncludeDir(includeDir)
-    c.renderFile(path)
-  }
 
   def makeParser(file: SourceFile): (LiquidParser, GatherErrors) = {
     val input = new ANTLRInputStream(file.body)
@@ -116,13 +107,13 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
   }
 
   override def visitOutput(c: LiquidParser.OutputContext): Obj = {
-    implicit val pc = Liquid.makeContext(c, template)
+    implicit val pc = Parser.makeContext(c, template)
     val output_expr = c.output_expr()
     OutputNode(visitOutputExpr(output_expr))
   }
 
   def visitOutputExpr(c: LiquidParser.Output_exprContext): Expr = {
-    implicit val pc = Liquid.makeContext(c, template)
+    implicit val pc = Parser.makeContext(c, template)
     val expVisitor = new LiquidExprVisitor(template)
     if (c.FILTER() != null) {
       val args =
@@ -141,7 +132,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
   }
 
   override def visitTag(c: LiquidParser.TagContext): Obj = {
-    implicit val pc = Liquid.makeContext(c, template)
+    implicit val pc = Parser.makeContext(c, template)
     if (c.ifTag() != null) {
       val ev = new LiquidExprVisitor(template)
       val expr =
@@ -227,7 +218,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
   }
 
   override def visitBlock(c: LiquidParser.BlockContext): Obj = {
-    implicit val pc = Liquid.makeContext(c, template)
+    implicit val pc = Parser.makeContext(c, template)
     BlockNode(c.node().asScala.toList.map(n => visitNode(n)))
   }
 }
@@ -240,7 +231,7 @@ class LiquidArgsVisitor(template: SourceFile)(implicit val ctx: Context)
     c.expr()
       .asScala
       .map(ec => {
-        implicit val pc = Liquid.makeContext(c, template)
+        implicit val pc = Parser.makeContext(c, template)
         new LiquidExprVisitor(template).visitExpr(ec)
       })
       .toList
@@ -256,7 +247,7 @@ class LiquidKwArgsVisitor(template: SourceFile)(implicit val ctx: Context)
       Map(
         c.kwarg.asScala
           .map(ec => {
-            implicit val pc = Liquid.makeContext(c, template)
+            implicit val pc = Parser.makeContext(c, template)
             val id = ec.id.getText
             val expr = new LiquidExprVisitor(template).visitExpr(ec.expr)
             (id, expr)
@@ -267,7 +258,7 @@ class LiquidKwArgsVisitor(template: SourceFile)(implicit val ctx: Context)
 class LiquidExprVisitor(template: SourceFile)(implicit val ctx: Context)
     extends LiquidParserBaseVisitor[Expr] {
   override def visitExpr(c: LiquidParser.ExprContext): Expr = {
-    implicit val pc = Liquid.makeContext(c, template)
+    implicit val pc = Parser.makeContext(c, template)
     if (c.DOTINDEX() != null) {
       DotExpr(visitExpr(c.expr(0)), c.id().getText())
     } else if (c.STARTINDEX() != null) {
@@ -301,7 +292,7 @@ class LiquidExprVisitor(template: SourceFile)(implicit val ctx: Context)
   }
 
   override def visitTerm(c: LiquidParser.TermContext): Expr = {
-    implicit val pc = Liquid.makeContext(c, template)
+    implicit val pc = Parser.makeContext(c, template)
     c.getChild(0) match {
       case t: TerminalNode => {
         if (c.INT() != null) {

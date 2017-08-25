@@ -1,7 +1,7 @@
 package com.vlthr.levee.core
 import scala.collection.mutable.{Buffer, Map => MMap}
 import scala.util.{Try, Success, Failure}
-import com.vlthr.levee.parser.Liquid
+import com.vlthr.levee.parser.Parser
 import scala.util.control.NonFatal
 import com.vlthr.levee.core.error._
 import java.nio.file.Paths
@@ -152,7 +152,7 @@ final case class IncludeTag(filename: Expr)(implicit val pctx: ParseContext)
     filename.eval().flatMap {
       case StringValue(f) => {
         val path = Paths.get(ctx.includeDir, f)
-        Liquid.parse(path.toString).flatMap(_.render())
+        Parser.parse(path.toString).flatMap(_.render())
       }
       case e => invalid(InvalidInclude(this, e))
     }

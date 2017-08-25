@@ -18,9 +18,9 @@ libraryDependencies += "com.vlthr" %% "levee" % "0.1.0"
 
 Then use as follows:
 ```scala
-import com.vlthr.levee.core._
+import com.vlthr.levee._
 
-val render = Context.createNew()
+val render = Levee.newContext()
   .withIncludeDir("./_includes")
   .withFilter(myCustomFilter)
   .withParams(Map("author" -> Map("name" -> "vlthr"), "title" -> "Levee README"))
