@@ -1,22 +1,9 @@
-lazy val metaVersion = "1.6.0"
 // scalaVersion in ThisBuild := dottyLatestNightlyBuild.get
 scalaVersion in ThisBuild := "0.2.0-RC1"
 
-lazy val root = Project(id = "levee", base = file("."))
-  .aggregate(app)
-
-lazy val common = Seq(
-  publishArtifact := false,
-  resolvers ++= Seq(
-    Resolver.sonatypeRepo("snapshots"),
-    Resolver.sonatypeRepo("releases"),
-    Resolver.typesafeIvyRepo("releases")
-  )
-)
-
-lazy val templatingSettings = antlr4Settings ++ Seq(
+lazy val leveeSettings = antlr4Settings ++ Seq(
   name := "levee",
-  version := "0.1.0",
+  version := "0.1.0-SNAPSHOT",
   organization := "com.vlthr",
   libraryDependencies ++= Seq(
     "junit" % "junit" % "4.12" % "test",
@@ -36,11 +23,16 @@ lazy val templatingSettings = antlr4Settings ++ Seq(
   antlr4GenListener in Antlr4 := true,
   antlr4GenVisitor in Antlr4 := true,
   antlr4Dependency in Antlr4 := "org.antlr" % "antlr4" % "4.5",
-  antlr4PackageName in Antlr4 := Some("com.vlthr.levee.parser")
-) ++ common
+  antlr4PackageName in Antlr4 := Some("com.vlthr.levee.parser"),
+  resolvers ++= Seq(
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.sonatypeRepo("releases"),
+    Resolver.typesafeIvyRepo("releases")
+  )
+)
 
-lazy val app = (project in file("app"))
-  .settings(templatingSettings)
+lazy val levee = Project(id = "levee", base = file("."))
+  .settings(leveeSettings)
 
 homepage := Some(url("https://github.com/vlthr/levee"))
 
