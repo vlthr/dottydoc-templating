@@ -1,7 +1,7 @@
 package com.vlthr.levee
 import scala.util.{Try, Success, Failure}
 import scala.util.control.NonFatal
-import com.vlthr.levee.parser.Parser
+import com.vlthr.levee.parser.LeveeParser
 import com.vlthr.levee.core._
 import com.vlthr.levee.util._
 import com.vlthr.levee.core.error._
@@ -14,7 +14,7 @@ import shapeless.ops.traversable._
 import shapeless.syntax.typeable._
 import shapeless.ops.coproduct._
 import shapeless.syntax.inject._
-import shapeless.Typeable._
+import com.vlthr.levee.core.Value._
 
 package object filters {
   abstract trait Filter extends Extension {
@@ -33,20 +33,19 @@ package object filters {
     def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
 
     def noOptArgs[I, A <: HList](s: String)(
-      f: (Context, Filter, I, A, Unit) => ValidatedFragment[Value])(
+      f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
       implicit ftArgs: FromTraversable[A],
       itype: Typeable[I],
-      rinj: RuntimeInject[I],
       hkArgs: HKernelAux[A]) = {
       def matchInput(filter: Filter, input: Value) = Result.fromOption(input.cast[I], InvalidInput(filter, input))
       def matchArgs(filter: Filter, args: List[Value]) = {
         val a = if (args.size < intLen[A]) failure(TooFewArgs(filter, args))
                 else if (args.size > intLen[A]) failure(TooManyArgs(filter, args))
                 else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
-        a zip success(())
+        a zip success(HNil)
       }
 
-      base[I, A, Unit](s, matchInput, matchArgs)(f)
+      base[I, A, HNil](s, matchInput, matchArgs)(f)
     }
 
     def apply[I, A <: HList, O <: HList](s: String)(
@@ -73,19 +72,19 @@ package object filters {
     }
 
     def multiNoOptArgs[I <: Coproduct, A <: HList](s: String)(
-      f: (Context, Filter, I, A, Unit) => ValidatedFragment[Value])(
+      f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
       implicit ftArgs: FromTraversable[A],
       itype: Typeable[I],
       rinj: RuntimeInject[I],
       hkArgs: HKernelAux[A]) = {
-      def matchInput(filter: Filter, input: Value) = Result.fromOption(Coproduct.runtimeInject[I](input), InvalidInput(this, input))
-      def matchArgs(filter: Filter, args: List[Value]) = {
-        val a = if (args.size < intLen[A]) failure(TooFewArgs(filter, args))
-                else if (args.size > intLen[A]) failure(TooManyArgs(filter, args))
-                else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
-        a zip success(())
+      def matchInput(filter: Filter, input: Value) = Result.fromOption(Coproduct.runtimeInject[I](input), InvalidInput(filter, input))
+      def matchArgs(filter: Filter, allArgs: List[Value]) = {
+        val a = if (allArgs.size < intLen[A]) failure(TooFewArgs(filter, allArgs))
+                else if (allArgs.size > intLen[A]) failure(TooManyArgs(filter, allArgs))
+                else Result.fromOption(ftArgs(allArgs), InvalidArgs(filter, allArgs))
+        a zip success(HNil)
       }
-      base[I, A, Unit](s, matchInput, matchArgs)(f)
+      base[I, A, HNil](s, matchInput, matchArgs)(f)
     }
 
     def multi[I <: Coproduct, A <: HList, O <: HList](s: String)(
@@ -96,8 +95,8 @@ package object filters {
       rinj: RuntimeInject[I],
       hkArgs: HKernelAux[A],
       hkOpt: HKernelAux[O]) = {
-      def matchInput(filter: Filter, input: Value) = Result.fromOption(Coproduct.runtimeInject[I](input), InvalidInput(this, input))
-      def matchArgs(filter: Filter, args: List[Value]) = {
+      def matchInput(filter: Filter, input: Value) = Result.fromOption(Coproduct.runtimeInject[I](input), InvalidInput(filter, input))
+      def matchArgs(filter: Filter, allArgs: List[Value]) = {
         val (args, optArgs) = allArgs.splitAt(intLen[A])
         val maxNrOpts = intLen[O]
         val a = if (allArgs.size < intLen[A]) failure(TooFewArgs(filter, args))
@@ -105,7 +104,7 @@ package object filters {
                 else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
         val fixedOptArgs = optArgs.map(v => Some(v)) ++ List.fill(
           maxNrOpts - optArgs.size)(None)
-        val o = Result.fromOption(ftOpt(fixedOptArgs), InvalidOptArgs(this, args))
+        val o = Result.fromOption(ftOpt(fixedOptArgs), InvalidOptArgs(filter, args))
         a zip o
       }
       base[I, A, O](s, matchInput, matchArgs)(f)
@@ -123,10 +122,11 @@ package object filters {
         f(ctx, this, input, args, optArgs)
       def apply(input: Value, allArgs: List[Value])(
           implicit ctx: Context): ValidatedFragment[Value] = {
-        val i = matchInput(input)
-        val as = matchArgs(allArgs)
-        (i zip as).flatMap { case (i, (a, o)) =>
-          filter(i, a, o)
+        val i = matchInput(this, input)
+        val as = matchArgs(this, allArgs)
+        (i zip as).flatMap { (i, allArgs) =>
+          val (args, optArgs) = allArgs
+          filter(i, args, optArgs)
         }
       }
     }
@@ -200,7 +200,8 @@ package object filters {
         input match {
           case Inl(list) => success(IntValue(list.get.size))
           case Inr(Inl(string)) => success(IntValue(string.get.size))
-          case Inr(Inr(_)) => abort()
+          // case Inr(Inr(_)) => abort()
+          case _ => abort()
         }
     }
 
@@ -210,7 +211,8 @@ package object filters {
         input match {
           case Inl(l) => success(l.get.head)
           case Inr(Inl(s)) => success(StringValue("" + s.get.head))
-          case Inr(Inr(_)) => abort()
+          // case Inr(Inr(_)) => abort()
+          case _ => abort()
         }
     }
 
@@ -220,7 +222,8 @@ package object filters {
         input match {
           case Inl(list) => success(list.get.last)
           case Inr(Inl(string)) => success(StringValue("" + string.get.last))
-          case Inr(Inr(_)) => abort()
+          // case Inr(Inr(_)) => abort()
+          case _ => abort()
         }
     }
 
@@ -230,7 +233,8 @@ package object filters {
         input match {
           case Inl(list) => success(ListValue(list.get.reverse))
           case Inr(Inl(string)) => success(StringValue(string.get.reverse))
-          case Inr(Inr(_)) => abort()
+          // case Inr(Inr(_)) => abort()
+          case _ => abort()
         }
     }
 
@@ -389,6 +393,7 @@ package object filters {
               toSeconds(string.get)
                 .map(success)
                 .getOrElse(failure(InvalidDate(filter, string.get)))
+            case _ => abort()
           }
           val date = seconds.map(s => new java.util.Date(s * 1000L))
 

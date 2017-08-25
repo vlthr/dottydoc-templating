@@ -59,11 +59,11 @@ class RenderTests {
   @Test def testRuntimeInject(): Unit = {
     import shapeless._
     import shapeless.ops.coproduct._
+    import com.vlthr.levee.core.Value._
     def makeFilter[I <: Coproduct](l: Any)(implicit rinj: RuntimeInject[I]) = {
       Coproduct.runtimeInject[I](l: Any)
     }
     import shapeless.ops.coproduct._
-    makeFilter[Int :+: String :+: CNil](1)
-    Coproduct.runtimeInject[Int :+: String :+: CNil](1)
+    makeFilter[IntValue :+: IntValue :+: CNil](IntValue(1))
   }
 }

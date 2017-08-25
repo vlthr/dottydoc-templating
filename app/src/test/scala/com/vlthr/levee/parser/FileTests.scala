@@ -7,6 +7,7 @@ import org.junit.Assert._
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
+import com.vlthr.levee._
 import com.vlthr.levee.core._
 import com.vlthr.levee.util._
 import scala.collection.JavaConverters._
@@ -42,13 +43,13 @@ class FileTests(file: SourceFile) {
 
   @Test def testParseTree(): Unit = {
     fileContentTest(".parseTree") { templateBody =>
-      Parser.getParseTree(templateBody)
+      LeveeParser.getParseTree(templateBody)
     }
   }
 
   @Test def testRender() = {
     fileTest(".render") { f =>
-      Parser.render(f.path, environment, includeDir) match {
+      Levee.render(f.path, environment, includeDir) match {
         case Success(output) => output
         case Failure(f) => f.toString
       }

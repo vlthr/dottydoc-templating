@@ -1,7 +1,7 @@
 package com.vlthr.levee.core
 import com.vlthr.levee.filters._
 import com.vlthr.levee.util._
-import com.vlthr.levee.parser.Parser
+import com.vlthr.levee.parser.LeveeParser
 import com.vlthr.levee.core.error._
 import shapeless._
 import shapeless.ops.hlist.HKernelAux
@@ -199,7 +199,7 @@ case class Context(mappings: MMap[String, Value],
   def renderFile(file: SourceFile): Try[String] = {
     implicit val c = this
     this.executionState = ExecutionState()
-    toTry(Parser.parse(file).flatMap(_.render()))
+    toTry(LeveeParser.parse(file).flatMap(_.render()))
   }
 
   /** Renders a file using this context. */
@@ -268,7 +268,7 @@ final case class StringValue(v: String) extends Value {
   def valueType = ValueType.String
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     Result.valid(v)
-  def truthy = true
+  override def truthy = true
   def get = v
 }
 
@@ -277,7 +277,7 @@ final case class BooleanValue(v: Boolean) extends Value {
   def valueType = ValueType.Boolean
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     Result.valid(v.toString)
-  def truthy = v
+  override def truthy = v
   def get = v
 }
 
@@ -286,7 +286,7 @@ final case class IntValue(v: Int) extends Value {
   def valueType = ValueType.Integer
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     Result.valid(v.toString)
-  def truthy = true
+  override def truthy = true
   def get = v
 }
 
@@ -296,7 +296,7 @@ final case class MapValue(v: Map[String, Value]) extends IndexedValue {
   def valueType = ValueType.Map
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     failure(UnrenderableValue(this))
-  def truthy = true
+  override def truthy = true
   def get = v
 }
 
@@ -305,7 +305,7 @@ final case class ListValue(v: List[Value]) extends IndexedValue {
   def valueType = ValueType.List
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     failure(UnrenderableValue(this))
-  def truthy = true
+  override def truthy = true
   def get = v
 }
 
@@ -314,7 +314,7 @@ final case class NullValue() extends Value {
   def valueType = ValueType.Null
   def render()(implicit ctx: Context): ValidatedFragment[String] =
     success("null")
-  def truthy = false
+  override def truthy = false
   def get = null
 }
 
