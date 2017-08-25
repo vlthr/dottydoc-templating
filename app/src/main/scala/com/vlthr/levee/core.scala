@@ -238,6 +238,7 @@ object ValueType {
 
 /** Represents the allowed types of values in the language */
 sealed trait Value extends Ordered[Value] {
+
   /** Display a value literal for use in debugging. */
   def display: String
 
@@ -290,8 +291,7 @@ final case class IntValue(v: Int) extends Value {
 }
 
 /** Represents nested variables that can be accessed using a DotExpr, i.e. {{ a.b.c }} */
-final case class MapValue(v: Map[String, Value])
-    extends IndexedValue {
+final case class MapValue(v: Map[String, Value]) extends IndexedValue {
   def display: String = ???
   def valueType = ValueType.Map
   def render()(implicit ctx: Context): ValidatedFragment[String] =
@@ -335,6 +335,7 @@ abstract class Tag(val name: String) extends Extension {
 }
 
 object Value {
+
   /** Convert a map of non-levee values to one with levee values. */
   def createMap(value: java.util.Map[String, Any]): Map[String, Value] =
     value.asScala.toMap.map {

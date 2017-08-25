@@ -177,8 +177,14 @@ package object error {
   case class InvalidArgs(ext: Extension, args: List[Value]) extends ExtensionError {
     def description = s"${ext.extensionType} `${ext.name}` is not defined for arguments (${args.map(_.valueType).mkString(", ")})."
   }
+  case class InvalidOptArgs(ext: Extension, args: List[Value]) extends ExtensionError {
+    def description = s"${ext.extensionType} `${ext.name}` is not defined for optional arguments (${args.map(_.valueType).mkString(", ")})."
+  }
   case class TooManyArgs(ext: Extension, args: List[Value]) extends ExtensionError {
-    def description = s"Too many arguments to filter ${ext.name}."
+    def description = s"Too many arguments to ${ext.extensionType} ${ext.name}."
+  }
+  case class TooFewArgs(ext: Extension, args: List[Value]) extends ExtensionError {
+    def description = s"Too many arguments to ${ext.extensionType} ${ext.name}."
   }
   case class UnknownFilterName(name: String) extends ExtensionError {
     def description = s"Unknown filter: `$name`."
