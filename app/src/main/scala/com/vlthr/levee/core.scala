@@ -119,9 +119,9 @@ abstract trait ASTNode {
 }
 
 /** Common trait for all object nodes, i.e. Liquid objects of the form
-  * {{ ... }}
+  * {{ ... }} or {% ... %}
   */
-abstract trait Obj extends ASTNode {}
+abstract trait Obj extends ASTNode
 
 /** Common trait for all nodes that can be evaluated to produce a Value */
 abstract trait Expr extends ASTNode {
@@ -131,7 +131,7 @@ abstract trait Expr extends ASTNode {
     eval().flatMap(v => imbueFragments(v.render()))
 }
 
-/** Common trait for code that is not part of the AST, i.e. tags and filters  */
+/** Common trait for code that is not directly part of the AST, i.e. tags and filters  */
 abstract trait Extension {
   def name: String
   def extensionType: String
@@ -142,6 +142,7 @@ case class ExecutionState(var breakWasHit: Boolean = false,
                           var continueWasHit: Boolean = false)
 
 /** Holds configuration and global variables required for rendering and evaluation
+  *
   * @param mappings the variable bindings used when rendering the template - may be mutated
   * @param customFilters all registered custom filters as a map from filter name to filter object
   * @param customTags all registered custom tags as a map from tag name to tag object
