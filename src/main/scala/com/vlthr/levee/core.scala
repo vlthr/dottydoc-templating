@@ -140,6 +140,8 @@ abstract trait Expr extends ASTNode {
   def eval()(implicit ctx: Context): Validated[Value]
   def render()(implicit ctx: Context): Validated[String] =
     eval().flatMap(v => imbueFragments(v.render()))
+  def truthy()(implicit ctx: Context): Validated[Boolean] =
+    eval().map(_.truthy)
 }
 
 /** Common trait for code that is not directly part of the AST, i.e. tags and filters  */
@@ -152,10 +154,10 @@ abstract trait Extension {
 case class ExecutionState(var breakWasHit: Boolean = false,
                           var continueWasHit: Boolean = false)
 
-case class Config(includeDir: String)
+case class Config(includeDir: String, strictConditionals: Boolean)
 
 object Config {
-  val default = Config(includeDir = "_include")
+  val default = Config(includeDir = "_include", strictConditionals = false)
 }
 
 /** Holds configuration and global variables required for rendering and evaluation
@@ -203,10 +205,14 @@ case class Context(mappings: MMap[String, Value],
   /** Sets configuration options used when rendering with this context.
     *
     * @param includeDir the path to the directory where included snippets can be found
+    * @param strictConditionals disallow checking for undefined variables in conditionals
     */
-  def withConfig(includeDir: String = Config.default.includeDir) =
+  def withConfig(includeDir: String = Config.default.includeDir,
+                 strictConditionals: Boolean =
+                   Config.default.strictConditionals) =
     copy(
-      config = config.copy(includeDir = includeDir))
+      config = config.copy(includeDir = includeDir,
+                           strictConditionals = strictConditionals))
 
   /** Gets a filter object by name if one exists */
   def getFilter(name: String): Filter =

@@ -127,18 +127,18 @@ final case class IfTag(condition: Expr,
                        elseBlock: Option[Obj])(implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Validated[String] = {
-    val condEval = condition.eval()
+    val condEval = condition.truthy()
     val elsifEvals = Result.sequence(elsifs.map {
-      case (cond, body) => cond.eval()
+      case (cond, body) => cond.truthy()
     }.toList)
     (condEval zip elsifEvals) flatMap { (c, eis) =>
       // Join all of the ifs to a (condition, body) form and find the first that matches
-      val elseBranch = (BooleanValue(true), TextNode(""))
+      val elseBranch = (true, TextNode(""))
       val elseifBranches = eis.zip(elsifs.map(_._2))
       val allBranches
-        : Seq[(Value, Obj)] = ((c, thenBlock) +: elseifBranches :+ elseBranch)
+        : Seq[(Boolean, Obj)] = ((c, thenBlock) +: elseifBranches :+ elseBranch)
       allBranches
-        .find { case (cond, body) => cond.truthy }
+        .find { case (cond, body) => cond }
         .get
         ._2
         .render()

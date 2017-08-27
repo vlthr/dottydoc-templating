@@ -118,6 +118,15 @@ final case class VariableUseExpr(name: String)(implicit val pctx: ParseContext)
       case None => invalid(UndefinedVariable(this))
     }
   }
+
+  override def truthy()(implicit ctx: Context) = {
+    if (ctx.config.strictConditionals) eval().map(_.truthy)
+    else
+      eval().map(_.truthy).recoverWith {
+        case UndefinedVariable(_) => valid(false)
+        case e => invalid(e)
+      }
+  }
 }
 
 /** Filter application
@@ -176,5 +185,14 @@ final case class DotExpr(indexable: Expr, key: String)(
         case None => invalid(UndefinedField(this, indexable, key))
       }
     }
+  }
+
+  override def truthy()(implicit ctx: Context) = {
+    if (ctx.config.strictConditionals) eval().map(_.truthy)
+    else
+      eval().map(_.truthy).recoverWith {
+        case UndefinedField(_, _, _) => valid(false)
+        case e => invalid(e)
+      }
   }
 }
