@@ -375,7 +375,7 @@ object Value {
         case _ => None
       }
 
-      def describe: String = s"IntValue"
+      def describe: String = s"Integer"
     }
 
   implicit val stringTypeable: Typeable[StringValue] =
@@ -385,7 +385,7 @@ object Value {
         case _ => None
       }
 
-      def describe: String = s"StringValue"
+      def describe: String = s"String"
     }
 
   implicit val mapTypeable: Typeable[MapValue] =
@@ -395,7 +395,7 @@ object Value {
         case _ => None
       }
 
-      def describe: String = s"MapValue"
+      def describe: String = s"Map"
     }
 
   implicit val listTypeable: Typeable[ListValue] =
@@ -405,7 +405,7 @@ object Value {
         case _ => None
       }
 
-      def describe: String = s"ListValue"
+      def describe: String = s"List"
     }
 
   implicit val boolTypeable: Typeable[BooleanValue] =
@@ -415,7 +415,7 @@ object Value {
         case _ => None
       }
 
-      def describe: String = s"BooleanValue"
+      def describe: String = s"Boolean"
     }
 
   implicit val nullTypeable: Typeable[NullValue] =
@@ -425,6 +425,6 @@ object Value {
         case _ => None
       }
 
-      def describe: String = s"BooleanValue"
+      def describe: String = s"Boolean"
     }
 }

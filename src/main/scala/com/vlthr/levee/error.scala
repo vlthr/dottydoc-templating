@@ -5,6 +5,7 @@ import com.vlthr.levee.util.Util
 import validation._
 import validation.Result.{Valid, Invalids, Invalid}
 import com.vlthr.levee.filters.Filter
+import shapeless.Typeable
 
 package object error {
   type Validated[A] = Result[Error, A]
@@ -94,6 +95,20 @@ package object error {
     case Invalid(errs) => Invalid(errs)
   }
 
+  /** Helper method for requiring a specific value type, or else returning a given error type. */
+  def typedEvalOrElse[T](expr: Expr)(makeError: Value => Error | ErrorFragment)(implicit ctx: Context, pctx: ParseContext, t: Typeable[T]): Validated[T] = expr.eval().flatMap { v =>
+    t.cast(v) match {
+      case Some(v) => valid(v)
+      case None => makeError(v) match {
+        case e: ErrorFragment => invalid(e.imbue(pctx))
+        case e: Error => invalid(e)
+      }
+    }
+  }
+
+  /** Helper method for requiring a specific value type, or else throw an UnexpectedValueType error */
+  def typedEval[T](expr: Expr)(implicit ctx: Context, pctx: ParseContext, t: Typeable[T]): Validated[T] = typedEvalOrElse[T](expr)(v => UnexpectedValueType(v, expected = Some(t.describe)))
+
   abstract class TypeError(pctx: ParseContext) extends Error(pctx) {
     def errorType = "Type Error"
   }
@@ -127,10 +142,11 @@ package object error {
     override def errorType = "Parse Error"
     def description = s"`$id` does not match any known tag."
   }
-  case class UnexpectedValueType(v: Value, expected: Option[ValueType] = None) extends ExtensionError  {
+  case class UnexpectedValueType(v: Value, expected: Option[ValueType | String] = None) extends ExtensionError  {
     override def errorType = "Type Error"
     def description = expected match {
-      case Some(e) => s"Unexpected value type: ${v.valueType}. Expected $e."
+      case Some(e: String) => s"Unexpected value type: ${v.valueType}. Expected $e."
+      case Some(e: ValueType) => s"Unexpected value type: ${v.valueType}. Expected $e."
       case None => s"Unexpected value type: ${v.valueType}."
     }
   }
