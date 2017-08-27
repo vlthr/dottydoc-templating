@@ -1,17 +1,17 @@
 # Levee
 [![Build Status](https://travis-ci.org/vlthr/levee.svg?branch=master)](https://travis-ci.org/vlthr/levee)
 
-Levee is a rendering engine for the Liquid templating engine with a focus on providing type safety and strict error detection wherever possible.
+Levee is a rendering engine for the [Liquid](https://shopify.github.io/liquid/) templating language with a focus on providing type safety and strict error detection wherever possible.
 
 ## Using Levee
-Currently, levee is available for dotty 0.2.0-RC1 and scalac 2.11. The library is still in its early stages and has some rough edges, but user feedback is greatly appreciated.
+Currently, levee is available for dotty 0.2.0-RC1 and is in the process of being ported to Scala2. The library is still in its early stages and has some rough edges, but user feedback is greatly appreciated.
 
 Add the following dependency to your `build.sbt`:
 ```scala
 resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("releases")
-}
+)
 
 libraryDependencies += "com.vlthr" %% "levee" % "0.1.0"
 ```
@@ -21,7 +21,7 @@ Then use as follows:
 import com.vlthr.levee._
 
 val render = Levee.newContext()
-  .withIncludeDir("./_includes")
+  .withConfig(includeDir = "./_include", strictConditionals = false)
   .withFilter(myCustomFilter)
   .withParams(Map("author" -> Map("name" -> "vlthr"), "title" -> "Levee README"))
   .renderFile("./index.md")
@@ -31,6 +31,32 @@ render match {
     case Failure(errors) => println(errors)
 }
 ```
+
+Use of undefined variables will cause an error everywhere except in the conditional part of an `if` tag, e.g.
+```liquid
+{{ noexists }} <- Throws an error
+{% if noexists %} <- Does not throw an error
+{% endif %}
+{% if page.noexists %}  <- Does not throw an error
+{% endif %}
+```
+This allows you to check for the existence of a variable without causing errors. To disable this feature, enable the `strictConditionals` configuration option.
+
+## Configuration
+Levee can be configured using the `.withConfig` builder method on the LeveeContext object.
+
+```scala
+Levee.newContext()
+  .withConfig(config1 = value, config2 = value)
+```
+
+The configuration options available are:
+
+Name              | Description
+------------------|-------------------------
+includeDir        | The path to the directory where included snippets can be found
+strictConditionals| Disallow checking for undefined variables in conditionals
+
 
 ## Writing custom filters
 Levee allows user code to define type safe filters without needing to manually implement type checking for all of its inputs.
