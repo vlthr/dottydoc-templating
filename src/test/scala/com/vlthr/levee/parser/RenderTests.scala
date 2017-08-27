@@ -36,7 +36,7 @@ class RenderTests {
     .withParams(environment.map {
       case (k: String, v: Object) => (k, Value.create(v))
     })
-    .withIncludeDir(includeDir)
+    .withConfig(includeDir = includeDir)
 
   @Test def testHListFilter() = {
     import shapeless._

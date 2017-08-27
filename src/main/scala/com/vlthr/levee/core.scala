@@ -152,20 +152,26 @@ abstract trait Extension {
 case class ExecutionState(var breakWasHit: Boolean = false,
                           var continueWasHit: Boolean = false)
 
+case class Config(includeDir: String)
+
+object Config {
+  val default = Config(includeDir = "_include")
+}
+
 /** Holds configuration and global variables required for rendering and evaluation
   *
   * @param mappings the variable bindings used when rendering the template - may be mutated
   * @param customFilters all registered custom filters as a map from filter name to filter object
   * @param customTags all registered custom tags as a map from tag name to tag object
   * @param parent a reference to a parent context - used to keep track of nested scopes
-  * @param includeDir the path to the directory where included snippets can be found
+  * @param config the configuration options used for rendering
   * @param executionState the current execution state
   */
 case class Context(mappings: MMap[String, Value],
                    customFilters: Map[String, Filter],
                    customTags: Map[String, Tag],
                    parent: Option[Context],
-                   includeDir: String,
+                   config: Config,
                    var executionState: ExecutionState) {
 
   /** Check whether a given variable name is bound to a value */
@@ -192,8 +198,15 @@ case class Context(mappings: MMap[String, Value],
   def withTag(tags: Tag*) =
     copy(customTags = customTags ++ tags.map(t => (t.name, t)))
 
-  /** Sets the include directory path */
-  def withIncludeDir(includeDir: String) = copy(includeDir = includeDir)
+  def withConfig(config: Config) = copy(config = config)
+
+  /** Sets configuration options used when rendering with this context.
+    *
+    * @param includeDir the path to the directory where included snippets can be found
+    */
+  def withConfig(includeDir: String = Config.default.includeDir) =
+    copy(
+      config = config.copy(includeDir = includeDir))
 
   /** Gets a filter object by name if one exists */
   def getFilter(name: String): Filter =
@@ -227,7 +240,7 @@ object Context {
 
   /** Create a new context */
   def createNew(): Context =
-    Context(MMap(), Map(), Map(), None, "_include", ExecutionState())
+    Context(MMap(), Map(), Map(), None, Config.default, ExecutionState())
 
   /** Create a new context as a child to the given context.
     *

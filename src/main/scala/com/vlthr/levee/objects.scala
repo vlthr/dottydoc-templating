@@ -151,7 +151,7 @@ final case class IncludeTag(filename: Expr)(implicit val pctx: ParseContext)
   override def render()(implicit ctx: Context): Validated[String] = {
     filename.eval().flatMap {
       case StringValue(f) => {
-        val path = Paths.get(ctx.includeDir, f)
+        val path = Paths.get(ctx.config.includeDir, f)
         LeveeParser.parse(path.toString).flatMap(_.render())
       }
       case e => invalid(InvalidInclude(this, e))

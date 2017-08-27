@@ -12,11 +12,9 @@ object Levee {
   def newContext(): Context = Context.createNew()
 
   /** Convenience method for rendering a template file without a context */
-  def render(path: String,
-             params: Map[String, Any],
-             includeDir: String): Try[String] = {
+  def render(path: String, params: Map[String, Any]): Try[String] = {
     val c =
-      Context.createNew().withParams(params).withIncludeDir(includeDir)
+      Context.createNew().withParams(params)
     c.renderFile(path)
   }
 }

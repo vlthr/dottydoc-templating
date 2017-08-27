@@ -39,7 +39,7 @@ class FileTests(file: SourceFile) {
     .withParams(environment.map {
       case (k: String, v: Object) => (k, Value.create(v))
     })
-    .withIncludeDir(includeDir)
+    .withConfig(includeDir = includeDir)
 
   @Test def testParseTree(): Unit = {
     fileContentTest(".parseTree") { templateBody =>
@@ -49,7 +49,7 @@ class FileTests(file: SourceFile) {
 
   @Test def testRender() = {
     fileTest(".render") { f =>
-      Levee.render(f.path, environment, includeDir) match {
+      ctx.renderFile(f.path) match {
         case Success(output) => output
         case Failure(f) => f.toString
       }
