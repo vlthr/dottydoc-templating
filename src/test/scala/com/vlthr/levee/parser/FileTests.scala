@@ -9,6 +9,7 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import com.vlthr.levee._
 import com.vlthr.levee.core._
+import com.vlthr.levee.source._
 import com.vlthr.levee.util._
 import scala.collection.JavaConverters._
 import java.nio.file.{FileSystems, Path, Paths, Files}
@@ -74,7 +75,7 @@ class FileTests(file: SourceFile) {
     val outFile = Util.pairedFileWithExt(file.path, ext)
     val expectedFile =
       Util.pairedFileWithExt(file.path, ext + "-expected")
-    val actual = f(file.body)
+    val actual = f(file.content.mkString)
     Util.writeFile(outFile, actual)
     Assume.assumeTrue(Files.exists(expectedFile))
     val expected = Util.readWholeFile(expectedFile)
@@ -101,7 +102,7 @@ object FileTests {
       .filter(_.toString.endsWith(".liquid"))
       .filter(!_.toString.contains("_include"))
       .map { file =>
-        val sourceFile = SourceFile(Util.readWholeFile(file), file.toString)
+        val sourceFile = SourceFile.fromFile(file.toString)
         List(sourceFile.asInstanceOf[Object]).toArray
       }
       .toList

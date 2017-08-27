@@ -4,12 +4,14 @@ token recognition error at: '}\n'
     {{ "hello" }
                ^
     { "hello" }}
+
 Parse Error: ./examples/err_unbalanced_object.liquid
 token recognition error at: '{'
 
     {{ "hello" }
     { "hello" }}
     ^
+
 Parse Error: ./examples/err_unbalanced_object.liquid
 extraneous input '"hello"' expecting {'|', '.', '[', 'contains', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '}}'}
 

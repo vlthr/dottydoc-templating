@@ -18,10 +18,11 @@ package object error {
     def description: String
 
     override def getMessage: String = {
-      s"""$errorType: ${pctx.sourcePosition.template.path}
+      s"""$errorType: ${pctx.sourcePosition.source.path}
    |$description
    |
-   |${Util.indent(pctx.sourcePosition.report)}""".stripMargin
+   |${Util.indent(pctx.sourcePosition.report)}
+   |""".stripMargin
     }
 
     override def toString: String = getMessage
@@ -164,7 +165,7 @@ package object error {
     def description = s"Expected an iterable"
   }
   case class InvalidMap(expr: DotExpr, map: Expr, value: Value) extends TypeError(map.pctx) {
-    def description = s"Expression `${map.pctx.sourcePosition.display}` of type ${value.valueType} can not be indexed as a map."
+    def description = s"Expression `${expr.pctx.sourcePosition.display}` of type ${value.valueType} can not be indexed as a map."
   }
   case class UndefinedVariable(expr: VariableUseExpr) extends RenderError(expr.pctx) {
     def description = s"Undefined variable reference `${expr.pctx.sourcePosition.display}`"

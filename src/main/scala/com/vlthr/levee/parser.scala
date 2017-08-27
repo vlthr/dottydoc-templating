@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.tree._
 import org.antlr.v4.runtime.misc.Interval
 import scala.collection.mutable.{Buffer, Map => MMap}
 import com.vlthr.levee.core._
+import com.vlthr.levee.source._
 import com.vlthr.levee.core.error._
 import com.vlthr.levee.filters._
 import com.vlthr.levee.util.Util
@@ -18,15 +19,14 @@ object LeveeParser {
   /** Creates a ParseContext from the given ANTLR context */
   def makeContext(c: ParserRuleContext, template: SourceFile) = {
     val stop = if (c.stop != null) c.stop else c.start
-    val sourcePosition =
-      SourcePosition(c.start.getStartIndex(),
-                     stop.getStopIndex() + 1,
-                     template)
+    val sourcePosition = SourcePosition.at(template,
+                                           c.start.getStartIndex(),
+                                           stop.getStopIndex() + 1)
     ParseContext(sourcePosition)
   }
 
   def getParseTree(node: String): String = {
-    val (parser, errors) = makeParser(SourceFile(node, "in-memory"))
+    val (parser, errors) = makeParser(SourceFile.fromFile(InMemoryFile(node)))
     val tree = parser.template()
     tree.toStringTree(parser)
   }
@@ -45,10 +45,10 @@ object LeveeParser {
 
   /** Parse a given template path to an AST */
   def parse(path: String)(implicit ctx: Context): Validated[Obj] =
-    parse(SourceFile(Util.readWholeFile(path), path))
+    parse(SourceFile.fromFile(TemplateFile(path)))
 
   def makeParser(file: SourceFile): (LiquidParser, GatherErrors) = {
-    val input = new ANTLRInputStream(file.body)
+    val input = new ANTLRInputStream(file.content, file.content.size)
     val lexer = new LiquidLexer(input)
     val tokens = new CommonTokenStream(lexer)
     val parser = new LiquidParser(tokens)
@@ -101,9 +101,9 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
   }
 
   def visitText(t: TerminalNode): Obj = {
-    val sourcePosition = SourcePosition(t.getSymbol().getStartIndex(),
-                                        t.getSymbol().getStopIndex() + 1,
-                                        template)
+    val sourcePosition = SourcePosition.at(template,
+                                           t.getSymbol().getStartIndex(),
+                                           t.getSymbol().getStopIndex() + 1)
     implicit val pc = ParseContext(sourcePosition)
     TextNode(t.getText())
   }

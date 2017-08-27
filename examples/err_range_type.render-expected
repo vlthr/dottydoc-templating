@@ -4,6 +4,7 @@ Unexpected value type: String. Expected Integer.
     {% for a in ("hi"..5) %}
                 ^^^^^^^^^
     {% endfor %}
+
 Type Error: ./examples/err_range_type.liquid
 Unexpected value type: String. Expected Integer.
 

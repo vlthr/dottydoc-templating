@@ -1,5 +1,5 @@
 Type Error: ./examples/err_invalid_map.liquid
-Expression `list.` of type List can not be indexed as a map.
+Expression `list.xxx` of type List can not be indexed as a map.
 
     {{ list.xxx }}
        ^^^^

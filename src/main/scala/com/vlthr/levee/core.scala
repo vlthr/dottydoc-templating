@@ -1,6 +1,7 @@
 package com.vlthr.levee.core
 import com.vlthr.levee.filters._
 import com.vlthr.levee.util._
+import com.vlthr.levee.source._
 import com.vlthr.levee.parser.LeveeParser
 import com.vlthr.levee.core.error._
 import shapeless._
@@ -11,108 +12,6 @@ import validation.Result
 import scala.util.{Success, Failure, Try}
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 import scala.collection.JavaConverters._
-
-/** Represents a template file.
-  *
-  * @constructor create a new source file
-  * @param body the content of the template file
-  * @param path the path to the template file
-  */
-case class SourceFile(body: String, path: String) {
-  final val LF = '\u000A'
-  final val FF = '\u000C'
-  final val CR = '\u000D'
-  final val SU = '\u001A'
-
-  /** Is character a line break? */
-  def isLineBreakChar(c: Char) = c match {
-    case LF | FF | CR | SU => true
-    case _ => false
-  }
-
-  def isLineBreak(idx: Int) =
-    if (idx >= length) false
-    else {
-      val ch = body(idx)
-      // don't identify the CR in CR LF as a line break, since LF will do.
-      if (ch == CR) (idx + 1 == length) || (body(idx + 1) != LF)
-      else isLineBreakChar(ch)
-    }
-
-  private def calculateLineIndices(cs: Array[Char]) = {
-    val buf = new ArrayBuffer[Int]
-    buf += 0
-    for (i <- 0 until cs.length) if (isLineBreak(i)) buf += i + 1
-    buf += cs.length // sentinel, so that findLine below works smoother
-    buf.toArray
-  }
-  private lazy val lineIndices: Array[Int] = calculateLineIndices(body.toArray)
-
-  /** Map line to offset of first character in line */
-  def lineToOffset(index: Int): Int = lineIndices(index)
-
-  def length: Int = body.length
-}
-
-/** Represents a range of characters in a given source file
-  *
-  * @constructor create a new source position
-  * @param start the index of the first character in the template
-  * @param end the index of the last character in the template plus one
-  *        (i.e the first character that is not included in the range)
-  * @param template the source file this source position is in
-  */
-case class SourcePosition(start: Int, end: Int, template: SourceFile) {
-  def display: String = template.body.substring(start, end + 1)
-  def report: String = linesOfContext(1)
-  def linesOfContext(count: Int): String = {
-    def seekNewline(str: String, start: Int, direction: Int, count: Int): Int = {
-      var c = start
-      var remaining = count
-      def validIndex(i: Int): Boolean = i >= 0 && i < str.size
-      while (remaining > 0 && validIndex(c + direction)) {
-        if (template.isLineBreak(c + direction)) {
-          remaining -= 1
-        }
-        if (remaining > 0) c += direction
-      }
-      c
-    }
-    val startOfContext = seekNewline(template.body, start, -1, count + 1)
-    val startOfLine = seekNewline(template.body, start, -1, 1)
-    val endOfLine = seekNewline(template.body, start, 1, 1)
-    val highlight = " " * (start - startOfLine) + "^" * Math.max(end - start,
-                                                                 1)
-    val endOfContext = seekNewline(template.body, start, 1, count + 1)
-    val prefix = template.body.substring(startOfContext, endOfLine+1)
-    val suffix = template.body.substring(endOfLine+2, endOfContext+1)
-    val s = s"""${prefix.replaceAll("\\s+$", "")}
-       |$highlight
-       |$suffix""".stripMargin
-    s
-  }
-}
-
-object NoSourceFile extends SourceFile("", "") {
-  override def length: Int = ???
-  override def lineToOffset(index: Int): Int = ???
-}
-
-class NoPosition extends SourcePosition(-1, -1, NoSourceFile) {
-  override def display: String = ???
-  override def report: String = ???
-}
-
-object SourcePosition {
-  def fromLine(sourceFile: SourceFile,
-               line: Int,
-               charPositionInLine: Int,
-               length: Int) = {
-    val start = sourceFile.lineToOffset(line) + charPositionInLine
-    val stop = start + length
-    SourcePosition(start, stop, sourceFile)
-  }
-}
 
 /** Holds metadata relating to how and where a given AST node was parsed
   *
@@ -234,11 +133,11 @@ case class Context(mappings: MMap[String, Value],
 
   /** Renders a file using this context. */
   def renderFile(path: String): Try[String] =
-    renderFile(SourceFile(Util.readWholeFile(path), path))
+    renderFile(SourceFile.fromFile(path))
 
   /** Renders a template string using this context. */
   def renderString(body: String): Try[String] =
-    renderFile(SourceFile(body, "In-memory file"))
+    renderFile(SourceFile.fromFile(InMemoryFile(body)))
 }
 
 object Context {
