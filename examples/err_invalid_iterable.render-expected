@@ -2,4 +2,4 @@ Type Error: ./examples/err_invalid_iterable.liquid
 Expected an iterable
 
     {% for i in map %}
-    {{ i }}
+        {{ i }}

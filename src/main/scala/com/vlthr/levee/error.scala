@@ -21,7 +21,7 @@ package object error {
       s"""$errorType: ${pctx.sourcePosition.template.path}
    |$description
    |
-   |    ${pctx.sourcePosition.report}""".stripMargin
+   |${Util.indent(pctx.sourcePosition.report)}""".stripMargin
     }
 
     override def toString: String = getMessage

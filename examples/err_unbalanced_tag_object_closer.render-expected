@@ -2,4 +2,4 @@ Parse Error: ./examples/err_unbalanced_tag_object_closer.liquid
 mismatched input '}}' expecting {'.', '[', 'contains', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
 
     {% if  x }}
-    OBJECT CLOSE TOKEN
+        OBJECT CLOSE TOKEN

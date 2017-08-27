@@ -63,11 +63,17 @@ object Util {
       .asJava
       .asInstanceOf[java.util.Map[String, Object]]
   }
+
   def getStackTrace(e: Throwable) = {
     import java.io.{StringWriter, PrintWriter}
     val sw = new StringWriter()
     val pw = new PrintWriter(sw)
     e.printStackTrace(pw)
     sw.toString()
+  }
+
+  def indent(text: String, levels: Int = 1, spacesPerLevel: Int = 4): String = {
+    val indentation = " " * (levels * spacesPerLevel)
+    indentation + text.split("\\r?\\n").mkString("\n" + indentation)
   }
 }
