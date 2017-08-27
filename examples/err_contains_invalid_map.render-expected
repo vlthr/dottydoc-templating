@@ -1,6 +1,5 @@
 Type Error: ./examples/err_contains_invalid_map.liquid
 Unexpected value type: Integer. Expected Map.
 
-    {{ zero contains "key" }
+    {{ zero contains "key" }}
        ^^^^^^^^^^^^^^^^^^^
-    }

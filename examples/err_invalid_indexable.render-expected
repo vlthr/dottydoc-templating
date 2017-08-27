@@ -1,6 +1,5 @@
 Type Error: ./examples/err_invalid_indexable.liquid
 Expression `zero[` of type `Integer` can not be indexed.
 
-    {{ zero[1] }
+    {{ zero[1] }}
        ^^^^^^^
-    }

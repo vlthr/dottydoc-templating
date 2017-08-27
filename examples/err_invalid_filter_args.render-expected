@@ -1,6 +1,5 @@
 Extension Error: ./examples/err_invalid_filter_args.liquid
 filter `split` is not defined for arguments (Integer).
 
-    {{ "1,2,3" | split: 1 | size }
+    {{ "1,2,3" | split: 1 | size }}
        ^^^^^^^^^^^^^^^^^^
-    }

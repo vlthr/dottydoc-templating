@@ -84,8 +84,8 @@ case class SourcePosition(start: Int, end: Int, template: SourceFile) {
     val highlight = " " * (start - startOfLine) + "^" * Math.max(end - start,
                                                                  1)
     val endOfContext = seekNewline(template.body, start, 1, count + 1)
-    val prefix = template.body.substring(startOfContext, endOfLine)
-    val suffix = template.body.substring(endOfLine, endOfContext)
+    val prefix = template.body.substring(startOfContext, endOfLine+1)
+    val suffix = template.body.substring(endOfLine+2, endOfContext+1)
     val s = s"""${prefix.replaceAll("\\s+$", "")}
        |$highlight
        |$suffix""".stripMargin

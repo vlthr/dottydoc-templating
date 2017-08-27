@@ -1,7 +1,6 @@
 Parse Error: ./examples/err_unbalanced_tag_object_closer.liquid
 mismatched input '}}' expecting {'.', '[', 'contains', 'and', 'or', '==', '!=', '<', '>', '<=', '>=', '%}'}
 
-    {% if  x }
+    {% if  x }}
              ^^
-    }
-        OBJECT CLOSE TOKE
+        OBJECT CLOSE TOKEN

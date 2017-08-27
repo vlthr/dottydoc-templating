@@ -1,6 +1,5 @@
 Render Error: ./examples/err_undefined_identifier.liquid
 Undefined variable reference `xxx `
 
-    {{ xxx }
+    {{ xxx }}
        ^^^
-    }
