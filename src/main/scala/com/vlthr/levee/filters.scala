@@ -33,15 +33,17 @@ package object filters {
     def intLen[T <: HList](implicit ker: HKernelAux[T]): Int = ker().length
 
     def noOptArgs[I, A <: HList](s: String)(
-      f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
-      implicit ftArgs: FromTraversable[A],
-      itype: Typeable[I],
-      hkArgs: HKernelAux[A]) = {
-      def matchInput(filter: Filter, input: Value) = Result.fromOption(input.cast[I], InvalidInput(filter, input))
+        f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
+        implicit ftArgs: FromTraversable[A],
+        itype: Typeable[I],
+        hkArgs: HKernelAux[A]) = {
+      def matchInput(filter: Filter, input: Value) =
+        Result.fromOption(input.cast[I], InvalidInput(filter, input))
       def matchArgs(filter: Filter, args: List[Value]) = {
-        val a = if (args.size < intLen[A]) failure(TooFewArgs(filter, args))
-                else if (args.size > intLen[A]) failure(TooManyArgs(filter, args))
-                else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
+        val a =
+          if (args.size < intLen[A]) failure(TooFewArgs(filter, args))
+          else if (args.size > intLen[A]) failure(TooManyArgs(filter, args))
+          else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
         a zip success(HNil)
       }
 
@@ -49,22 +51,26 @@ package object filters {
     }
 
     def apply[I, A <: HList, O <: HList](s: String)(
-      f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
-      implicit ftArgs: FromTraversable[A],
-      ftOpt: FromTraversable[O],
-      itype: Typeable[I],
-      hkArgs: HKernelAux[A],
-      hkOpt: HKernelAux[O]) = {
-      def matchInput(filter: Filter, input: Value) = Result.fromOption(input.cast[I], InvalidInput(filter, input))
+        f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
+        implicit ftArgs: FromTraversable[A],
+        ftOpt: FromTraversable[O],
+        itype: Typeable[I],
+        hkArgs: HKernelAux[A],
+        hkOpt: HKernelAux[O]) = {
+      def matchInput(filter: Filter, input: Value) =
+        Result.fromOption(input.cast[I], InvalidInput(filter, input))
       def matchArgs(filter: Filter, allArgs: List[Value]) = {
         val (args, optArgs) = allArgs.splitAt(intLen[A])
         val maxNrOpts = intLen[O]
-        val a = if (args.size < intLen[A]) failure(TooFewArgs(filter, args))
-                else if (args.size > (intLen[A] + intLen[O])) failure(TooManyArgs(filter, args))
-                else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
+        val a =
+          if (args.size < intLen[A]) failure(TooFewArgs(filter, args))
+          else if (args.size > (intLen[A] + intLen[O]))
+            failure(TooManyArgs(filter, args))
+          else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
         val fixedOptArgs = optArgs.map(v => Some(v)) ++ List.fill(
           maxNrOpts - optArgs.size)(None)
-        val o = Result.fromOption(ftOpt(fixedOptArgs), InvalidOptArgs(filter, args))
+        val o =
+          Result.fromOption(ftOpt(fixedOptArgs), InvalidOptArgs(filter, args))
         a zip o
       }
 
@@ -72,64 +78,76 @@ package object filters {
     }
 
     def multiNoOptArgs[I <: Coproduct, A <: HList](s: String)(
-      f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
-      implicit ftArgs: FromTraversable[A],
-      itype: Typeable[I],
-      rinj: RuntimeInject[I],
-      hkArgs: HKernelAux[A]) = {
-      def matchInput(filter: Filter, input: Value) = Result.fromOption(Coproduct.runtimeInject[I](input), InvalidInput(filter, input))
+        f: (Context, Filter, I, A, HNil) => ValidatedFragment[Value])(
+        implicit ftArgs: FromTraversable[A],
+        itype: Typeable[I],
+        rinj: RuntimeInject[I],
+        hkArgs: HKernelAux[A]) = {
+      def matchInput(filter: Filter, input: Value) =
+        Result.fromOption(Coproduct.runtimeInject[I](input),
+                          InvalidInput(filter, input))
       def matchArgs(filter: Filter, allArgs: List[Value]) = {
-        val a = if (allArgs.size < intLen[A]) failure(TooFewArgs(filter, allArgs))
-                else if (allArgs.size > intLen[A]) failure(TooManyArgs(filter, allArgs))
-                else Result.fromOption(ftArgs(allArgs), InvalidArgs(filter, allArgs))
+        val a =
+          if (allArgs.size < intLen[A]) failure(TooFewArgs(filter, allArgs))
+          else if (allArgs.size > intLen[A])
+            failure(TooManyArgs(filter, allArgs))
+          else Result.fromOption(ftArgs(allArgs), InvalidArgs(filter, allArgs))
         a zip success(HNil)
       }
       base[I, A, HNil](s, matchInput, matchArgs)(f)
     }
 
     def multi[I <: Coproduct, A <: HList, O <: HList](s: String)(
-      f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
-      implicit ftArgs: FromTraversable[A],
-      ftOpt: FromTraversable[O],
-      itype: Typeable[I],
-      rinj: RuntimeInject[I],
-      hkArgs: HKernelAux[A],
-      hkOpt: HKernelAux[O]) = {
-      def matchInput(filter: Filter, input: Value) = Result.fromOption(Coproduct.runtimeInject[I](input), InvalidInput(filter, input))
+        f: (Context, Filter, I, A, O) => ValidatedFragment[Value])(
+        implicit ftArgs: FromTraversable[A],
+        ftOpt: FromTraversable[O],
+        itype: Typeable[I],
+        rinj: RuntimeInject[I],
+        hkArgs: HKernelAux[A],
+        hkOpt: HKernelAux[O]) = {
+      def matchInput(filter: Filter, input: Value) =
+        Result.fromOption(Coproduct.runtimeInject[I](input),
+                          InvalidInput(filter, input))
       def matchArgs(filter: Filter, allArgs: List[Value]) = {
         val (args, optArgs) = allArgs.splitAt(intLen[A])
         val maxNrOpts = intLen[O]
-        val a = if (allArgs.size < intLen[A]) failure(TooFewArgs(filter, args))
-                else if (allArgs.size > (intLen[A] + intLen[O])) failure(TooManyArgs(filter, args))
-                else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
+        val a =
+          if (allArgs.size < intLen[A]) failure(TooFewArgs(filter, args))
+          else if (allArgs.size > (intLen[A] + intLen[O]))
+            failure(TooManyArgs(filter, args))
+          else Result.fromOption(ftArgs(args), InvalidArgs(filter, args))
         val fixedOptArgs = optArgs.map(v => Some(v)) ++ List.fill(
           maxNrOpts - optArgs.size)(None)
-        val o = Result.fromOption(ftOpt(fixedOptArgs), InvalidOptArgs(filter, args))
+        val o =
+          Result.fromOption(ftOpt(fixedOptArgs), InvalidOptArgs(filter, args))
         a zip o
       }
       base[I, A, O](s, matchInput, matchArgs)(f)
     }
     type MatchInput[T] = (Filter, Value) => ValidatedFragment[T]
     type MatchArgs[A, O] = (Filter, List[Value]) => ValidatedFragment[(A, O)]
-    def base[I, A <: HList, O <: HList](s: String, matchInput: MatchInput[I], matchArgs: MatchArgs[A, O])(
-        f: (Context, Filter, I, A, O) => ValidatedFragment[Value]): Filter = new Filter {
-      type Input = I
-      type Args = A
-      type OptArgs = O
-      def name = s
-      def filter(input: Input, args: Args, optArgs: OptArgs)(
-          implicit ctx: Context): ValidatedFragment[Value] =
-        f(ctx, this, input, args, optArgs)
-      def apply(input: Value, allArgs: List[Value])(
-          implicit ctx: Context): ValidatedFragment[Value] = {
-        val i = matchInput(this, input)
-        val as = matchArgs(this, allArgs)
-        (i zip as).flatMap { (i, allArgs) =>
-          val (args, optArgs) = allArgs
-          filter(i, args, optArgs)
+    def base[I, A <: HList, O <: HList](s: String,
+                                        matchInput: MatchInput[I],
+                                        matchArgs: MatchArgs[A, O])(
+        f: (Context, Filter, I, A, O) => ValidatedFragment[Value]): Filter =
+      new Filter {
+        type Input = I
+        type Args = A
+        type OptArgs = O
+        def name = s
+        def filter(input: Input, args: Args, optArgs: OptArgs)(
+            implicit ctx: Context): ValidatedFragment[Value] =
+          f(ctx, this, input, args, optArgs)
+        def apply(input: Value, allArgs: List[Value])(
+            implicit ctx: Context): ValidatedFragment[Value] = {
+          val i = matchInput(this, input)
+          val as = matchArgs(this, allArgs)
+          (i zip as).flatMap { (i, allArgs) =>
+            val (args, optArgs) = allArgs
+            filter(i, args, optArgs)
+          }
         }
       }
-    }
 
     def byName(s: String): Option[Filter] = registry.get(s)
     val registry: MMap[String, Filter] = MMap(

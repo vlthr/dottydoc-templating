@@ -49,8 +49,7 @@ final case class ContainsExpr(left: Expr, right: Expr)(
     val l = typedEval[MapValue](left)
     val r = typedEval[StringValue](right)
     (l and r) { (l, r) =>
-      BooleanValue(
-        l.get.contains(r.get))
+      BooleanValue(l.get.contains(r.get))
     }
   }
 }
@@ -152,7 +151,8 @@ final case class IndexExpr(indexable: Expr, key: Expr)(
     implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
-    val i = typedEvalOrElse[ListValue](indexable)(v => InvalidIndexable(this, indexable, v))
+    val i = typedEvalOrElse[ListValue](indexable)(v =>
+      InvalidIndexable(this, indexable, v))
     val k = typedEvalOrElse[IntValue](key)(v => InvalidIndex(this, key, v))
     (i and k) { (i, k) =>
       i.get.apply(k.get)
@@ -168,7 +168,8 @@ final case class DotExpr(indexable: Expr, key: String)(
     implicit val pctx: ParseContext)
     extends Expr {
   override def eval()(implicit ctx: Context) = {
-    val source = typedEvalOrElse[MapValue](indexable)(v => InvalidMap(this, indexable, v))
+    val source =
+      typedEvalOrElse[MapValue](indexable)(v => InvalidMap(this, indexable, v))
     source.flatMap { source =>
       source.get.get(key) match {
         case Some(s) => valid(s)
