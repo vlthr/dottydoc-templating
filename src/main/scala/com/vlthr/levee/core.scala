@@ -327,11 +327,7 @@ case class UnknownTag(n: String) extends Tag(n) {
 /** Base class for custom tags, i.e. {% myTag %} */
 abstract class Tag(val name: String) extends Extension {
   def extensionType = "tag"
-  def checkArgs(v: List[Value])(implicit ctx: Context): List[ErrorFragment]
-  def typeCheck(args: List[Value])(implicit ctx: Context): Validated[Unit] = {
-    Result.valid(())
-  }
-  def render(args: List[Value])(implicit ctx: Context): String
+  def apply(args: List[Value]): ValidatedFragment[String] = ???
 }
 
 object Value {

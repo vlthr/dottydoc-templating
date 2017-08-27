@@ -172,20 +172,15 @@ final case class CustomTag(tag: Tag, args: List[Expr])(
     implicit val pctx: ParseContext)
     extends TagNode {
   override def render()(implicit ctx: Context): Validated[String] = {
-    // val evaledArgs = Result.sequence(args.map(_.eval()))
-    // evaledArgs.flatMap { args =>
-    //   val t =
-    //     implicit val parent = this
-    //     tag.render(args)
-    //     .recoverWith {
-    //       case LiquidFailure(errors) =>
-    //         invalid(imbueFragments(errors))
-    //       case NonFatal(e) => invalid(UncaughtExceptionError(e))
-    //       case e => invalid(UncaughtExceptionError(e))
-    //     }
-    //   Result.fromTry(t)
-    // }
-    valid("")
+    val argsVal = Result.sequence(args.map(_.eval()))
+
+    try {
+      argsVal flatMap { args =>
+        imbueFragments(tag.apply(args))
+      }
+    } catch {
+      case NonFatal(err) => invalid(UncaughtExceptionError(err))
+    }
   }
 }
 
