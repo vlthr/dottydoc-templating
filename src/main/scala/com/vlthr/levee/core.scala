@@ -30,7 +30,7 @@ case class SourceFile(body: String, path: String) {
     case _ => false
   }
 
-  private def isLineBreak(idx: Int) =
+  def isLineBreak(idx: Int) =
     if (idx >= length) false
     else {
       val ch = body(idx)
@@ -58,7 +58,8 @@ case class SourceFile(body: String, path: String) {
   *
   * @constructor create a new source position
   * @param start the index of the first character in the template
-  * @param end the index of the last character in the template (inclusive)
+  * @param end the index of the last character in the template plus one
+  *        (i.e the first character that is not included in the range)
   * @param template the source file this source position is in
   */
 case class SourcePosition(start: Int, end: Int, template: SourceFile) {
@@ -68,17 +69,27 @@ case class SourcePosition(start: Int, end: Int, template: SourceFile) {
     def seekNewline(str: String, start: Int, direction: Int, count: Int): Int = {
       var c = start
       var remaining = count
-      while (remaining > 0 && ((direction < 0 && c > 0 && c < str.size) || (direction > 0 && c < (str.size - 1) && c >= 0))) {
-        if (str(c) == '\n') {
+      def validIndex(i: Int): Boolean = i >= 0 && i < str.size
+      while (remaining > 0 && validIndex(c + direction)) {
+        if (template.isLineBreak(c + direction)) {
           remaining -= 1
         }
-        c += direction
+        if (remaining > 0) c += direction
       }
       c
     }
-    val s = seekNewline(template.body, start, -1, count + 1)
-    val e = seekNewline(template.body, start, 1, count + 1)
-    template.body.substring(s, e)
+    val startOfContext = seekNewline(template.body, start, -1, count + 1)
+    val startOfLine = seekNewline(template.body, start, -1, 1)
+    val endOfLine = seekNewline(template.body, start, 1, 1)
+    val highlight = " " * (start - startOfLine) + "^" * Math.max(end - start,
+                                                                 1)
+    val endOfContext = seekNewline(template.body, start, 1, count + 1)
+    val prefix = template.body.substring(startOfContext, endOfLine)
+    val suffix = template.body.substring(endOfLine, endOfContext)
+    val s = s"""${prefix.replaceAll("\\s+$", "")}
+       |$highlight
+       |$suffix""".stripMargin
+    s
   }
 }
 

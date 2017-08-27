@@ -19,7 +19,9 @@ object LeveeParser {
   def makeContext(c: ParserRuleContext, template: SourceFile) = {
     val stop = if (c.stop != null) c.stop else c.start
     val sourcePosition =
-      SourcePosition(c.start.getStartIndex(), stop.getStopIndex(), template)
+      SourcePosition(c.start.getStartIndex(),
+                     stop.getStopIndex() + 1,
+                     template)
     ParseContext(sourcePosition)
   }
 
@@ -100,7 +102,7 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
 
   def visitText(t: TerminalNode): Obj = {
     val sourcePosition = SourcePosition(t.getSymbol().getStartIndex(),
-                                        t.getSymbol().getStopIndex(),
+                                        t.getSymbol().getStopIndex() + 1,
                                         template)
     implicit val pc = ParseContext(sourcePosition)
     TextNode(t.getText())

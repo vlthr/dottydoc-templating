@@ -1,4 +1,6 @@
 Extension Error: ./examples/err_invalid_filter_input.liquid
 filter `split` is not defined for input type Integer.
 
-    {{ 1 | split: "," | size }}
+    {{ 1 | split: "," | size }
+       ^^^^^^^^^^^^^^
+    }

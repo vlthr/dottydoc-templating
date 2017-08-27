@@ -1,12 +1,15 @@
 Type Error: ./examples/err_range_type.liquid
 Unexpected value type: String. Expected Integer.
 
-    {% for a in ("hi"..5) %}
-    {% endfor %}
+    {% for a in ("hi"..5) %
+                ^^^^^^^^^
+    }
+    {% endfor %
 Type Error: ./examples/err_range_type.liquid
 Unexpected value type: String. Expected Integer.
 
+    {% endfor %}
+    {% for a in (5.."hi") %
+                ^^^^^^^^^
     }
-    {% endfor %}
-    {% for a in (5.."hi") %}
-    {% endfor %}
+    {% endfor %

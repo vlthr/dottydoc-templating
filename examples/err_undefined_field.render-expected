@@ -1,4 +1,6 @@
 Render Error: ./examples/err_undefined_field.liquid
-Map `map` contains no field `noexists`
+Map `map.` contains no field `noexists`
 
-    {{ map.noexists }}
+    {{ map.noexists }
+       ^^^^^^^^^^^^
+    }
