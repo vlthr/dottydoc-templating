@@ -11,6 +11,7 @@ node : tag
      | TEXT;
 
 tag : ifTag
+    | unlessTag
     | caseTag
     | forTag
     | assignTag
@@ -41,6 +42,10 @@ assignTag : TAGSTART ASSIGN id EQUALS expr TAGEND;
 ifStart : TAGSTART IFSTART expr TAGEND;
 ifTag : ifStart block elsif* els? ifEnd;
 ifEnd : TAGSTART IFEND TAGEND;
+
+unlessStart : TAGSTART UNLESSSTART expr TAGEND;
+unlessTag : unlessStart block unlessEnd;
+unlessEnd : TAGSTART UNLESSEND TAGEND;
 
 elsif: TAGSTART ELSIF expr TAGEND block;
 els: TAGSTART ELSE TAGEND block;

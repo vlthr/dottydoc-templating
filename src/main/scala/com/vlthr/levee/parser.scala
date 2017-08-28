@@ -154,6 +154,12 @@ class LiquidNodeVisitor(template: SourceFile)(implicit val ctx: Context)
           Some(visitBlock(c.ifTag().els().block()))
         else None
       IfTag(expr, block, elsifs, els)
+    } else if (c.unlessTag() != null) {
+      val ev = new LiquidExprVisitor(template)
+      val expr =
+        ev.visitExpr(c.unlessTag().unlessStart().expr())
+      val block = visitBlock(c.unlessTag().block())
+      UnlessTag(expr, block)
     } else if (c.caseTag != null) {
       val ev = new LiquidExprVisitor(template)
       val expr =

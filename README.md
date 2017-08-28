@@ -40,7 +40,7 @@ Use of undefined variables will cause an error everywhere except in the conditio
 {% if page.noexists %}  <- Does not throw an error
 {% endif %}
 ```
-This allows you to check for the existence of a variable without causing errors. To disable this feature, enable the `strictConditionals` configuration option.
+This is a special case for when an if statement contains only a single variable/field reference, allowing you to check for the existence of a variable without causing errors. To check for the absence of a variable definition, use `unless` instead of `if`. To disable this feature, enable the `strictConditionals` configuration option.
 
 ## Configuration
 Levee can be configured using the `.withConfig` builder method on the LeveeContext object.
@@ -55,7 +55,7 @@ The configuration options available are:
 Name              | Description
 ------------------|-------------------------
 includeDir        | The path to the directory where included snippets can be found
-strictConditionals| Disallow checking for undefined variables in conditionals
+strictConditionals| Disallow checking for undefined variables in conditionals (if and unless tags)
 
 
 ## Writing custom filters

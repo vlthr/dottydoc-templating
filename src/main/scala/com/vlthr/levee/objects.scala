@@ -121,6 +121,18 @@ final case class ContinueTag()(implicit val pctx: ParseContext)
   }
 }
 
+final case class UnlessTag(condition: Expr, thenBlock: Obj)(
+    implicit val pctx: ParseContext)
+    extends TagNode {
+  override def render()(implicit ctx: Context): Validated[String] = {
+    val condEval = condition.truthy()
+    condEval.flatMap { c =>
+      if (!c) thenBlock.render()
+      else valid("")
+    }
+  }
+}
+
 final case class IfTag(condition: Expr,
                        thenBlock: Obj,
                        elsifs: List[(Expr, Obj)],
@@ -165,8 +177,6 @@ final case class RawTag(text: String)(implicit val pctx: ParseContext)
     Result.valid(text)
   }
 }
-
-final case class UnlessTag()(implicit val pctx: ParseContext) extends TagNode
 
 final case class CustomTag(tag: Tag, args: List[Expr])(
     implicit val pctx: ParseContext)

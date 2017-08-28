@@ -33,6 +33,8 @@ BREAK      : 'break';
 CONTINUE   : 'continue';
 IFEND      : 'endif';
 IFSTART    : 'if';
+UNLESSEND  : 'endunless';
+UNLESSSTART: 'unless';
 TRUE       : 'true';
 FALSE      : 'false';
 IN         : 'in';

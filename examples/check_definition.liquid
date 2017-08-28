@@ -10,3 +10,6 @@
 {% if noexists %}
     does not exist
 {% endif %}
+{% unless page.title %}
+    does not render
+{% endunless %}
