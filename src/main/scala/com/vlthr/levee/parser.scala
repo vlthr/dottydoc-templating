@@ -305,6 +305,8 @@ class LiquidExprVisitor(template: SourceFile)(implicit val ctx: Context)
       case t: TerminalNode => {
         if (c.INT() != null) {
           LiteralExpr(IntValue(t.getText().toInt))
+        } else if (c.NULL() != null) {
+          LiteralExpr(NullValue())
         } else if (c.STRSINGLE() != null || c.STRDOUBLE() != null) {
           LiteralExpr(
             StringValue(t.getText().substring(1, t.getText().size - 1)))

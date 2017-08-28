@@ -50,6 +50,7 @@ COMMA      : ',';
 RANGE      : '..';
 LPAR       : '(';
 RPAR       : ')';
+NULL       : 'null';
 
 OUTPUTEND   : '}}' -> popMode;
 TAGEND      : '%}' -> popMode;

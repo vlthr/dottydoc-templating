@@ -1,0 +1,1 @@
+(template (block (node (tag (ifTag (ifStart {% if (expr (term null)) %}) (block (node \n    Should not render\n)) (ifEnd {% endif %})))) (node \n)) <EOF>)

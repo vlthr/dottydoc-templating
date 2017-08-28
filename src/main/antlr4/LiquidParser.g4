@@ -84,6 +84,7 @@ kwarg: id COLON expr;
 kwargs: kwarg+;
 
 term : INT
+     | NULL
      | STRDOUBLE
      | STRSINGLE
      | TRUE
